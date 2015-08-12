@@ -1,0 +1,17 @@
+= FLaP &mdash; Flat LaTeX Projects
+:Author:    Franck Chauvel
+:Email:     franck.chauvel@gmail.com
+
+Flap is a simple utility that flattens LaTeX projects. It takes a well organised LaTeX project 
+&mdash; one you so carefully crafted &mdash; and merged it into a vulgar single LaTeX file 
+in a flat directory.
+
+Why to do so? Some publisher requires such a flat structure when you submit the sources of your 
+manuscript and I got tired to do that by hand.
+
+== Contact
+
+If you get the change to give it a try, please report any bugs, issues or feature request using 
+the link:https://github.com/fchauvel/flap/issues[issue tracker].
+Should you need any further information, feel free to email mailto:franck.chauvel@gmail.com[me]
+
