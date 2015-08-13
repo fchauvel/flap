@@ -1,4 +1,4 @@
-
+import os
 import re
 from flap.path import Path
 
@@ -61,18 +61,27 @@ class Flap:
 
 
     def flattenInputDirectives(self, file):
-        text = file.content()
+        text = file.content() 
+        lines = text.splitlines(True)
         fragments = []
-        current = 0
-        for match in Flap.INPUT_PATTERN.finditer(text):
-            self.listener.onInput(match.group(1))
-            self.appendPrefix(text, fragments, current, match)
-            self.appendFile(file, fragments, "%s.tex" % match.group(1))
-            current = match.end()
+        for eachLine in lines:
+            if not self.isCommentedOut(eachLine):
+                current = 0
+                for match in Flap.INPUT_PATTERN.finditer(eachLine):
+                    self.listener.onInput(match.group(1))
+                    self.appendPrefix(eachLine, fragments, current, match)
+                    self.appendFile(file, fragments, "%s.tex" % match.group(1))
+                    current = match.end()
+                self.appendSuffix(eachLine, fragments, current)
+
+            else:
+                fragments.append(eachLine)
         
-        self.appendSuffix(text, fragments, current)
         return fragments
 
+
+    def isCommentedOut(self, text):
+        return text.strip().startswith("%")
 
     def merge(self, fragments):
         mergedContent = ''.join(fragments)

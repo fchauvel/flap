@@ -21,7 +21,7 @@ Here is a list of features, which are not yet supported:
 
  * Add license headers
  * Support for backward relative links in directives, for instance `\input{../img/foo}`.
- * Do not merge directives when the line is commented out
+ * [line-through]#Do not merge directives when the line is commented out.#
  * Provide a verbose mode to disable the user feedback
  * Show file name and line number in user feedback
  * [line-through]#Provide some feedback to the user#

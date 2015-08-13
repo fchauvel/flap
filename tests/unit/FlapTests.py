@@ -12,7 +12,7 @@ class FlapTests(TestCase):
 
     def setUp(self):
         self.fileSystem = InMemoryFileSystem()
-        self.flatexer = Flap(self.fileSystem)
+        self.flap = Flap(self.fileSystem)
 
 
     def verifyFile(self, path, content):
@@ -25,7 +25,7 @@ class FlapTests(TestCase):
         self.fileSystem.createFile(ROOT/"project"/"main.tex", "blahblah \input{foo} blah")
         self.fileSystem.createFile(ROOT/"project"/"foo.tex", "bar")
         
-        self.flatexer.flatten(ROOT/"project"/"main.tex", ROOT/"result")
+        self.flap.flatten(ROOT/"project"/"main.tex", ROOT/"result")
        
         self.verifyFile(ROOT/"result"/"merged.tex", "blahblah bar blah") 
         
@@ -35,7 +35,7 @@ class FlapTests(TestCase):
         self.fileSystem.createFile(ROOT/"project"/"foo.tex", "B \input{bar} Y")
         self.fileSystem.createFile(ROOT/"project"/"bar.tex", "blah")
         
-        self.flatexer.flatten(ROOT/"project"/"main.tex", ROOT/"result")
+        self.flap.flatten(ROOT/"project"/"main.tex", ROOT/"result")
         
         self.verifyFile(ROOT/"result"/"merged.tex", "A B blah Y Z")
   
@@ -44,14 +44,14 @@ class FlapTests(TestCase):
         self.fileSystem.createFile(ROOT/"project"/"main.tex", "blahblah \input{foo} blah")
                     
         with self.assertRaises(ValueError):
-            self.flatexer.flatten(ROOT/"project"/"main.tex", ROOT/"result")
+            self.flap.flatten(ROOT/"project"/"main.tex", ROOT/"result")
             
             
     def testLinksToGraphicsAreAdjusted(self):
         self.fileSystem.createFile(ROOT/"project"/"main.tex", "A \includegraphics[width=3cm]{img/foo} Z")
         self.fileSystem.createFile(ROOT/"project"/"img"/"foo.pdf", "xyz")
          
-        self.flatexer.flatten(ROOT/"project"/"main.tex", ROOT/"result")
+        self.flap.flatten(ROOT/"project"/"main.tex", ROOT/"result")
                  
         self.verifyFile(ROOT/"result"/"merged.tex", "A \includegraphics[width=3cm]{foo} Z")
         self.verifyFile(ROOT/"result"/"foo.pdf", "xyz")
@@ -62,7 +62,7 @@ class FlapTests(TestCase):
         self.fileSystem.createFile(ROOT/"project"/"foo.tex", "BB \includegraphics[width=3cm]{img/foo} BB")
         self.fileSystem.createFile(ROOT/"project"/"img"/"foo.pdf", "xyz")
         
-        self.flatexer.flatten(ROOT/"project"/"main.tex", ROOT/"result")
+        self.flap.flatten(ROOT/"project"/"main.tex", ROOT/"result")
                  
         self.verifyFile(ROOT/"result"/"merged.tex", "AA BB \includegraphics[width=3cm]{foo} BB AA")
         self.verifyFile(ROOT/"result"/"foo.pdf", "xyz")
@@ -72,7 +72,7 @@ class FlapTests(TestCase):
         self.fileSystem.createFile(ROOT/"project"/"style.cls", "whatever")
         self.fileSystem.createFile(ROOT/"project"/"main.tex", "xxx")
         
-        self.flatexer.flatten(ROOT/"project"/"main.tex", ROOT/"result")
+        self.flap.flatten(ROOT/"project"/"main.tex", ROOT/"result")
                  
         self.verifyFile(ROOT/"result"/"style.cls", "whatever")
         
@@ -100,6 +100,26 @@ class FlapTests(TestCase):
         flap.flatten(ROOT / "project" / "main.tex", ROOT / "result")
 
         listener.onInput.assert_called_once_with("foo")
+        
+    def testFlapIgnoreLinesThatAreCommentedOut(self):
+        content = """
+            blah blah blah
+            % \input{foo}
+            blah blah blah
+        """
+        self.fileSystem.createFile(ROOT/"project"/"main.tex", content)
+        self.fileSystem.createFile(ROOT/"project"/"foo.tex", "included content")
+
+        self.flap.flatten(ROOT / "project" / "main.tex", ROOT / "result")
+
+        merged = """
+            blah blah blah
+            % \input{foo}
+            blah blah blah
+        """
+
+        self.verifyFile(ROOT/"result"/"merged.tex", merged)
+        
         
         
 if __name__ == "__main__":
