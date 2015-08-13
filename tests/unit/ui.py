@@ -25,9 +25,11 @@ class UiTest(TestCase):
     def testUiReportsInputDirectives(self, mock):
         ui = UI(mock)
         
-        ui.onInput("foo")
+        ui.onInput("main.tex", 3, "foo")
 
-        self.verifyOutputContains(mock, " - input: foo")        
+        self.verifyOutputContains(mock, "main.tex")        
+        self.verifyOutputContains(mock, "3")        
+        self.verifyOutputContains(mock, "foo")        
 
     
     @patch('sys.stdout', new_callable=StringIO)

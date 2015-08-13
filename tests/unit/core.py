@@ -90,7 +90,8 @@ class FlapTests(TestCase):
 
         
     def testFlapNotifiesWhenAnInputDirectiveIsMet(self):
-        self.fileSystem.createFile(ROOT/"project"/"main.tex", "\input{foo}")
+        self.fileSystem.createFile(ROOT/"project"/"main.tex", """blah blabh 
+        \input{foo}""")
         self.fileSystem.createFile(ROOT/"project"/"foo.tex", "blah blah")
 
         listener = Listener()
@@ -99,7 +100,8 @@ class FlapTests(TestCase):
         
         flap.flatten(ROOT / "project" / "main.tex", ROOT / "result")
 
-        listener.onInput.assert_called_once_with("foo")
+        listener.onInput.assert_called_once_with("main.tex", 2, "foo")
+        
         
     def testFlapIgnoreLinesThatAreCommentedOut(self):
         content = """

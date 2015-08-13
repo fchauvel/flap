@@ -1,4 +1,5 @@
 
+
 import sys
 import tempfile
 
@@ -18,8 +19,9 @@ class UI(Listener):
     def onStartup(self):
         self.show("FLaP v0.1")
         
-    def onInput(self, inputedFile):
-        self.show(" - input: " + inputedFile)
+    def onInput(self, fileName, lineNumber, inputedFile):
+        text = "+ in '%s' line %d: \\input{%s}" % (fileName, lineNumber, inputedFile)
+        self.show(text)
         
     def onFlattenComplete(self):
         self.show("Flatten complete.")
@@ -76,6 +78,7 @@ class Controller:
         self.engine = Flap(fileSystem, self.ui)
         
     def run(self, arguments):
+        self.ui.onStartup()
         command = Command.parse(arguments)
         command.sendTo(self.engine)
         

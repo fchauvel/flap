@@ -1,4 +1,3 @@
-import os
 import re
 from flap.path import Path
 
@@ -8,7 +7,7 @@ class Listener:
     Handle events emitted by FLaP.
     """
     
-    def onInput(self, inputedFile):
+    def onInput(self, fileName, lineNumber, inputedFile):
         """
         Triggered when an input directive was found in the LaTeX source.
         """
@@ -61,14 +60,13 @@ class Flap:
 
 
     def flattenInputDirectives(self, file):
-        text = file.content() 
-        lines = text.splitlines(True)
         fragments = []
-        for eachLine in lines:
+        lines = file.content().splitlines(True)
+        for (position, eachLine) in enumerate(lines):
             if not self.isCommentedOut(eachLine):
                 current = 0
                 for match in Flap.INPUT_PATTERN.finditer(eachLine):
-                    self.listener.onInput(match.group(1))
+                    self.listener.onInput(file.fullname(), position + 1, match.group(1))
                     self.appendPrefix(eachLine, fragments, current, match)
                     self.appendFile(file, fragments, "%s.tex" % match.group(1))
                     current = match.end()
@@ -78,7 +76,7 @@ class Flap:
                 fragments.append(eachLine)
         
         return fragments
-
+        
 
     def isCommentedOut(self, text):
         return text.strip().startswith("%")
