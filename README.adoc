@@ -6,8 +6,17 @@ Flap is a simple utility that flattens LaTeX projects. It takes a well organised
 &mdash; one you so carefully crafted &mdash; and merged it into a vulgar single LaTeX file 
 in a flat directory.
 
-Why to do so? Some publisher requires such a flat structure when you submit the sources of your 
-manuscript and I got tired to do that by hand.
+*Why?* Some publishers require such a flat structure when you submit the sources of your 
+manuscripts, and I got tired to flatten the sources by hand.
+
+== TODOs
+
+Here is a list of features, which are not yet supported:
+
+ * Support for backward relative links in directives, for instance `\input{../img/foo}`.
+ * Do not merge directives when the line is commented out
+ * Provide some feedback to the user
+ * Test on a UNIX-like file system
 
 == Contact
 

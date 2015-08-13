@@ -1,8 +1,8 @@
 
 import unittest
 
-from flatexer.FileSystem import InMemoryFileSystem
-from flatexer.path import Path, ROOT
+from flap.FileSystem import InMemoryFileSystem
+from flap.path import Path, ROOT
 
 
 class InMemoryFileSystemTest(unittest.TestCase):

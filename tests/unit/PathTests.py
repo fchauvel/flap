@@ -1,7 +1,7 @@
 
 import unittest
 
-from flatexer.path import Path, ROOT
+from flap.path import Path, ROOT
 
 class PathTests(unittest.TestCase):
 

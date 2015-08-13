@@ -1,17 +1,18 @@
 
-import unittest
-from flatexer.FileSystem import OSFileSystem
-from flatexer.path import ROOT
-from flatexer.Runner import Runner
+from unittest import TestCase, main
 
-class OSFileSystemTest(unittest.TestCase):
+from flap.FileSystem import OSFileSystem
+from flap.path import ROOT
+from flap.ui import Controller
+
+class OSFileSystemTest(TestCase):
     
     def setUp(self):
         self.fileSystem = OSFileSystem()
-        self.path = ROOT / "C:" / "temp" / "flatexer" / "test.txt"
+        self.path = ROOT / "C:" / "temp" / "flap" / "test.txt"
         self.content = "blahblah blah"
 
-        self.fileSystem.deleteDirectory(ROOT / "C:" / "temp" / "flatexer")
+        self.fileSystem.deleteDirectory(ROOT / "C:" / "temp" / "flap")
         self.fileSystem.deleteDirectory(ROOT / "C:" / "temp" / "flatexer_copy")
     
     def createAndOpenTestFile(self):
@@ -36,11 +37,11 @@ class OSFileSystemTest(unittest.TestCase):
 
 
 
-class Test(unittest.TestCase):
+class Test(TestCase):
 
     def setUp(self):
         self.fileSystem = OSFileSystem()
-        self.workingDir = ROOT / "C:" / "temp" / "flatexer"
+        self.workingDir = ROOT / "C:" / "temp" / "flap"
         self.source = self.workingDir / "project"
         self.output = self.workingDir / "output"
         self.fileSystem.deleteDirectory(self.workingDir)
@@ -51,7 +52,7 @@ class Test(unittest.TestCase):
         
 
     def testFlattenLatexProject(self):
-        Runner(self.fileSystem).run(["C:\\temp\\flatexer\\project\\main.tex", "C:\\temp\\flatexer\\output"])
+        Controller(self.fileSystem).run(["C:\\temp\\flap\\project\\main.tex", "C:\\temp\\flap\\output"])
         
         file = self.fileSystem.open(self.output / "merged.tex")
         self.assertEqual(file.content(), "\includegraphics{plot}")
@@ -61,4 +62,4 @@ class Test(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main() 
+    main() 
