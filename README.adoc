@@ -9,18 +9,23 @@ in a flat directory.
 *Why?* Some publishers require such a flat structure when you submit the sources of your 
 manuscripts, and I got tired to flatten the sources by hand.
 
-== TODOs
-
-Here is a list of features, which are not yet supported:
-
- * Support for backward relative links in directives, for instance `\input{../img/foo}`.
- * Do not merge directives when the line is commented out
- * Provide some feedback to the user
- * Test on a UNIX-like file system
-
 == Contact
 
 If you get the change to give it a try, please report any bugs, issues or feature request using 
 the link:https://github.com/fchauvel/flap/issues[issue tracker].
 Should you need any further information, feel free to email mailto:franck.chauvel@gmail.com[me]
+
+== TODOs
+
+Here is a list of features, which are not yet supported:
+
+ * Add license headers
+ * Support for backward relative links in directives, for instance `\input{../img/foo}`.
+ * Do not merge directives when the line is commented out
+ * Provide a verbose mode to disable the user feedback
+ * Show file name and line number in user feedback
+ * [line-through]#Provide some feedback to the user#
+ * Test on a UNIX-like file system
+ * Add a example in the README
+
 

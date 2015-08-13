@@ -20,9 +20,18 @@ class UiTest(TestCase):
         
         self.verifyOutputContains(mock, "v0.1")
 
+
+    @patch('sys.stdout', new_callable=StringIO)
+    def testUiReportsInputDirectives(self, mock):
+        ui = UI(mock)
+        
+        ui.onInput("foo")
+
+        self.verifyOutputContains(mock, " - input: foo")        
+
     
     @patch('sys.stdout', new_callable=StringIO)
-    def testUiWriteReportComplete(self, mock):
+    def testUiReportsCompletion(self, mock):
         ui = UI(mock)
         
         ui.onFlattenComplete()

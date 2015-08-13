@@ -87,6 +87,19 @@ class FlapTests(TestCase):
         flap.flatten(ROOT / "project" / "main.tex", ROOT / "result")
 
         listener.onFlattenComplete.assert_called_once_with()
+
+        
+    def testFlapNotifiesWhenAnInputDirectiveIsMet(self):
+        self.fileSystem.createFile(ROOT/"project"/"main.tex", "\input{foo}")
+        self.fileSystem.createFile(ROOT/"project"/"foo.tex", "blah blah")
+
+        listener = Listener()
+        listener.onInput = MagicMock()
+        flap = Flap(self.fileSystem, listener)
+        
+        flap.flatten(ROOT / "project" / "main.tex", ROOT / "result")
+
+        listener.onInput.assert_called_once_with("foo")
         
         
 if __name__ == "__main__":

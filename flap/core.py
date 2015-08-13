@@ -5,10 +5,19 @@ from flap.path import Path
 
 class Listener:
     """
-    Listen to events emitted by FLaP and react as needed.
+    Handle events emitted by FLaP.
     """
     
+    def onInput(self, inputedFile):
+        """
+        Triggered when an input directive was found in the LaTeX source.
+        """
+        pass
+    
     def onFlattenComplete(self):
+        """
+        Triggered when the flattening process is complete.
+        """
         pass
     
 
@@ -56,6 +65,7 @@ class Flap:
         fragments = []
         current = 0
         for match in Flap.INPUT_PATTERN.finditer(text):
+            self.listener.onInput(match.group(1))
             self.appendPrefix(text, fragments, current, match)
             self.appendFile(file, fragments, "%s.tex" % match.group(1))
             current = match.end()

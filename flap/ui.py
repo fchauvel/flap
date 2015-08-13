@@ -18,6 +18,9 @@ class UI(Listener):
     def onStartup(self):
         self.show("FLaP v0.1")
         
+    def onInput(self, inputedFile):
+        self.show(" - input: " + inputedFile)
+        
     def onFlattenComplete(self):
         self.show("Flatten complete.")
         
