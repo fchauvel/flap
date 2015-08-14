@@ -51,7 +51,6 @@ Here is a list of features, which are not yet supported:
 
  * Add license headers
  * Support for backward relative links in directives, for instance `\input{../img/foo}`.
- * Provide a verbose mode to disable the user feedback
  * Test on a UNIX-like file system
  * Add a example in the README
 
