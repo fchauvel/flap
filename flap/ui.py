@@ -6,6 +6,7 @@ import tempfile
 from flap.core import Flap, Listener
 from flap.path import Path
 from flap.FileSystem import OSFileSystem
+from idlelib.macosxSupport import overrideRootMenu
 
 
 class UI(Listener):
@@ -19,8 +20,8 @@ class UI(Listener):
     def onStartup(self):
         self.show("FLaP v0.1")
         
-    def onInput(self, fileName, lineNumber, inputedFile):
-        text = "+ in '%s' line %d: \\input{%s}" % (fileName, lineNumber, inputedFile)
+    def onInput(self, fragment):
+        text = "+ in '%s' line %d: \\input{%s}" % (fragment.file().fullname(), fragment.lineNumber(), fragment.text())
         self.show(text)
         
     def onFlattenComplete(self):
@@ -52,9 +53,18 @@ class Command:
         self._rootFile = "main.tex"
         
     def outputDirectory(self):
+        """
+        :returns: the selected output directory
+		"""
         return self._outputDirectory
     
     def setOutputDirectory(self, outputDirectory):
+        """ 
+		Set the output directory
+		
+		:param outputDirectory: the selected output directory
+		:type outputDirectory: str
+		"""
         self._outputDirectory = outputDirectory
     
     def rootFile(self):

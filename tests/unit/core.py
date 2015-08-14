@@ -2,10 +2,44 @@
 from unittest import TestCase, main
 from unittest.mock import MagicMock
 
-from flap.FileSystem import InMemoryFileSystem
-from flap.core import Flap, Listener 
+from flap.FileSystem import InMemoryFileSystem, File, MissingFile
+from flap.core import Flap, Fragment, Listener 
 from flap.path import ROOT
 
+
+class FragmentTest(TestCase):
+    """
+    Specification of the Fragment class 
+    """
+
+    def setUp(self):
+        self.file = File(None, ROOT/"main.tex", "xxx")
+        self.fragment = Fragment(self.file, 13, "blah blah")
+    
+    def testShouldExposeLineNumber(self):
+        self.assertEqual(self.fragment.lineNumber(), 13)
+
+
+    def testShouldRejectNegativeOrZeroLineNumber(self):
+        with self.assertRaises(ValueError):
+            fragment = Fragment(self.file, 0, "blah blah")
+        
+        
+    def testShouldExposeFile(self):
+        self.assertEqual(self.fragment.file().fullname(), "main.tex")
+        
+    def testShouldRejectMissingFile(self):
+        with self.assertRaises(ValueError):
+            fragment = Fragment(MissingFile(ROOT/"main.tex"), 13, "blah blah")
+            
+    def testShouldExposeFragmentText(self):
+        self.assertEqual(self.fragment.text(), "blah blah")
+
+    def testShouldDetectComments(self):
+        self.assertFalse(self.fragment.isCommentedOut())
+
+    def testShouldBeSliceable(self):
+        self.assertEqual(self.fragment[0:4].text(), "blah")
 
 class FlapTests(TestCase):
 
@@ -90,6 +124,7 @@ class FlapTests(TestCase):
 
         
     def testFlapNotifiesWhenAnInputDirectiveIsMet(self):
+                
         self.fileSystem.createFile(ROOT/"project"/"main.tex", """blah blabh 
         \input{foo}""")
         self.fileSystem.createFile(ROOT/"project"/"foo.tex", "blah blah")
@@ -100,7 +135,12 @@ class FlapTests(TestCase):
         
         flap.flatten(ROOT / "project" / "main.tex", ROOT / "result")
 
-        listener.onInput.assert_called_once_with("main.tex", 2, "foo")
+        fragment = listener.onInput.call_args[0][0]
+        
+        self.assertEqual(fragment.file().fullname(), "main.tex")
+        self.assertEqual(fragment.lineNumber(), 2)
+        self.assertEqual(fragment.text().strip(), "\input{foo}")
+        
         
         
     def testFlapIgnoreLinesThatAreCommentedOut(self):
@@ -116,13 +156,20 @@ class FlapTests(TestCase):
 
         merged = """
             blah blah blah
-            % \input{foo}
             blah blah blah
         """
 
         self.verifyFile(ROOT/"result"/"merged.tex", merged)
         
-        
-        
+class Matcher(object):
+            
+    def __init__(self, model):
+        self.model = model
+
+    def __eq__(self, other):
+        return (self.model.file().fullname == other.file().fullname()
+            and self.model.lineNumber() == other.lineNumber()
+            and self.model.text() == other.text())    
+
 if __name__ == "__main__":
     main()

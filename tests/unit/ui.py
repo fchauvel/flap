@@ -5,8 +5,9 @@ from unittest.mock import patch
 
 from io import StringIO
 import tempfile
-
-
+from flap.path import ROOT
+from flap.core import Fragment
+from flap.FileSystem import File
 from flap.ui import Command, UI 
 
 
@@ -25,7 +26,7 @@ class UiTest(TestCase):
     def testUiReportsInputDirectives(self, mock):
         ui = UI(mock)
         
-        ui.onInput("main.tex", 3, "foo")
+        ui.onInput(Fragment(File(None, ROOT/"main.tex", None), 3, "foo"))
 
         self.verifyOutputContains(mock, "main.tex")        
         self.verifyOutputContains(mock, "3")        

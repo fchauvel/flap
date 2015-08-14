@@ -3,6 +3,7 @@ import os
 import re
 
 from flap.path import Path
+from flap.core import Fragment
 
 class File:
    
