@@ -1,7 +1,6 @@
 
 
 import sys
-import tempfile
 
 from flap.core import Flap, Listener
 from flap.path import Path
@@ -15,6 +14,13 @@ class UI(Listener):
     
     def __init__(self, output=sys.stdout):
         self.output = output
+        self.showDetails = False
+    
+    def enableDetails(self):
+        self.showDetails = True
+    
+    def disableDetails(self):
+        self.showDetails = False
     
     def onStartup(self):
         self.show("FLaP v0.1")
@@ -29,8 +35,9 @@ class UI(Listener):
         self.show("Flatten complete.")
         
     def showFragment(self, fragment):
-        text = "+ in '%s' line %d: '%s'" % (fragment.file().fullname(), fragment.lineNumber(), fragment.text())
-        self.show(text)
+        if self.showDetails:
+            text = "+ in '%s' line %d: '%s'" % (fragment.file().fullname(), fragment.lineNumber(), fragment.text().strip())
+            self.show(text)
 
     def show(self, message):
         print(message, file=self.output)
@@ -48,19 +55,24 @@ class Controller:
         self.flap = Flap(fileSystem, ui)
         
     def run(self, arguments):
+        (rootFile, output, isVerbose) = self.parse(arguments)
+        if isVerbose:
+            self.ui.enableDetails()
         self.ui.onStartup()
-        (rootFile, output) = self.parse(arguments)
         self.flap.flatten(rootFile, output)
         
     def parse(self, arguments):
         rootFile = "main.tex"
         output = "/temp/"
+        verbose = False
         for each in arguments:
             if each.endswith(".tex"):
                 rootFile = each
+            elif each == "-v" or each == "--verbose":
+                verbose = True
             else:
                 output = each
-        return (Path.fromText(rootFile), Path.fromText(output))
+        return (Path.fromText(rootFile), Path.fromText(output), verbose)
         
 if __name__ == "__main__":
     Controller(OSFileSystem()).run(sys.argv)

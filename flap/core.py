@@ -158,9 +158,7 @@ class InputFlattener(ProcessorDecorator):
     def allInputDirectives(self, fragment):
         return InputFlattener.PATTERN.finditer(fragment.text())
 
-
     PATTERN = re.compile("\\input{([^}]+)}")
-
    
     def fragmentsFrom(self, fileName):
         includedFile = self.file().sibling(fileName + ".tex")
@@ -204,11 +202,7 @@ class IncludeGraphicsAdjuster(ProcessorDecorator):
             graphicInclusion = match.group(0).replace(match.group(1), graphic.basename())
             return Fragment(fragment.file(), fragment.lineNumber(), "\\" + graphicInclusion)
 
-
-
     PATTERN = re.compile("\\includegraphics(?:\[[^\]]+\])*\{([^\}]+)\}")
-
-
  
 
 class Flap:
@@ -242,12 +236,16 @@ class Flap:
         fragments = pipeline.fragments()
         merge = ''.join([ f.text() for f in fragments ])
         self._fileSystem.createFile(self._output / "merged.tex", merge)
-        
+            
     def copyResourceFiles(self):
         project = self._root.container()
         for eachFile in project.files():
-            if eachFile.hasExtension() and eachFile.extension() in Flap.RESOURCE_FILES:
+            if self.isResource(eachFile):
                 self._fileSystem.copy(eachFile, self._output)
+
+    def isResource(self, eachFile):
+        return eachFile.hasExtension() and eachFile.extension() in Flap.RESOURCE_FILES
+
 
     RESOURCE_FILES = ["cls", "sty", "bib", "bst"]       
         

@@ -9,6 +9,36 @@ in a flat directory.
 *Why?* Some publishers require such a flat structure when you submit the sources of your 
 manuscripts, and I got tired to flatten the sources by hand.
 
+== Usage Example
+
+Consider for instance one of my typical LaTeX project, which I organize as follows. 
+We placed the LaTeX sources at the root level, but images are stored in sub 
+directory named `img`. In addition, the LaTeX sources we wrote each section in 
+a separate TeX file, such as `introduction.tex`, `abstract.tex` and so on.
+
+We want to merge all the TeX sources into a single fat file, where all graphics
+are now in the same directory. 
+
+FLaP does just that, as shown below:
+----
+$> python -m flap.ui -v C:\\users\\franckc\\pub\\main.tex C:\\temp\\result
+FLaP v0.1
++ in 'main.tex' line 39: '\input{configuration}'
++ in 'main.tex' line 116: '\input{abstract}'
++ in 'main.tex' line 158: '\input{introduction}'
++ in 'main.tex' line 160: '\input{motivations}'
++ in 'motivations.tex' line 20: '\includegraphics[width=8cm]{img/sensapp}'
++ in 'motivations.tex' line 79: '\includegraphics[width=7cm]{img/topologies}'
+...
++ in 'random.tex' line 31: '\includegraphics[width=8cm]{img/graphs}'
++ in 'main.tex' line 222: '\input{convergence}'
+Flatten complete.
+----
+
+Note the usage of the verbose mode (`-v`). By default, the details are not 
+displayed.
+
+
 == Contact
 
 If you get the change to give it a try, please report any bugs, issues or feature request using 
@@ -21,10 +51,7 @@ Here is a list of features, which are not yet supported:
 
  * Add license headers
  * Support for backward relative links in directives, for instance `\input{../img/foo}`.
- * [line-through]#Do not merge directives when the line is commented out.#
  * Provide a verbose mode to disable the user feedback
- * [line-through]#Show file name and line number in user feedback.#
- * [line-through]#Provide some feedback to the user#
  * Test on a UNIX-like file system
  * Add a example in the README
 
