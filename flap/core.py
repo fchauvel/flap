@@ -16,6 +16,15 @@ class Listener:
         """
         pass
     
+    def onIncludeGraphics(self, fragment):
+        """
+        Triggered when an 'includegraphics' directive is detected in the LaTeX source.
+        
+        :param fragment: the text fragment of interest
+        :type fragment: Fragment
+        """
+        pass
+    
     def onFlattenComplete(self):
         """
         Triggered when the flattening process is complete.
@@ -41,7 +50,6 @@ class Fragment:
     def lineNumber(self):
         return self._lineNumber
 
-
     def file(self):
         return self._file
     
@@ -65,6 +73,14 @@ class Processor:
     
     def fragments(self):
         pass
+
+    @staticmethod
+    def inputMerger(file, proxy):
+        return InputFlattener(CommentRemover(LineExtractor(file)), proxy)
+
+    @staticmethod
+    def flapPipeline(proxy):
+        return IncludeGraphicsAdjuster(Processor.inputMerger(proxy.file(), proxy), proxy)
 
 
 class LineExtractor(Processor):
@@ -122,10 +138,10 @@ class InputFlattener(ProcessorDecorator):
     the fragments from the file that is referred (such as 'foo.tex')
     """
     
-    def __init__(self, delegate, listener):
+    def __init__(self, delegate, flap):
         super().__init__(delegate)
-        self.listener = listener
-        
+        self.flap = flap
+    
     def fragments(self):
         for eachFragment in self._delegate.fragments():
             yield from self.flattenInput(eachFragment)
@@ -133,7 +149,7 @@ class InputFlattener(ProcessorDecorator):
     def flattenInput(self, fragment):
         current = 0
         for eachInput in self.allInputDirectives(fragment):
-            self.listener.onInput(fragment)
+            self.flap.onInput(fragment)
             yield fragment[current:eachInput.start() - 1]
             yield from self.fragmentsFrom(eachInput.group(1))
             current = eachInput.end()
@@ -142,35 +158,28 @@ class InputFlattener(ProcessorDecorator):
     def allInputDirectives(self, fragment):
         return InputFlattener.PATTERN.finditer(fragment.text())
 
+
     PATTERN = re.compile("\\input{([^}]+)}")
+
    
     def fragmentsFrom(self, fileName):
         includedFile = self.file().sibling(fileName + ".tex")
         if includedFile.isMissing():
             raise ValueError("The file '%s' could not be found." % includedFile.path())
-        return Flap.pipeline(includedFile, self.listener).fragments()
+        return Processor.inputMerger(includedFile, self.flap).fragments()
 
 
 
 class IncludeGraphicsAdjuster(ProcessorDecorator):
+    """
+    Check whether fragments contains a graphic inclusion directive (such as 
+    \includegraphics{img/foo}). When one is detected, it produces a new fragment
+    where the link to the file is corrected.
+    """
     
-    def __init__(self, delegate, flap, output):
+    def __init__(self, delegate, flap):
         super().__init__(delegate)
         self.flap = flap
-        self.outputDirectory = output
-
-
-    def adjustIncludeGraphics(self, fragment, match):
-        path = Path.fromText(match.group(1))
-        graphics = fragment.file().container().filesThatMatches(path)
-        if not graphics:
-            raise ValueError("Unable to find file for graphic '%s' in '%s'" % (match.group(1), fragment.file().container().path()))
-        else:
-            graphic = graphics[0]
-            self.flap.copy(graphic, self.outputDirectory)
-            graphicInclusion = match.group(0).replace(match.group(1), graphic.basename())
-            return Fragment(fragment.file(), fragment.lineNumber(), "\\" + graphicInclusion)
-
 
     def fragments(self):
         for eachFragment in self._delegate.fragments():
@@ -184,8 +193,23 @@ class IncludeGraphicsAdjuster(ProcessorDecorator):
     def allIncludeGraphics(self, eachFragment):
         return IncludeGraphicsAdjuster.PATTERN.finditer(eachFragment.text())
 
+    def adjustIncludeGraphics(self, fragment, match):
+        path = Path.fromText(match.group(1))
+        graphics = fragment.file().container().filesThatMatches(path)
+        if not graphics:
+            raise ValueError("Unable to find file for graphic '%s' in '%s'" % (match.group(1), fragment.file().container().path()))
+        else:
+            graphic = graphics[0]
+            self.flap.onIncludeGraphics(fragment, graphic)
+            graphicInclusion = match.group(0).replace(match.group(1), graphic.basename())
+            return Fragment(fragment.file(), fragment.lineNumber(), "\\" + graphicInclusion)
+
+
+
     PATTERN = re.compile("\\includegraphics(?:\[[^\]]+\])*\{([^\}]+)\}")
 
+
+ 
 
 class Flap:
     """
@@ -193,45 +217,45 @@ class Flap:
     included files, moving graphics and resources files such as classes, styles 
     and bibliography 
     """
-
-    def __init__(self, fileSystem, listener = Listener()):
-        self.fileSystem = fileSystem
-        self.listener = listener
-
-
+    
+    def __init__(self, fileSystem, listener=Listener()):
+        self._fileSystem = fileSystem
+        self._listener = listener
+        
+    def flatten(self, root, output):
+        self._output = output
+        self.openFile(root)
+        self.mergeLaTeXSource()
+        self.copyResourceFiles()
+        self._listener.onFlattenComplete()
+        
     def openFile(self, source):
-        file = self.fileSystem.open(source)
-        if file.isMissing():
+        self._root = self._fileSystem.open(source)
+        if self._root.isMissing():
             raise ValueError("The file '%s' could not be found." % source)
-        return file
-
-    def merge(self, fragments):
-        mergedContent = ''.join([ f.text() for f in fragments ])
-        return mergedContent
-
-    RESOURCE_FILES = ["cls", "sty", "bib", "bst"]
-    
-    
-    def copyResourceFiles(self, outputDirectory, root):
-        project = root.container()
+        
+    def file(self):
+        return self._root
+        
+    def mergeLaTeXSource(self):
+        pipeline = Processor.flapPipeline(self)
+        fragments = pipeline.fragments()
+        merge = ''.join([ f.text() for f in fragments ])
+        self._fileSystem.createFile(self._output / "merged.tex", merge)
+        
+    def copyResourceFiles(self):
+        project = self._root.container()
         for eachFile in project.files():
             if eachFile.hasExtension() and eachFile.extension() in Flap.RESOURCE_FILES:
-                self.fileSystem.copy(eachFile, outputDirectory)
-            
-            
-    def flatten(self, source, outputDirectory):
-        root = self.openFile(source)
-        self.copyResourceFiles(outputDirectory, root)
-        fragments = IncludeGraphicsAdjuster(Flap.pipeline(root, self.listener), self, outputDirectory).fragments()
-        result = self.merge(fragments)
-        self.fileSystem.createFile(outputDirectory / "merged.tex", result)
-        self.listener.onFlattenComplete()
- 
-    def copy(self, file, directory):
-        self.fileSystem.copy(file, directory)
-            
-    @staticmethod
-    def pipeline(file, listener):
-        return InputFlattener(CommentRemover(LineExtractor(file)), listener)
-            
+                self._fileSystem.copy(eachFile, self._output)
+
+    RESOURCE_FILES = ["cls", "sty", "bib", "bst"]       
         
+    def onInput(self, fragment):
+        self._listener.onInput(fragment)
+    
+    def onIncludeGraphics(self, fragment, graphicFile):
+        self._fileSystem.copy(graphicFile, self._output)
+        self._listener.onIncludeGraphics(fragment)   
+           
+    

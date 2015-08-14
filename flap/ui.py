@@ -6,7 +6,6 @@ import tempfile
 from flap.core import Flap, Listener
 from flap.path import Path
 from flap.FileSystem import OSFileSystem
-from idlelib.macosxSupport import overrideRootMenu
 
 
 class UI(Listener):
@@ -21,12 +20,18 @@ class UI(Listener):
         self.show("FLaP v0.1")
         
     def onInput(self, fragment):
-        text = "+ in '%s' line %d: \\input{%s}" % (fragment.file().fullname(), fragment.lineNumber(), fragment.text())
-        self.show(text)
+        self.showFragment(fragment)
+        
+    def onIncludeGraphics(self, fragment):
+        self.showFragment(fragment)
         
     def onFlattenComplete(self):
         self.show("Flatten complete.")
         
+    def showFragment(self, fragment):
+        text = "+ in '%s' line %d: '%s'" % (fragment.file().fullname(), fragment.lineNumber(), fragment.text())
+        self.show(text)
+
     def show(self, message):
         print(message, file=self.output)
         

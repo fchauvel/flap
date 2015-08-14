@@ -31,6 +31,16 @@ class UiTest(TestCase):
         self.verifyOutputContains(mock, "main.tex")        
         self.verifyOutputContains(mock, "3")        
         self.verifyOutputContains(mock, "foo")        
+        
+    @patch('sys.stdout', new_callable=StringIO)
+    def testUiReportsIncludeGraphics(self, mock):
+        ui = UI(mock)
+        
+        ui.onIncludeGraphics(Fragment(File(None, ROOT/"main.tex", None), 3, "foo"))
+
+        self.verifyOutputContains(mock, "main.tex")        
+        self.verifyOutputContains(mock, "3")        
+        self.verifyOutputContains(mock, "foo")        
 
     
     @patch('sys.stdout', new_callable=StringIO)
