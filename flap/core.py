@@ -221,7 +221,7 @@ class Flap:
     def __init__(self, fileSystem, listener=Listener()):
         self._fileSystem = fileSystem
         self._listener = listener
-        
+               
     def flatten(self, root, output):
         self._output = output
         self.openFile(root)

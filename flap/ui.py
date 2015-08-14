@@ -37,51 +37,6 @@ class UI(Listener):
         
         
 
-class Command:
-    """
-    An invocation of the FLaP tool
-    """
-        
-    @staticmethod
-    def parse(arguments):
-        command = Command() 
-        for each in arguments:
-            if each.endswith(".tex"):
-                command.setRootFile(each)
-            else:
-                command.setOutputDirectory(each)
-        return command
-                
-    
-    def __init__(self):
-        self._outputDirectory = tempfile.gettempdir()
-        self._rootFile = "main.tex"
-        
-    def outputDirectory(self):
-        """
-        :returns: the selected output directory
-		"""
-        return self._outputDirectory
-    
-    def setOutputDirectory(self, outputDirectory):
-        """ 
-		Set the output directory
-		
-		:param outputDirectory: the selected output directory
-		:type outputDirectory: str
-		"""
-        self._outputDirectory = outputDirectory
-    
-    def rootFile(self):
-        return self._rootFile
-    
-    def setRootFile(self, rootFile):
-        self._rootFile = rootFile
-        
-    def sendTo(self, flap):
-        flap.flatten(Path.fromText(self.rootFile()), Path.fromText(self.outputDirectory()))
-        
-
 class Controller:
     """
     Controller, as in the Model-View-Controller pattern. Receive command, and 
@@ -90,13 +45,22 @@ class Controller:
     
     def __init__(self, fileSystem, ui=UI()):
         self.ui = ui
-        self.engine = Flap(fileSystem, self.ui)
+        self.flap = Flap(fileSystem, ui)
         
     def run(self, arguments):
         self.ui.onStartup()
-        command = Command.parse(arguments)
-        command.sendTo(self.engine)
+        (rootFile, output) = self.parse(arguments)
+        self.flap.flatten(rootFile, output)
         
+    def parse(self, arguments):
+        rootFile = "main.tex"
+        output = "/temp/"
+        for each in arguments:
+            if each.endswith(".tex"):
+                rootFile = each
+            else:
+                output = each
+        return (Path.fromText(rootFile), Path.fromText(output))
         
 if __name__ == "__main__":
     Controller(OSFileSystem()).run(sys.argv)
