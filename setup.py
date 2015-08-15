@@ -17,13 +17,18 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from distutils.core import setup
+import flap
+from setuptools import setup, find_packages
+
 
 setup(name='FLaP',
-     version='0.1',
-     description='Flat LaTeX Projects',
+     version=flap.__version__,
+     description='Flat LaTeX Projects', 
      author='Franck Chauvel',
      author_email='franck.chauvel@gmail.com',
+     license="GPLv3",
      url='https://github.com/fchauvel/flap',
-     packages=['flap']
+     download_url="https://github.com/fchauvel/flap/releases",
+     packages=find_packages(exclude='tests'),
+     test_suite = "tests"
      )
