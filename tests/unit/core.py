@@ -1,3 +1,19 @@
+#
+# This file is part of Flap.
+#
+# Flap is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Flap is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Flap.  If not, see <http://www.gnu.org/licenses/>.
+#
 
 from unittest import TestCase, main
 from unittest.mock import MagicMock
@@ -22,7 +38,7 @@ class FragmentTest(TestCase):
 
     def testShouldRejectNegativeOrZeroLineNumber(self):
         with self.assertRaises(ValueError):
-            fragment = Fragment(self.file, 0, "blah blah")
+            Fragment(self.file, 0, "blah blah")
         
         
     def testShouldExposeFile(self):
@@ -30,7 +46,7 @@ class FragmentTest(TestCase):
         
     def testShouldRejectMissingFile(self):
         with self.assertRaises(ValueError):
-            fragment = Fragment(MissingFile(ROOT/"main.tex"), 13, "blah blah")
+            Fragment(MissingFile(ROOT/"main.tex"), 13, "blah blah")
             
     def testShouldExposeFragmentText(self):
         self.assertEqual(self.fragment.text(), "blah blah")
@@ -40,6 +56,7 @@ class FragmentTest(TestCase):
 
     def testShouldBeSliceable(self):
         self.assertEqual(self.fragment[0:4].text(), "blah")
+
 
 class FlapTests(TestCase):
 
