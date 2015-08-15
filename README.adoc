@@ -45,11 +45,34 @@ If you get the change to give it a try, please report any bugs, issues or featur
 the link:https://github.com/fchauvel/flap/issues[issue tracker].
 Should you need any further information, feel free to email mailto:franck.chauvel@gmail.com[me]
 
-== TODOs
+== Development Info
+
+=== TODO
 
 Here is a list of features, which are not yet supported:
 
+ * Test with comments inserted half-way through the line, such `blablab \include{foo} % nice comment`
+ * Test for * form of directives, such as `\includegraphics*{foo}`
+ * Support other inclusion directives, such as `\includeonly` `\include`
  * Support for backward relative links in directives, for instance `\input{../img/foo}`.
  * Test on a UNIX-like file system
+ * Automate the release process
 
+=== How to Release?
+Below is the reminder of the steps to follows, and the associated shell commands:
+
+. Increase the version number in the file '+flap/__init__.py+'. You can see the current
+version number using `python setup.py --version`.
+
+. Ensure that all tests pass just fine with: `python setup.py test`
+
+. Commit and push all changes made to get the tests to pass.
+
+. Tag the sources with appropriate version number: `git tag -a vX.X -m "the new version"`
+
+. Build a source distribution `python setup.py sdist`
+
+. Build an Python egg `python setup.py bdist_egg`
+
+. Create a new release, specifying the tag and upload both distribution on the https://github.com/fchauvel/flap/releases[GitHub release page]
 
