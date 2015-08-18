@@ -148,102 +148,112 @@ class CommentRemover(ProcessorDecorator):
                 yield eachFragment                
 
 
-class IncludeFlattener(ProcessorDecorator):
+class RegexReplacer(ProcessorDecorator):
+    """
+    General template method for searching and replacing a given regular expression
+    in a set of fragments.
+    """
+
+    def __init__(self, delegate, flap):
+        super().__init__(delegate)
+        self.flap = flap
+
+    def fragments(self):
+        self.pattern = self.preparePattern()
+        for eachFragment in self._delegate.fragments():
+            yield from self.processFragment(eachFragment)
+
+    def processFragment(self, fragment):
+        current = 0
+        for eachMatch in self.allMatches(fragment):
+            yield fragment[current:eachMatch.start() - 1] 
+            yield from self.replacementsFor(fragment, eachMatch)
+            yield self.suffixFragment(fragment, eachMatch)
+            current = eachMatch.end()
+        yield fragment[current:]
+
+    def replacementsFor(self, fragment, match):
+        """
+        :return: The list of fragments that replace the given match
+        """
+        pass
+
+    def suffixFragment(self, fragment, match):
+        """
+        :return: An additional fragment that shall be appended just after the replacement
+        """
+        return Fragment(fragment.file(), fragment.lineNumber(), "")
+
+    def allMatches(self, fragment):
+        """
+        :return: All the occurrence of the pattern in the given fragment
+        """
+        return self.pattern.finditer(fragment.text())
+
+    def preparePattern(self):
+        """
+        :return: The compiled pattern that is to be matched and replaced
+        """
+        pass
+
+
+    
+class IncludeFlattener(RegexReplacer):
     """
     Traverse the fragments available and search for nest `\include{file.tex}`. It
     replaces them by the content of the file and append a \clearpage after.
     """
     def __init__(self, delegate, flap):
-        super().__init__(delegate)
-        self.flap = flap
-    
-    def fragments(self):
-        for eachFragment in self._delegate.fragments():
-            yield from self.flattenInclude(eachFragment)
-        
-    def flattenInclude(self, fragment):
-        current = 0
-        for eachInput in self.allIncludeDirectives(fragment):
-            self.flap.onInput(fragment)
-            yield fragment[current:eachInput.start() - 1]
-            yield from self.fragmentsFrom(eachInput.group(1))
-            yield Fragment(fragment.file(), fragment.lineNumber(), "\\clearpage ")
-            current = eachInput.end()
-        yield fragment[current:]
+        super().__init__(delegate, flap)
 
-    def allIncludeDirectives(self, fragment):
-        return IncludeFlattener.PATTERN.finditer(fragment.text())
-
-    PATTERN = re.compile("\\include{([^}]+)}")
+    def preparePattern(self):
+        return re.compile("\\include{([^}]+)}")
    
-    def fragmentsFrom(self, fileName):
-        includedFile = self.file().sibling(fileName + ".tex")
+    def replacementsFor(self, fragment, match):
+        includedFile = self.file().sibling(match.group(1) + ".tex")
         if includedFile.isMissing():
             raise ValueError("The file '%s' could not be found." % includedFile.path())
         return Processor.inputMerger(includedFile, self.flap).fragments() 
     
+    def suffixFragment(self, fragment, match):
+        return Fragment(fragment.file(), fragment.lineNumber(), "\\clearpage ")
+      
         
-class InputFlattener(ProcessorDecorator):
+class InputFlattener(RegexReplacer):
     """
-    Goes through the fragments available, and detects those that contains an
-    input directive (such as '\input{foo}). When on is detected, it extracts all
-    the fragments from the file that is referred (such as 'foo.tex')
+    Detects fragments that contains an input directive (such as '\input{foo}). 
+    When one is detected, it extracts all the fragments from the file that 
+    is referred (such as 'foo.tex')
     """
     
     def __init__(self, delegate, flap):
-        super().__init__(delegate)
-        self.flap = flap
-    
-    def fragments(self):
-        for eachFragment in self._delegate.fragments():
-            yield from self.flattenInput(eachFragment)
+        super().__init__(delegate, flap)
         
-    def flattenInput(self, fragment):
-        current = 0
-        for eachInput in self.allInputDirectives(fragment):
-            self.flap.onInput(fragment)
-            yield fragment[current:eachInput.start() - 1]
-            yield from self.fragmentsFrom(eachInput.group(1))
-            current = eachInput.end()
-        yield fragment[current:]
-
-    def allInputDirectives(self, fragment):
-        return InputFlattener.PATTERN.finditer(fragment.text())
-
-    PATTERN = re.compile("\\input{([^}]+)}")
-   
-    def fragmentsFrom(self, fileName):
-        includedFile = self.file().sibling(fileName + ".tex")
+    def preparePattern(self):
+        return re.compile("\\input{([^}]+)}")
+            
+    def replacementsFor(self, fragment, match):
+        self.flap.onInput(fragment)
+        includedFile = self.file().sibling(match.group(1) + ".tex")
         if includedFile.isMissing():
             raise ValueError("The file '%s' could not be found." % includedFile.path())
         return Processor.inputMerger(includedFile, self.flap).fragments()
 
 
 
-class IncludeGraphicsAdjuster(ProcessorDecorator):
+class IncludeGraphicsAdjuster(RegexReplacer):
     """
-    Check whether fragments contains a graphic inclusion directive (such as 
-    \includegraphics{img/foo}). When one is detected, it produces a new fragment
+    Detects "\includegraphics". When one is detected, it produces a new fragment
     where the link to the file is corrected.
     """
     
     def __init__(self, delegate, flap):
-        super().__init__(delegate)
-        self.flap = flap
+        super().__init__(delegate, flap)
+        
+    def preparePattern(self):
+        return re.compile("\\includegraphics(?:\[[^\]]+\])*\{([^\}]+)\}")
 
-    def fragments(self):
-        for eachFragment in self._delegate.fragments():
-            current = 0
-            for match in self.allIncludeGraphics(eachFragment):
-                yield eachFragment[current: match.start()-1]    
-                yield self.adjustIncludeGraphics(eachFragment, match)
-                current = match.end()
-            yield eachFragment[current:]
-
-    def allIncludeGraphics(self, eachFragment):
-        return IncludeGraphicsAdjuster.PATTERN.finditer(eachFragment.text())
-
-    def adjustIncludeGraphics(self, fragment, match):
+    def replacementsFor(self, fragment, match):
         path = Path.fromText(match.group(1))
         graphics = fragment.file().container().filesThatMatches(path)
         if not graphics:
@@ -252,9 +262,8 @@ class IncludeGraphicsAdjuster(ProcessorDecorator):
             graphic = graphics[0]
             self.flap.onIncludeGraphics(fragment, graphic)
             graphicInclusion = match.group(0).replace(match.group(1), graphic.basename())
-            return Fragment(fragment.file(), fragment.lineNumber(), "\\" + graphicInclusion)
+            return [ Fragment(fragment.file(), fragment.lineNumber(), "\\" + graphicInclusion) ]
 
-    PATTERN = re.compile("\\includegraphics(?:\[[^\]]+\])*\{([^\}]+)\}")
  
 
 class Flap:
