@@ -2,6 +2,8 @@
 :Author:    Franck Chauvel
 :Email:     franck.chauvel@gmail.com
 
+image:https://codeship.com/projects/ad32e1e0-27d8-0133-8e78-7af7072ae828/status?branch=master[]
+
 Flap is a simple utility that flattens LaTeX projects. It takes a well organised LaTeX project 
 &mdash; one you so carefully crafted &mdash; and merged it into a vulgar single LaTeX file 
 in a flat directory.
