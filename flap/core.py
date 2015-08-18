@@ -33,6 +33,15 @@ class Listener:
         """
         pass
     
+    def onInclude(self, fragment):
+        """
+        Triggered when an '\include' directive was found in the LaTeX source.
+        
+        :param fragment: the fragment which was expanded
+        :type fragment: Fragment
+        """
+        pass
+    
     def onIncludeGraphics(self, fragment):
         """
         Triggered when an 'includegraphics' directive is detected in the LaTeX source.
@@ -210,6 +219,7 @@ class IncludeFlattener(RegexReplacer):
         return re.compile("\\include{([^}]+)}")
    
     def replacementsFor(self, fragment, match):
+        self.flap.onInclude(fragment)
         includedFile = self.file().sibling(match.group(1) + ".tex")
         if includedFile.isMissing():
             raise ValueError("The file '%s' could not be found." % includedFile.path())
@@ -316,5 +326,8 @@ class Flap:
     def onIncludeGraphics(self, fragment, graphicFile):
         self._fileSystem.copy(graphicFile, self._output)
         self._listener.onIncludeGraphics(fragment)   
+        
+    def onInclude(self, fragment):
+        self._listener.onInclude(fragment)
            
     

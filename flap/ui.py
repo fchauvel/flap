@@ -46,6 +46,9 @@ class UI(Listener):
     def onIncludeGraphics(self, fragment):
         self.showFragment(fragment)
         
+    def onInclude(self, fragment):
+        self.showFragment(fragment)
+        
     def onFlattenComplete(self):
         self.show("Flatten complete.")
         

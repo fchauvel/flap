@@ -61,17 +61,25 @@ class Test(TestCase):
         self.source = self.workingDir / "project"
         self.output = self.workingDir / "output"
         self.fileSystem.deleteDirectory(self.workingDir)
-        self.fileSystem.createFile(self.source / "main.tex", "\input{result}")
+        self.fileSystem.createFile(self.source / "main.tex", 
+                """
+                \input{result}
+                \include{explanations}
+                """)
         self.fileSystem.createFile(self.source / "result.tex", "\includegraphics{img/plot}")
+        self.fileSystem.createFile(self.source / "explanations.tex", "blablah")
         self.fileSystem.createFile(self.source / "img" / "plot.pdf", "\input{result}")
         self.fileSystem.createFile(self.source / "style.sty", "some style crap")
         
-
     def testFlattenLatexProject(self):
-        Controller(self.fileSystem).run(["C:\\temp\\flap\\project\\main.tex", "C:\\temp\\flap\\output"])
+        Controller(self.fileSystem).run(["-v", "C:\\temp\\flap\\project\\main.tex", "C:\\temp\\flap\\output"])
         
         file = self.fileSystem.open(self.output / "merged.tex")
-        self.assertEqual(file.content(), "\includegraphics{plot}")
+        self.assertEqual(file.content(), 
+                """
+                \includegraphics{plot}
+                blablah\clearpage 
+                """)
         
         styFile = self.fileSystem.open(self.output / "style.sty")
         self.assertEqual(styFile.content(), "some style crap")
