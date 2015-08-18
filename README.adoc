@@ -53,7 +53,9 @@ Here is a list of features, which are not yet supported:
 
  * Test with comments inserted half-way through the line, such `blablab \include{foo} % nice comment`
  * Test for * form of directives, such as `\includegraphics*{foo}`
- * Support other inclusion directives, such as `\includeonly` `\include`
+ * Test for supporting `\graphicspath` directive
+ * Support `\include{foo}`
+ * Support the use of `includeonly`
  * Support for backward relative links in directives, for instance `\input{../img/foo}`.
  * Test on a UNIX-like file system
  * Automate the release process

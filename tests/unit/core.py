@@ -39,8 +39,7 @@ class FragmentTest(TestCase):
     def testShouldRejectNegativeOrZeroLineNumber(self):
         with self.assertRaises(ValueError):
             Fragment(self.file, 0, "blah blah")
-        
-        
+                
     def testShouldExposeFile(self):
         self.assertEqual(self.fragment.file().fullname(), "main.tex")
         
@@ -90,6 +89,15 @@ class FlapTests(TestCase):
         
         self.verifyFile(ROOT/"result"/"merged.tex", "A B blah Y Z")
   
+  
+    def testIncludeDirectivesAreMerged(self):
+        self.fileSystem.createFile(ROOT/"project"/"main.tex", "blahblah \include{foo} blah")
+        self.fileSystem.createFile(ROOT/"project"/"foo.tex", "bar")
+        
+        self.flap.flatten(ROOT/"project"/"main.tex", ROOT/"result")
+       
+        self.verifyFile(ROOT/"result"/"merged.tex", "blahblah bar\clearpage  blah") 
+        
         
     def testMissingFileAreReported(self):
         self.fileSystem.createFile(ROOT/"project"/"main.tex", "blahblah \input{foo} blah")

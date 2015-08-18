@@ -20,7 +20,6 @@
 import flap
 from setuptools import setup, find_packages
 
-
 setup(name='FLaP',
      version=flap.__version__,
      description='Flat LaTeX Projects', 

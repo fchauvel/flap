@@ -97,7 +97,7 @@ class Processor:
 
     @staticmethod
     def flapPipeline(proxy):
-        return IncludeGraphicsAdjuster(Processor.inputMerger(proxy.file(), proxy), proxy)
+        return IncludeGraphicsAdjuster(IncludeFlattener(Processor.inputMerger(proxy.file(), proxy), proxy), proxy)
 
 
 class LineExtractor(Processor):
@@ -146,7 +146,42 @@ class CommentRemover(ProcessorDecorator):
         for eachFragment in self._delegate.fragments():
             if not eachFragment.isCommentedOut():
                 yield eachFragment                
+
+
+class IncludeFlattener(ProcessorDecorator):
+    """
+    Traverse the fragments available and search for nest `\include{file.tex}`. It
+    replaces them by the content of the file and append a \clearpage after.
+    """
+    def __init__(self, delegate, flap):
+        super().__init__(delegate)
+        self.flap = flap
+    
+    def fragments(self):
+        for eachFragment in self._delegate.fragments():
+            yield from self.flattenInclude(eachFragment)
         
+    def flattenInclude(self, fragment):
+        current = 0
+        for eachInput in self.allIncludeDirectives(fragment):
+            self.flap.onInput(fragment)
+            yield fragment[current:eachInput.start() - 1]
+            yield from self.fragmentsFrom(eachInput.group(1))
+            yield Fragment(fragment.file(), fragment.lineNumber(), "\\clearpage ")
+            current = eachInput.end()
+        yield fragment[current:]
+
+    def allIncludeDirectives(self, fragment):
+        return IncludeFlattener.PATTERN.finditer(fragment.text())
+
+    PATTERN = re.compile("\\include{([^}]+)}")
+   
+    def fragmentsFrom(self, fileName):
+        includedFile = self.file().sibling(fileName + ".tex")
+        if includedFile.isMissing():
+            raise ValueError("The file '%s' could not be found." % includedFile.path())
+        return Processor.inputMerger(includedFile, self.flap).fragments() 
+    
         
 class InputFlattener(ProcessorDecorator):
     """
