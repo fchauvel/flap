@@ -17,6 +17,7 @@
 
 import sys
 
+import flap
 from flap.core import Flap, Listener
 from flap.path import Path
 from flap.FileSystem import OSFileSystem
@@ -38,7 +39,7 @@ class UI(Listener):
         self.showDetails = False
     
     def onStartup(self):
-        self.show("FLaP v0.1")
+        self.show("FLaP v" + flap.__version__ + " -- Flat LaTeX Projects")
         
     def onInput(self, fragment):
         self.showFragment(fragment)

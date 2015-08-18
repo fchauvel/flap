@@ -19,6 +19,7 @@ import re
 from unittest import TestCase, main
 from unittest.mock import patch
 
+import flap
 from io import StringIO
 from flap.path import ROOT
 from flap.core import Fragment
@@ -39,7 +40,7 @@ class UiTest(TestCase):
         
         ui.onStartup()
         
-        self.verifyOutputContains(mock, "v0.1")
+        self.verifyOutputContains(mock, flap.__version__)
 
 
     @patch('sys.stdout', new_callable=StringIO)
