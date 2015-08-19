@@ -16,6 +16,8 @@
 #
 
 import re
+import tempfile
+
 
 class Path:
     
@@ -103,3 +105,5 @@ class Root(Path):
 
 
 ROOT = Root()
+
+TEMP = Path.fromText(tempfile.gettempdir())

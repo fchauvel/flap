@@ -60,7 +60,16 @@ Here is a list of features, which are not yet supported:
  * Support for backward relative links in directives, for instance `\input{../img/foo}`.
  * Test on a UNIX-like file system
  * Automate the release process
+ * Adjust copyright and credits in flap.__init__.py
 
+=== Setting up a Development Environment
+
+----
+virtualenv venv
+pip install coverage
+coverage setup.py test
+coverage report -m 
+----
 === How to Release?
 Below is the reminder of the steps to follows, and the associated shell commands:
 

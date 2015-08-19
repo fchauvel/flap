@@ -17,15 +17,20 @@
 
 import unittest
 
-from flap.path import Path, ROOT
+from tempfile import tempdir
+from flap.path import Path, ROOT, TEMP
+
 
 class PathTests(unittest.TestCase):
-
+    
 
     def testRoot(self):
         path = ROOT
         self.assertTrue(path.isRoot())
-
+        
+    def testTemp(self):
+        path = TEMP
+        self.assertTrue(path.fullname() in tempdir)
         
     def testPathToFile(self):
         path = (ROOT / "test" / "source.tex")

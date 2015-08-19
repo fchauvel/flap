@@ -144,7 +144,7 @@ class OSFileSystem(FileSystem):
         super().__init__()
         
     def forOS(self, path):
-        return "\\".join(path.parts())
+        return os.path.sep.join(path.parts())
             
         
     def createFile(self, path, content):

@@ -18,18 +18,18 @@
 from unittest import TestCase, main
 
 from flap.FileSystem import OSFileSystem
-from flap.path import ROOT
+from flap.path import TEMP
 from flap.ui import Controller
 
 class OSFileSystemTest(TestCase):
     
     def setUp(self):
         self.fileSystem = OSFileSystem()
-        self.path = ROOT / "C:" / "temp" / "flap" / "test.txt"
+        self.path = TEMP / "flap" / "test.txt"
         self.content = "blahblah blah"
 
-        self.fileSystem.deleteDirectory(ROOT / "C:" / "temp" / "flap")
-        self.fileSystem.deleteDirectory(ROOT / "C:" / "temp" / "flatexer_copy")
+        self.fileSystem.deleteDirectory(TEMP / "flap")
+        self.fileSystem.deleteDirectory(TEMP / "flatexer_copy")
     
     def createAndOpenTestFile(self):
         self.fileSystem.createFile(self.path, self.content)
@@ -44,7 +44,7 @@ class OSFileSystemTest(TestCase):
     def testCopyAndOpenFile(self):
         file = self.createAndOpenTestFile()
         
-        copyPath = ROOT / "C:" / "temp" / "flatexer_copy"
+        copyPath = TEMP / "flatexer_copy"
         
         self.fileSystem.copy(file, copyPath)
         copy = self.fileSystem.open(copyPath / "test.txt")
@@ -57,7 +57,7 @@ class Test(TestCase):
 
     def setUp(self):
         self.fileSystem = OSFileSystem()
-        self.workingDir = ROOT / "C:" / "temp" / "flap"
+        self.workingDir = TEMP / "flap"
         self.source = self.workingDir / "project"
         self.output = self.workingDir / "output"
         self.fileSystem.deleteDirectory(self.workingDir)
@@ -72,7 +72,9 @@ class Test(TestCase):
         self.fileSystem.createFile(self.source / "style.sty", "some style crap")
         
     def testFlattenLatexProject(self):
-        Controller(self.fileSystem).run(["-v", "C:\\temp\\flap\\project\\main.tex", "C:\\temp\\flap\\output"])
+        root = self.fileSystem.forOS(TEMP / "flap" / "project" / "main.tex")
+        output = self.fileSystem.forOS(TEMP / "flap" / "output")
+        Controller(self.fileSystem).run(["-v", root, output])
         
         file = self.fileSystem.open(self.output / "merged.tex")
         self.assertEqual(file.content(), 
