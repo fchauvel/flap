@@ -19,14 +19,37 @@ class LexerTest(TestCase):
         lexer = self.makeLexer(source)
         print("\n".join([ str(fragment) for fragment in lexer.breakUp()]))
             
-         
-    def testBreakDownIncludeCommands(self):
-        lexer = self.makeLexer(r"\include{foo}")
-        
+    def testBreakDownCommands(self):
+        self.checkFragmentText("\\include", ["\\include"])
+    
+    def checkFragmentText(self, text, expected):
+        lexer = self.makeLexer(text)        
         fragments = [ fragment.text() for fragment in lexer.breakUp() ]
+        self.assertEquals(fragments, expected)
+         
+    def makeLexer(self, text):
+        source = Source()
+        source.text = MagicMock()
+        source.text.return_value = text
+        return Lexer(source)
         
-        self.assertEqual(fragments, [r"\include", r"{", r"foo", r"}"])
-
+    def testBreakDownCommandsWithOneOption(self):
+        self.checkFragmentText("\\include[foo]", ["\\include", "[", "foo", "]"])
+        self.checkFragmentText("\\text[foo]", ["\\text", "[", "foo", "]"])
+        
+    def testBreakDownCommandsWithManyOptions(self):
+        self.checkFragmentText("\\include[foo][bar]", ["\\include", "[", "foo", "]", "[", "bar", "]"])
+        
+    def testBreakDownCommandsWithOneParameter(self):
+        self.checkFragmentText("\\include{foo}", ["\\include", "{", "foo", "}"])
+        
+    def testBreakDownCommandsWithManyParameter(self):
+        self.checkFragmentText("\\include{foo}{bar}", ["\\include", "{", "foo", "}", "{", "bar", "}"])
+        
+    def testBreakDownCommandWithOneOptionAndOneParameter(self):
+        self.checkFragmentText("\\include[bla]{foo}", ["\\include", "[", "bla", "]", "{", "foo", "}"])
+        
+        
     def testDetectCommentsAfterASymbol(self):
         lexer = self.makeLexer("\\include{% this is a comment\nfoo}")
 
@@ -58,11 +81,7 @@ class LexerTest(TestCase):
         self.assertEqual(fragments[2].position(), Position(2,1), fragments)
         self.assertEqual(fragments[4].position(), Position(3,1), fragments)
 
-    def makeLexer(self, text):
-        source = Source()
-        source.text = MagicMock()
-        source.text.return_value = text
-        return Lexer(source)
+   
 
 
 

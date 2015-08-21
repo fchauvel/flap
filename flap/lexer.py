@@ -37,9 +37,6 @@ class Position:
 
 
 class Fragment:
-    TEXT = "text"
-    SYMBOL = "symbol"
-    COMMENT = "comment"
     
     def __init__(self, buffer, kind):
         self._position = buffer.position()
@@ -54,6 +51,15 @@ class Fragment:
     
     def position(self):
         return self._position
+    
+    def isAComment(self):
+        return self._kind == FragmentKind.COMMENT
+    
+    def isACommand(self):
+        return self._kind == FragmentKind.COMMAND
+    
+    def isAWhiteSpace(self):
+        return self._kind == FragmentKind.WHITE_SPACE
     
     def __repr__(self):
         return "(%s@%s: '%s')" % (self._kind.upper(), self._position, self._text)
@@ -99,7 +105,7 @@ class Reader:
         self._buffer.append(self._cursor.current())
             
     def __repr__(self):
-        return "%s :: %s" % (self._cursor.current(), self._buffer)
+        return "'%s' :: %s" % (self._cursor.current(), self._buffer)
 
     
 class Cursor:
@@ -162,6 +168,26 @@ class RuleExtension(Rule):
         pass
 
 
+class WhiteSpaces(RuleExtension):
+    
+    def __init__(self, delegate):
+        super().__init__(delegate)
+        self._symbols = [" ", "\t", "\r", "\n"]
+        
+    def _match(self, reader):
+        return reader.current() in self._symbols
+
+    def _proceed(self, reader):
+        yield from self._factory.makeFragment(reader)
+        while self._isWhiteSpace(reader):
+            reader.read()
+        yield from self._factory.makeWhiteSpace(reader)
+        reader.clear()
+        
+    def _isWhiteSpace(self, reader):
+        return reader.current() in self._symbols
+
+
 class Symbols(RuleExtension):
     
     def __init__(self, delegate):
@@ -197,18 +223,29 @@ class Comments(RuleExtension):
     def _endsComment(self, character):
         return (character.current() is None 
                 or character.current() in self._comments["end"])
-    
+
+
+class FragmentKind:
+    TEXT = "text"
+    SYMBOL = "symbol"
+    COMMENT = "comment"
+    WHITE_SPACE = "white space"
+    COMMAND = "command"    
+
 
 class FragmentFactory:
     
     def __init__(self):
-        self._types = { "command": re.compile(r"\\\w+") }
+        self._types = { FragmentKind.COMMAND: re.compile(r"\\\w+") }
         
     def makeComment(self, reader):
-        return [Fragment(reader, Fragment.COMMENT)]
+        return [Fragment(reader, FragmentKind.COMMENT)]
         
     def makeSymbol(self, reader):
-        return [Fragment(reader, Fragment.SYMBOL)]
+        return [Fragment(reader, FragmentKind.SYMBOL)]
+        
+    def makeWhiteSpace(self, reader):
+        return [Fragment(reader, FragmentKind.WHITE_SPACE)]
         
     def makeFragment(self, reader):
         if not reader.isEmpty():
@@ -221,14 +258,14 @@ class FragmentFactory:
         for (kind, pattern) in self._types.items():
             if pattern.match(reader.text()):
                 return Fragment(reader, kind)
-            return Fragment(reader, Fragment.TEXT)
+            return Fragment(reader, FragmentKind.TEXT)
         
     
 class Lexer:
     
     def __init__(self, source):
         self._factory = FragmentFactory()
-        self._rules = Symbols(Comments(DefaultRule()))
+        self._rules = WhiteSpaces(Symbols(Comments(DefaultRule())))
         self._source = source
     
         
