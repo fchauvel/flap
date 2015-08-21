@@ -4,6 +4,7 @@ from unittest.mock import MagicMock
 from flap.lexer import Lexer, Source
 from flap.parser import Automaton
 
+
 class AutomatonTest(TestCase):
     
     def setUp(self):
@@ -56,6 +57,50 @@ class AutomatonTest(TestCase):
         self.runTest(text, 4)
 
 
+
+class CaptureTest(TestCase):
+    
+    def testSimpleCommand(self):
+        self.runTest("\\text", 
+                     name="\\text", 
+                     options=[], 
+                     parameters=[])  
+        
+    def testCommandWithOneOption(self):
+        self.runTest("\\text[foo]", 
+                     name="\\text", 
+                     options=["foo"], 
+                     parameters=[])  
+        
+    def testCommandWithOneParameter(self):
+        self.runTest("\\text{foo}", 
+                     name="\\text", 
+                     options=[], 
+                     parameters=["foo"])  
+
+    def testCommandWithOneOptionAndOneParameter(self):
+        self.runTest("\\text[blahblah]{foo}", 
+                     name="\\text", 
+                     options=["blahblah"], 
+                     parameters=["foo"])  
+
+
+    def runTest(self, text, name, options, parameters):
+        matches = self.parse(text)
+        self.assertEqual(len(matches), 1, "Wrong number of match")
+        self.assertEqual(matches[0].name(), name, "wrong command")
+        self.assertEqual(matches[0].options(), options, "wrong options")
+        self.assertEqual(matches[0].parameters(), parameters, "wrong parameters") 
+
+    def parse(self, text):
+        automaton = Automaton()
+        source = Source()
+        source.text = MagicMock()
+        source.text.return_value = text
+        fragments = Lexer(source).breakUp()
+        automaton.acceptAll(fragments)
+        matches = automaton.matches()
+        return matches
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
