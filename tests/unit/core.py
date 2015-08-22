@@ -19,8 +19,8 @@ from unittest import TestCase, main
 from unittest.mock import MagicMock
 
 from flap.FileSystem import InMemoryFileSystem, File, MissingFile
-from flap.core import Flap, Fragment, Listener 
-from flap.path import ROOT
+from flap.core import Flap, Fragment, Listener, CommentsRemover, Processor
+from flap.path import ROOT, TEMP
 
 
 class FragmentTest(TestCase):
@@ -57,6 +57,40 @@ class FragmentTest(TestCase):
         self.assertEqual(self.fragment[0:4].text(), "blah")
 
 
+
+class CommentRemoverTest(TestCase):
+    
+    def testRemoveCommentedLines(self):
+        self.runTest("\nfoo\n% this is a comment\nbar",
+                     "\nfoo\n\nbar")
+    
+    def testRemoveEndLineComments(self):
+        text = ("A"
+                 "\\includegraphics[width=8cm]{%\n"
+                 "foo%\n"
+                 "}\n"
+                 "B")
+        self.runTest(text, "A\\includegraphics[width=8cm]{\nfoo\n}\nB")
+    
+    
+    def runTest(self, text, expectation):
+        source = File(None, TEMP / "test", None)
+        source.isMissing = MagicMock()
+        source.isMissing.return_value = False
+        
+        delegate = Processor()
+        delegate.fragments = MagicMock()
+        delegate.fragments.return_value = iter([Fragment(source, 1, text)])
+        
+        sut = CommentsRemover(delegate)
+        
+        result = list(sut.fragments())
+        
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0].text(), expectation)
+        
+    
+
 class FlapTests(TestCase):
 
 
@@ -72,7 +106,7 @@ class FlapTests(TestCase):
 
 
     def testMergeInputDirectives(self):
-        self.fileSystem.createFile(ROOT/"project"/"main.tex", "blahblah \input{foo} blah")
+        self.fileSystem.createFile(ROOT/"project"/"main.tex", r"blahblah \input{foo} blah")
         self.fileSystem.createFile(ROOT/"project"/"foo.tex", "bar")
         
         self.flap.flatten(ROOT/"project"/"main.tex", ROOT/"result")
@@ -107,23 +141,40 @@ class FlapTests(TestCase):
             
             
     def testLinksToGraphicsAreAdjusted(self):
-        self.fileSystem.createFile(ROOT/"project"/"main.tex", "A \includegraphics[width=3cm]{img/foo} Z")
+        self.fileSystem.createFile(ROOT/"project"/"main.tex", r"A \includegraphics[width=3cm]{img/foo} Z")
         self.fileSystem.createFile(ROOT/"project"/"img"/"foo.pdf", "xyz")
          
         self.flap.flatten(ROOT/"project"/"main.tex", ROOT/"result")
                  
-        self.verifyFile(ROOT/"result"/"merged.tex", "A \includegraphics[width=3cm]{foo} Z")
+        self.verifyFile(ROOT/"result"/"merged.tex", r"A \includegraphics[width=3cm]{foo} Z")
+        self.verifyFile(ROOT/"result"/"foo.pdf", "xyz")
+    
+    
+    def testMultilinesDirectives(self):
+        content = ("A"
+                   "\includegraphics[width=8cm]{%\n"
+                   "img/foo%\n"
+                   "}\n"
+                   "B")
+        self.fileSystem.createFile(ROOT/"project"/"main.tex", content)
+        self.fileSystem.createFile(ROOT/"project"/"img"/"foo.pdf", "xyz")
+         
+        self.flap.flatten(ROOT/"project"/"main.tex", ROOT/"result")
+    
+        expected = "A\\includegraphics[width=8cm]{foo}\nB"
+
+        self.verifyFile(ROOT/"result"/"merged.tex", expected)
         self.verifyFile(ROOT/"result"/"foo.pdf", "xyz")
     
     
     def testLinksToGraphicsAreRecursivelyAdjusted(self):
-        self.fileSystem.createFile(ROOT/"project"/"main.tex", "AA \input{foo} AA")
-        self.fileSystem.createFile(ROOT/"project"/"foo.tex", "BB \includegraphics[width=3cm]{img/foo} BB")
+        self.fileSystem.createFile(ROOT/"project"/"main.tex", r"AA \input{foo} AA")
+        self.fileSystem.createFile(ROOT/"project"/"foo.tex", r"BB \includegraphics[width=3cm]{img/foo} BB")
         self.fileSystem.createFile(ROOT/"project"/"img"/"foo.pdf", "xyz")
         
         self.flap.flatten(ROOT/"project"/"main.tex", ROOT/"result")
                  
-        self.verifyFile(ROOT/"result"/"merged.tex", "AA BB \includegraphics[width=3cm]{foo} BB AA")
+        self.verifyFile(ROOT/"result"/"merged.tex", r"AA BB \includegraphics[width=3cm]{foo} BB AA")
         self.verifyFile(ROOT/"result"/"foo.pdf", "xyz")
         
         
@@ -181,6 +232,7 @@ class FlapTests(TestCase):
 
         merged = """
             blah blah blah
+            
             blah blah blah
         """
 

@@ -63,12 +63,12 @@ class Test(TestCase):
         self.fileSystem.deleteDirectory(self.workingDir)
         self.fileSystem.createFile(self.source / "main.tex", 
                 """
-                \input{result}
-                \include{explanations}
+                \\input{result}
+                \\include{explanations}
                 """)
-        self.fileSystem.createFile(self.source / "result.tex", "\includegraphics{img/plot}")
+        self.fileSystem.createFile(self.source / "result.tex", "\\includegraphics{img/plot}")
         self.fileSystem.createFile(self.source / "explanations.tex", "blablah")
-        self.fileSystem.createFile(self.source / "img" / "plot.pdf", "\input{result}")
+        self.fileSystem.createFile(self.source / "img" / "plot.pdf", "\\input{result}")
         self.fileSystem.createFile(self.source / "style.sty", "some style crap")
         
     def testFlattenLatexProject(self):
@@ -79,8 +79,8 @@ class Test(TestCase):
         file = self.fileSystem.open(self.output / "merged.tex")
         self.assertEqual(file.content(), 
                 """
-                \includegraphics{plot}
-                blablah\clearpage 
+                \\includegraphics{plot}
+                blablah\\clearpage 
                 """)
         
         styFile = self.fileSystem.open(self.output / "style.sty")

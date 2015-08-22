@@ -64,14 +64,15 @@ class Fragment:
     A fragment of text, taken from a line in a file
     """
     
-    def __init__(self, file, lineNumber, text):
+    def __init__(self, file, lineNumber=1, text=None):
         if lineNumber < 1:
             raise ValueError("Line number must be strictly positive (found %d)" % lineNumber)
         self._lineNumber = lineNumber
         if file.isMissing():
             raise ValueError("Missing file '%s'" % file.fullname())
         self._file = file
-        self._text = text
+        self._text = text if text is not None else self._file.content()
+        
 
     def lineNumber(self):
         return self._lineNumber
@@ -102,31 +103,26 @@ class Processor:
 
     @staticmethod
     def inputMerger(file, proxy):
-        return InputFlattener(CommentRemover(LineExtractor(file)), proxy)
+        return InputFlattener(CommentsRemover(FileWrapper(file)), proxy)
 
     @staticmethod
     def flapPipeline(proxy):
         return IncludeGraphicsAdjuster(IncludeFlattener(Processor.inputMerger(proxy.file(), proxy), proxy), proxy)
 
 
-class LineExtractor(Processor):
+class FileWrapper(Processor):
     """
-    Expose all the line of a file as fragments
+    Expose the content of a file as a (singleton) list of fragment
     """
     
     def __init__(self, file):
-        super().__init__()
         self._file = file
-
+        
     def file(self):
         return self._file
-    
+        
     def fragments(self):
-        for (line, text) in enumerate(self.lines()):
-            yield Fragment(self._file, line+1, text)
-
-    def lines(self):
-        yield from self._file.content().splitlines(True)
+        yield from [ Fragment(self._file) ]
 
 
 class ProcessorDecorator(Processor):
@@ -141,20 +137,18 @@ class ProcessorDecorator(Processor):
     def file(self):
         return self._delegate.file()
 
-    
-class CommentRemover(ProcessorDecorator):
-    """
-    Processor decorator (cf. GoF), which breaks down the file content into lines
-    and remove the one that are commented
-    """
+
+class CommentsRemover(ProcessorDecorator):
     
     def __init__(self, delegate):
-        super().__init__(delegate)    
-            
+        super().__init__(delegate)
+    
     def fragments(self):
         for eachFragment in self._delegate.fragments():
-            if not eachFragment.isCommentedOut():
-                yield eachFragment                
+            text = eachFragment.text()
+            withoutComments = re.sub(r"%(?:[^\n])*\n", "\n", text)
+            eachFragment._text = withoutComments
+            yield eachFragment
 
 
 class RegexReplacer(ProcessorDecorator):
@@ -175,7 +169,7 @@ class RegexReplacer(ProcessorDecorator):
     def processFragment(self, fragment):
         current = 0
         for eachMatch in self.allMatches(fragment):
-            yield fragment[current:eachMatch.start() - 1] 
+            yield fragment[current:eachMatch.start()] 
             yield from self.replacementsFor(fragment, eachMatch)
             yield self.suffixFragment(fragment, eachMatch)
             current = eachMatch.end()
@@ -204,8 +198,6 @@ class RegexReplacer(ProcessorDecorator):
         :return: The compiled pattern that is to be matched and replaced
         """
         pass
-
-
     
 class IncludeFlattener(RegexReplacer):
     """
@@ -216,10 +208,10 @@ class IncludeFlattener(RegexReplacer):
         super().__init__(delegate, flap)
 
     def preparePattern(self):
-        return re.compile("\\include{([^}]+)}")
+        return re.compile(r"\\include{([^}]+)}")
    
     def replacementsFor(self, fragment, match):
-        self.flap.onInclude(fragment)
+        self.flap.onInclude(Fragment(fragment.file(), fragment[:match.start()].text().count("\n") + 1, match.group(0)))
         includedFile = self.file().sibling(match.group(1) + ".tex")
         if includedFile.isMissing():
             raise ValueError("The file '%s' could not be found." % includedFile.path())
@@ -240,10 +232,10 @@ class InputFlattener(RegexReplacer):
         super().__init__(delegate, flap)
         
     def preparePattern(self):
-        return re.compile("\\input{([^}]+)}")
+        return re.compile(r"\\input\{([^}]+)\}")
             
     def replacementsFor(self, fragment, match):
-        self.flap.onInput(fragment)
+        self.flap.onInput(Fragment(fragment.file(), fragment[:match.start()].text().count("\n") + 1, match.group(0)))
         includedFile = self.file().sibling(match.group(1) + ".tex")
         if includedFile.isMissing():
             raise ValueError("The file '%s' could not be found." % includedFile.path())
@@ -261,10 +253,11 @@ class IncludeGraphicsAdjuster(RegexReplacer):
         super().__init__(delegate, flap)
         
     def preparePattern(self):
-        return re.compile("\\includegraphics(?:\[[^\]]+\])*\{([^\}]+)\}")
-
+        pattern = r"\\includegraphics\s*(?:\[(?:[^\]]+)\])*\{([^\}]+)\}"
+        return re.compile(pattern)
+    
     def replacementsFor(self, fragment, match):
-        path = Path.fromText(match.group(1))
+        path = Path.fromText(match.group(1).strip())
         graphics = fragment.file().container().filesThatMatches(path)
         if not graphics:
             raise ValueError("Unable to find file for graphic '%s' in '%s'" % (match.group(1), fragment.file().container().path()))
@@ -272,7 +265,7 @@ class IncludeGraphicsAdjuster(RegexReplacer):
             graphic = graphics[0]
             self.flap.onIncludeGraphics(fragment, graphic)
             graphicInclusion = match.group(0).replace(match.group(1), graphic.basename())
-            return [ Fragment(fragment.file(), fragment.lineNumber(), "\\" + graphicInclusion) ]
+            return [ Fragment(fragment.file(), fragment.lineNumber(), graphicInclusion) ]
 
  
 
