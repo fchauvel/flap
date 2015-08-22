@@ -19,8 +19,9 @@ from unittest import TestCase, main
 from unittest.mock import MagicMock
 
 from flap.FileSystem import InMemoryFileSystem, File, MissingFile
-from flap.core import Flap, Fragment, Listener, CommentsRemover, Processor
+from flap.core import Flap, Fragment, Listener, CommentsRemover, Processor, IncludeSVGFixer
 from flap.path import ROOT, TEMP
+from builtins import type
 
 
 class FragmentTest(TestCase):
@@ -89,7 +90,7 @@ class CommentRemoverTest(TestCase):
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0].text(), expectation)
         
-    
+
 
 class FlapTests(TestCase):
 
@@ -139,7 +140,7 @@ class FlapTests(TestCase):
         with self.assertRaises(ValueError):
             self.flap.flatten(ROOT/"project"/"main.tex", ROOT/"result")
             
-            
+    
     def testLinksToGraphicsAreAdjusted(self):
         self.fileSystem.createFile(ROOT/"project"/"main.tex", r"A \includegraphics[width=3cm]{img/foo} Z")
         self.fileSystem.createFile(ROOT/"project"/"img"/"foo.pdf", "xyz")
@@ -148,6 +149,16 @@ class FlapTests(TestCase):
                  
         self.verifyFile(ROOT/"result"/"merged.tex", r"A \includegraphics[width=3cm]{foo} Z")
         self.verifyFile(ROOT/"result"/"foo.pdf", "xyz")
+        
+        
+    def testLinksToSVGAreAdjusted(self):
+        self.fileSystem.createFile(ROOT/"project"/"main.tex", r"A \includesvg{img/foo} Z")
+        self.fileSystem.createFile(ROOT/"project"/"img"/"foo.svg", "xyz")
+         
+        self.flap.flatten(ROOT/"project"/"main.tex", ROOT/"result")
+                 
+        self.verifyFile(ROOT/"result"/"merged.tex", r"A \includesvg{foo} Z")
+        self.verifyFile(ROOT/"result"/"foo.svg", "xyz")
     
     
     def testMultilinesDirectives(self):
@@ -177,7 +188,7 @@ class FlapTests(TestCase):
         self.verifyFile(ROOT/"result"/"merged.tex", r"AA BB \includegraphics[width=3cm]{foo} BB AA")
         self.verifyFile(ROOT/"result"/"foo.pdf", "xyz")
         
-        
+                
     def testClassFilesAreCopied(self):
         self.fileSystem.createFile(ROOT/"project"/"style.cls", "whatever")
         self.fileSystem.createFile(ROOT/"project"/"main.tex", "xxx")
@@ -217,7 +228,7 @@ class FlapTests(TestCase):
         self.assertEqual(fragment.lineNumber(), 2)
         self.assertEqual(fragment.text().strip(), "\input{foo}")
         
-        
+    
         
     def testFlapIgnoreLinesThatAreCommentedOut(self):
         content = """

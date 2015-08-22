@@ -47,6 +47,9 @@ class UI(Listener):
     def onIncludeGraphics(self, fragment):
         self.showFragment(fragment)
         
+    def onIncludeSVG(self, fragment):
+        self.showFragment(fragment)
+        
     def onInclude(self, fragment):
         self.showFragment(fragment)
         

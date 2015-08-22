@@ -50,6 +50,16 @@ class Listener:
         :type fragment: Fragment
         """
         pass
+
+    def onIncludeSVG(self, fragment):
+        """
+        Triggered when an 'includesvg' directive is detected in the LaTeX source.
+        
+        :param fragment: the text fragment of interest
+        :type fragment: Fragment
+        """
+        pass
+
     
     def onFlattenComplete(self):
         """
@@ -107,7 +117,7 @@ class Processor:
 
     @staticmethod
     def flapPipeline(proxy):
-        return IncludeGraphicsAdjuster(IncludeFlattener(Processor.inputMerger(proxy.file(), proxy), proxy), proxy)
+        return IncludeSVGFixer(IncludeGraphicsAdjuster(IncludeFlattener(Processor.inputMerger(proxy.file(), proxy), proxy), proxy), proxy)
 
 
 class FileWrapper(Processor):
@@ -263,11 +273,25 @@ class IncludeGraphicsAdjuster(RegexReplacer):
             raise ValueError("Unable to find file for graphic '%s' in '%s'" % (match.group(1), fragment.file().container().path()))
         else:
             graphic = graphics[0]
-            self.flap.onIncludeGraphics(fragment, graphic)
+            self.notify(fragment, graphic)
             graphicInclusion = match.group(0).replace(match.group(1), graphic.basename())
             return [ Fragment(fragment.file(), fragment.lineNumber(), graphicInclusion) ]
 
- 
+    def notify(self, fragment, graphic):
+        return self.flap.onIncludeGraphics(fragment, graphic)
+
+class IncludeSVGFixer(IncludeGraphicsAdjuster):
+    """
+    Detects "\includesvg". When one is detected, it produces a new fragment
+    where the link to the file is corrected.
+    """
+            
+    def preparePattern(self):
+        pattern = r"\\includesvg\s*(?:\[(?:[^\]]+)\])*\{([^\}]+)\}"
+        return re.compile(pattern)
+
+    def notify(self, fragment, graphic):
+        return self.flap.onIncludeSVG(fragment, graphic)
 
 class Flap:
     """
@@ -322,5 +346,8 @@ class Flap:
         
     def onInclude(self, fragment):
         self._listener.onInclude(fragment)
-           
+        
+    def onIncludeSVG(self, fragment, graphicFile):
+        self._fileSystem.copy(graphicFile, self._output)
+        self._listener.onIncludeSVG(fragment)   
     

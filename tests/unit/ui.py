@@ -36,44 +36,35 @@ class UiTest(TestCase):
     
     @patch('sys.stdout', new_callable=StringIO)
     def testUiShowVersionNumber(self, mock):
-        ui = self.makeUI(mock)
-        
+        ui = self.makeUI(mock)        
         ui.onStartup()
-        
         self.verifyOutputContains(mock, flap.__version__)
 
 
     @patch('sys.stdout', new_callable=StringIO)
     def testUiReportsInputDirectives(self, mock):
+        ui = self.makeUI(mock)     
+        self.runTest(ui.onInput, mock, ["main.tex", "3", "foo"])
+    
+    @patch('sys.stdout', new_callable=StringIO)
+    def testUiReportsIncludeSVGDirectives(self, mock):
         ui = self.makeUI(mock)
-        
-        ui.onInput(Fragment(File(None, ROOT/"main.tex", None), 3, "foo"))
+        self.runTest(ui.onIncludeSVG, mock, ["main.tex", "3", "foo"])
 
-        self.verifyOutputContains(mock, "main.tex")        
-        self.verifyOutputContains(mock, "3")        
-        self.verifyOutputContains(mock, "foo")        
-        
-        
     @patch('sys.stdout', new_callable=StringIO)
     def testUiReportsInclude(self, mock):
-        ui = self.makeUI(mock)
-        
-        ui.onInclude(Fragment(File(None, ROOT/"main.tex", None), 3, "foo"))
-
-        self.verifyOutputContains(mock, "main.tex")        
-        self.verifyOutputContains(mock, "3")        
-        self.verifyOutputContains(mock, "foo")        
-        
+        ui = self.makeUI(mock)        
+        self.runTest(ui.onInclude, mock,["main.tex", "3", "foo"])        
         
     @patch('sys.stdout', new_callable=StringIO)
     def testUiReportsIncludeGraphics(self, mock):
         ui = self.makeUI(mock)
-        
-        ui.onIncludeGraphics(Fragment(File(None, ROOT/"main.tex", None), 3, "foo"))
+        self.runTest(ui.onIncludeGraphics, mock, ["main.tex", "3", "foo"])
 
-        self.verifyOutputContains(mock, "main.tex")        
-        self.verifyOutputContains(mock, "3")        
-        self.verifyOutputContains(mock, "foo")        
+    def runTest(self, operation, mock, expectedOutputs):
+        operation(Fragment(File(None, ROOT/"main.tex", None), 3, "foo"))
+        for eachOutput in expectedOutputs:
+            self.verifyOutputContains(mock, eachOutput)        
 
     
     @patch('sys.stdout', new_callable=StringIO)
