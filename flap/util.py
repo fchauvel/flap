@@ -26,14 +26,14 @@ class Version:
     
     @staticmethod
     def fromText(text):
-        pattern = re.compile("(\\d+)\\.(\\d+)(?:\\.dev(\\d+))?")
+        pattern = re.compile("(\\d+)\\.(\\d+)(?:\\.(?:dev)?(\\d+))?")
         match = re.match(pattern, text)
         return Version(int(match.group(1)), int(match.group(2)), int(match.group(3)) if match.group(3) else None)
                     
-    def __init__(self, major, minor, development=None):
+    def __init__(self, major, minor, micro=None):
         self.major = major
         self.minor = minor
-        self.underDevelopment = development
+        self.micro = micro
         
     def hasMinor(self, minor):
         return self.minor == minor
@@ -41,36 +41,22 @@ class Version:
     def hasMajor(self, major):
         return self.major == major
         
-    def isUnderDevelopment(self):
-        return self.underDevelopment is not None
+    def hasMicro(self, micro):
+        return self.micro == micro
     
-    def nextDevelopmentRelease(self):
-        return Version(self.major, self.minor, self.underDevelopment + 1)
+    def nextMicroRelease(self):
+        return Version(self.major, self.minor, self.micro + 1)
             
     def nextMinorRelease(self):
-        return Version(self.major, self.minor + 1, 1)
+        return Version(self.major, self.minor + 1, 0)
             
     def nextMajorRelease(self):
-        return Version(self.major + 1, 0, 1)            
-    
-    def startDevelopment(self):
-        assert not self.isUnderDevelopment() 
-        self.underDevelopment = 1       
-    
-    def developmentIncrement(self):
-        assert self.isUnderDevelopment()
-        self.underDevelopment += 1 
-    
-    def minorIncrement(self):
-        self.minor += 1
-        
-    def majorIncrement(self):
-        self.major += 1
-        
+        return Version(self.major + 1, 0, 0)            
+            
     def __repr__(self):
         version = "{}.{}".format(self.major, self.minor)
-        if self.isUnderDevelopment():
-            version += ".dev%d" % self.underDevelopment
+        if self.micro is not None:
+            version += ".%d" % self.micro
         return version
     
     def __str__(self):
@@ -78,19 +64,21 @@ class Version:
 
     def __eq__(self, other):
         return (other and isinstance(other, Version) and
-                other.underDevelopment == self.underDevelopment and
+                other.micro == self.micro and
                 other.hasMajor(self.major) and
                 other.hasMinor(self.minor))
 
 class Sources:
     
-    def readVersion(self, version):
-        pass
+    LOCATION = "flap/__init__.py"
+    
+    def readVersion(self):
+        return Version.fromText(flap.__version__)
     
     def writeVersion(self, version):
-        content = open("flap/__init__.py").read()
-        content = content.replace(flap.__version__, self.__repr__())
-        updated = open("flap/__init__.py", "w")
+        content = open(Sources.LOCATION).read()
+        content = content.replace(flap.__version__, str(version))
+        updated = open(Sources.LOCATION, "w")
         updated.write(content)
         updated.flush()
         updated.close()
@@ -103,7 +91,7 @@ class SourceControl:
         subprocess.call(command)
     
     def tag(self, version):
-        command = ["git", "tag", "-a", "v" + str(version), "-m" "\"%s\"" % str(version) ]
+        command = ["git", "tag", "-a", "v" + str(version), "-m", "\"Version %s\"" % str(version) ]
         subprocess.call(command)
         command = ["git", "push", "--tag"]
         subprocess.call(command)
@@ -124,14 +112,23 @@ class Release(Command):
     def finalize_options(self):
         pass
     
-    def run(self):
-        print("python setup.py sdist")
+
+    def run(self):      
         version = self.sources.readVersion()
-        print("Current version: %s" % version)
+        print("Releasing version: %s" % version)
         self.scm.commit("Releasing version %s" % version)
         self.scm.tag(version)
-        newVersion = version.nextDevelopmentRelease()
+        newVersion = self.nextVersion(version)
         self.sources.writeVersion(newVersion)
-        print("New version: " + str(newVersion))
+        print("Preparing for version: " + str(newVersion))
         self.scm.commit("Preparing version %s" % newVersion)
                 
+    def nextVersion(self, version):
+        if self.next == "micro":
+            return version.nextMicroRelease()
+        elif self.next == "minor":
+            return version.nextMinorRelease()
+        elif self.next == "major":
+            return version.nextMajorRelease()
+        else:
+            raise ValueError("Unknown type of release '%s' (options are %s)." % (self.next, ["micro", "minor", "major"]))
