@@ -89,17 +89,17 @@ class SourceControl:
     
     def __init__(self):
         self.environment = os.environ.copy()
-        self.environment["PATH"] += """C:\Program Files (x86)\Git\\bin\;"""
+        self.environment["PATH"] += "C:\\Program Files (x86)\\Git\\bin\\;"
 
     
     def commit(self, message):
-        command = ["git", "commit", "-m", "\"%s\"" % message ]
+        command = ["git.exe", "commit", "-m", "\"%s\"" % message ]
         subprocess.call(command, env=self.environment, shell=True)
     
     def tag(self, version):
-        command = ["git", "tag", "-a", "v" + str(version), "-m", "\"Version %s\"" % str(version) ]
+        command = ["git.exe", "tag", "-a", "v" + str(version), "-m", "\"Version %s\"" % str(version) ]
         subprocess.call(command, env=self.environment, shell=True)
-        command = ["git", "push", "--tag"]
+        command = ["git.exe", "push", "--tag"]
         subprocess.call(command, env=self.environment, shell=True)
     
     

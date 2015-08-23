@@ -16,7 +16,7 @@
 #
 
 from unittest import TestCase, main
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, call, patch, ANY
 
 from flap.util import Version, Release, SourceControl, Sources 
 from distutils.dist import Distribution
@@ -55,10 +55,11 @@ class VersionTest(TestCase):
         v2 = self.makeVersion("1.3.dev3")
         self.assertTrue(v1 != v2)
 
+
+
 class SourcesTest(TestCase):
     
-   
-    def testReadVersion(self):
+       def testReadVersion(self):
         with patch("flap.__version__", "1.3.4"):
             sources = Sources()
             version = sources.readVersion() 
@@ -72,16 +73,16 @@ class SourceControlTest(TestCase):
         with patch("subprocess.call", mock):
             scm = SourceControl()
             scm.commit("my message")
-        mock.assert_called_once_with(["git", "commit", "-m", "\"my message\""])
-
+        mock.assert_called_once_with(["git.exe", "commit", "-m", "\"my message\""], env=ANY, shell=True)
+        
 
     def testTag(self):
         mock = MagicMock()
         with patch("subprocess.call", mock):
             scm = SourceControl()
             scm.tag(Version(2, 0, 1))
-        mock.assert_has_calls([call(["git", "tag", "-a", "v2.0.1", "-m", "\"Version 2.0.1\""]),
-                               call(["git", "push", "--tag"])])
+        mock.assert_has_calls([call(["git.exe", "tag", "-a", "v2.0.1", "-m", "\"Version 2.0.1\""], env=ANY, shell=True),
+                               call(["git.exe", "push", "--tag"], env=ANY, shell=True)])
 
 class ReleaseTest(TestCase):
     

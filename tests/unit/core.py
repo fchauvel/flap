@@ -21,7 +21,6 @@ from unittest.mock import MagicMock
 from flap.FileSystem import InMemoryFileSystem, File, MissingFile
 from flap.core import Flap, Fragment, Listener, CommentsRemover, Processor, IncludeSVGFixer
 from flap.path import ROOT, TEMP
-from builtins import type
 
 
 class FragmentTest(TestCase):
