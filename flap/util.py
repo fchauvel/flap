@@ -124,7 +124,7 @@ class Release(Command):
     def run(self):      
         version = self.sources.readVersion()
         print("Releasing version: %s" % version)
-        self.scm.commit("Releasing version %s" % version)
+        #self.scm.commit("Releasing version %s" % version)
         self.scm.tag(version)
         newVersion = self.nextVersion(version)
         self.sources.writeVersion(newVersion)
