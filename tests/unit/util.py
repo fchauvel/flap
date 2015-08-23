@@ -59,7 +59,7 @@ class VersionTest(TestCase):
 
 class SourcesTest(TestCase):
     
-       def testReadVersion(self):
+    def testReadVersion(self):
         with patch("flap.__version__", "1.3.4"):
             sources = Sources()
             version = sources.readVersion() 
@@ -73,8 +73,8 @@ class SourceControlTest(TestCase):
         with patch("subprocess.call", mock):
             scm = SourceControl()
             scm.commit("my message")
-        mock.assert_called_once_with(["git.exe", "commit", "-m", "\"my message\""], env=ANY, shell=True)
-        
+        mock.assert_has_calls([call(["git.exe", "add", "-u"], env=ANY, shell=True),
+                               call(["git.exe", "commit", "-m", "\"my message\""], env=ANY, shell=True)])
 
     def testTag(self):
         mock = MagicMock()

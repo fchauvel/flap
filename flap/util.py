@@ -89,10 +89,12 @@ class SourceControl:
     
     def __init__(self):
         self.environment = os.environ.copy()
-        self.environment["PATH"] += "C:\\Program Files (x86)\\Git\\bin\\;"
+        self.environment["PATH"] += ";C:/Program Files (x86)/Git/bin/"
 
     
     def commit(self, message):
+        command = ["git.exe", "add", "-u"]
+        subprocess.call(command, env=self.environment, shell=True)
         command = ["git.exe", "commit", "-m", "\"%s\"" % message ]
         subprocess.call(command, env=self.environment, shell=True)
     

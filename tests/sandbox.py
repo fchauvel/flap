@@ -23,13 +23,13 @@ from flap.ui import Controller, UI
 from flap.FileSystem import OSFileSystem
 
   
-@skip("Sandbox")        
+#@skip("Sandbox")        
 class SandboxTest(TestCase):
     
     
     def testCallingGit(self):
         environment = os.environ.copy()
-        environment["PATH"] += """C:\Program Files (x86)\Git\\bin\;"""
+        environment["PATH"] += """;C:/Program Files (x86)/Git/bin/"""
         print(environment["PATH"])
         subprocess.call(["git.exe", "log"], env=environment, shell=True)
     
