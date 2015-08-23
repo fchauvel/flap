@@ -16,6 +16,7 @@
 #
 
 import re
+import os
 import subprocess
 from setuptools import Command
 
@@ -86,15 +87,20 @@ class Sources:
 
 class SourceControl:
     
+    def __init__(self):
+        self.environment = os.environ.copy()
+        self.environment["PATH"] += """C:\Program Files (x86)\Git\\bin\;"""
+
+    
     def commit(self, message):
         command = ["git", "commit", "-m", "\"%s\"" % message ]
-        subprocess.call(command)
+        subprocess.call(command, env=self.environment, shell=True)
     
     def tag(self, version):
         command = ["git", "tag", "-a", "v" + str(version), "-m", "\"Version %s\"" % str(version) ]
-        subprocess.call(command)
+        subprocess.call(command, env=self.environment, shell=True)
         command = ["git", "push", "--tag"]
-        subprocess.call(command)
+        subprocess.call(command, env=self.environment, shell=True)
     
     
 class Release(Command):
@@ -104,10 +110,10 @@ class Release(Command):
         self.scm = scm
         self.sources = sources
             
-    user_options = []
+    user_options = [('next=', None, 'The type of release (micro, minor or major')]
     
     def initialize_options(self):
-        pass
+        self.next = ""
         
     def finalize_options(self):
         pass

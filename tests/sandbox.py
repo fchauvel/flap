@@ -14,7 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
-import re
+import os
+import subprocess
 
 from unittest import TestCase, main, skip
 
@@ -22,29 +23,15 @@ from flap.ui import Controller, UI
 from flap.FileSystem import OSFileSystem
 
   
-class RegexText(TestCase):
-    
-    def testMultilineMatch(self):
-        text = """
-        \\includegraphics[width=3cm]{%
-            img/foo/text}
-        """
-        pattern = re.compile(r"\includegraphics\s*(?:\[([^\]]+)\])\{([^\}]+)\}")
-        
-        match = re.search(pattern, text)      
-        self.assertIsNotNone(match)
-        self.assertEqual(match.group(1), "width=3cm")
-        self.assertEqual(self.discardComments(match.group(2)), "img/foo/text")
-        
-        lineNumber = text[:match.start()].count("\n")
-        self.assertEqual(lineNumber, 1)
-
-
-    def discardComments(self, text):
-        return re.sub(r"%[^\\n]", "", text).strip()
-        
-@skip("Sandbox")
+@skip("Sandbox")        
 class SandboxTest(TestCase):
+    
+    
+    def testCallingGit(self):
+        environment = os.environ.copy()
+        environment["PATH"] += """C:\Program Files (x86)\Git\\bin\;"""
+        print(environment["PATH"])
+        subprocess.call(["git.exe", "log"], env=environment, shell=True)
     
     
     def testJOCC(self):

@@ -273,7 +273,7 @@ class IncludeGraphicsAdjuster(RegexReplacer):
             raise ValueError("Unable to find file for graphic '%s' in '%s'" % (match.group(1), fragment.file().container().path()))
         else:
             graphic = graphics[0]
-            self.notify(fragment, graphic)
+            self.notify(Fragment(fragment.file(), fragment[:match.start()].text().count("\n") + 1, match.group(0)), graphic)
             graphicInclusion = match.group(0).replace(match.group(1), graphic.basename())
             return [ Fragment(fragment.file(), fragment.lineNumber(), graphicInclusion) ]
 
