@@ -1,0 +1,137 @@
+#
+# This file is part of Flap.
+#
+# Flap is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Flap is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Flap.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+import re
+import subprocess
+from setuptools import Command
+
+import flap
+
+
+class Version:
+    
+    @staticmethod
+    def fromText(text):
+        pattern = re.compile("(\\d+)\\.(\\d+)(?:\\.dev(\\d+))?")
+        match = re.match(pattern, text)
+        return Version(int(match.group(1)), int(match.group(2)), int(match.group(3)) if match.group(3) else None)
+                    
+    def __init__(self, major, minor, development=None):
+        self.major = major
+        self.minor = minor
+        self.underDevelopment = development
+        
+    def hasMinor(self, minor):
+        return self.minor == minor
+    
+    def hasMajor(self, major):
+        return self.major == major
+        
+    def isUnderDevelopment(self):
+        return self.underDevelopment is not None
+    
+    def nextDevelopmentRelease(self):
+        return Version(self.major, self.minor, self.underDevelopment + 1)
+            
+    def nextMinorRelease(self):
+        return Version(self.major, self.minor + 1, 1)
+            
+    def nextMajorRelease(self):
+        return Version(self.major + 1, 0, 1)            
+    
+    def startDevelopment(self):
+        assert not self.isUnderDevelopment() 
+        self.underDevelopment = 1       
+    
+    def developmentIncrement(self):
+        assert self.isUnderDevelopment()
+        self.underDevelopment += 1 
+    
+    def minorIncrement(self):
+        self.minor += 1
+        
+    def majorIncrement(self):
+        self.major += 1
+        
+    def __repr__(self):
+        version = "{}.{}".format(self.major, self.minor)
+        if self.isUnderDevelopment():
+            version += ".dev%d" % self.underDevelopment
+        return version
+    
+    def __str__(self):
+        return self.__repr__()
+
+    def __eq__(self, other):
+        return (other and isinstance(other, Version) and
+                other.underDevelopment == self.underDevelopment and
+                other.hasMajor(self.major) and
+                other.hasMinor(self.minor))
+
+class Sources:
+    
+    def readVersion(self, version):
+        pass
+    
+    def writeVersion(self, version):
+        content = open("flap/__init__.py").read()
+        content = content.replace(flap.__version__, self.__repr__())
+        updated = open("flap/__init__.py", "w")
+        updated.write(content)
+        updated.flush()
+        updated.close()
+
+
+class SourceControl:
+    
+    def commit(self, message):
+        command = ["git", "commit", "-m", "\"%s\"" % message ]
+        subprocess.call(command)
+    
+    def tag(self, version):
+        command = ["git", "tag", "-a", "v" + str(version), "-m" "\"%s\"" % str(version) ]
+        subprocess.call(command)
+        command = ["git", "push", "--tag"]
+        subprocess.call(command)
+    
+    
+class Release(Command):
+            
+    def __init__(self, dist, scm = SourceControl(), sources = Sources()):
+        super().__init__(dist)
+        self.scm = scm
+        self.sources = sources
+            
+    user_options = []
+    
+    def initialize_options(self):
+        pass
+        
+    def finalize_options(self):
+        pass
+    
+    def run(self):
+        print("python setup.py sdist")
+        version = self.sources.readVersion()
+        print("Current version: %s" % version)
+        self.scm.commit("Releasing version %s" % version)
+        self.scm.tag(version)
+        newVersion = version.nextDevelopmentRelease()
+        self.sources.writeVersion(newVersion)
+        print("New version: " + str(newVersion))
+        self.scm.commit("Preparing version %s" % newVersion)
+                
