@@ -87,25 +87,59 @@ class SourceControlTest(TestCase):
 class ReleaseTest(TestCase):
     
     
-    def testDevelopmentRelease(self):
+
+    def createSourceWithVersion(self, text):
         sources = Sources()
         sources.readVersion = MagicMock()
-        sources.readVersion.return_value = Version.fromText("1.3.3")
+        sources.readVersion.return_value = Version.fromText(text)
         sources.writeVersion = MagicMock()
-                
+        return sources
+
+    def release(self, sources, scm, kind):
+        release = Release(Distribution(), scm, sources)
+        release.type = kind
+        release.run()
+    
+    def createSCM(self):
         scm = SourceControl()
         scm.tag = MagicMock()
         scm.commit = MagicMock()
+        return scm
+
+    def testMicroRelease(self):
+        sources = self.createSourceWithVersion("1.3.3")
+        scm = self.createSCM()
         
-        release = Release(Distribution(), scm, sources)
-        release.next = "micro"
-        release.run()
+        self.release(sources, scm, "micro")
         
         scm.tag.assert_called_once_with(Version(1, 3, 3))
         sources.readVersion.assert_called_once_with()
         sources.writeVersion.assert_called_once_with(Version(1, 3, 4))
-        scm.commit.assert_has_calls([call("Releasing version 1.3.3"), 
-                                     call("Preparing version 1.3.4")])
+        scm.commit.assert_called_once_with("Preparing version 1.3.4")
+     
+    def testMinorRelease(self):
+        sources = self.createSourceWithVersion("1.3.3")
+        scm = self.createSCM()
+        
+        self.release(sources, scm, "minor")
+        
+        sources.readVersion.assert_called_once_with()
+        scm.tag.assert_called_once_with(Version(1, 4, 0))
+        sources.writeVersion.assert_has_calls([call(Version(1, 4, 0)), call(Version(1,4,1))])
+        scm.commit.assert_has_calls([call("Releasing version 1.4.0"), 
+                                     call("Preparing version 1.4.1")])
+
+    def testMajorRelease(self):
+        sources = self.createSourceWithVersion("1.3.3")        
+        scm = self.createSCM()
+        
+        self.release(sources, scm, "major")
+        
+        sources.readVersion.assert_called_once_with()
+        scm.tag.assert_called_once_with(Version(2, 0, 0))
+        sources.writeVersion.assert_has_calls([call(Version(2, 0, 0)), call(Version(2,0,1))])
+        scm.commit.assert_has_calls([call("Releasing version 2.0.0"), 
+                                     call("Preparing version 2.0.1")])
      
      
 if __name__ == "__main__":

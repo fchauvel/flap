@@ -54,12 +54,10 @@ Should you need any further information, feel free to email mailto:franck.chauve
 
 Here is a list of features, which are not yet supported:
 
- * Test with comments inserted half-way through the line, such `blablab \include{foo} % nice comment`
  * Test for * form of directives, such as `\includegraphics*{foo}`
  * Test for supporting `\graphicspath` directive
  * Support the use of `\includeonly{f1, f2}`
  * Support for backward relative links in directives, for instance `\input{../img/foo}`.
- * Automate the release process
  * Adjust copyright and credits in flap.__init__.py
 
 === Setting up a Development Environment

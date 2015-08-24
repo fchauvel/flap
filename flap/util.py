@@ -112,31 +112,43 @@ class Release(Command):
         self.scm = scm
         self.sources = sources
             
-    user_options = [('next=', None, 'The type of release (micro, minor or major')]
+    user_options = [('type=', None, 'The type of release (micro, minor or major')]
     
     def initialize_options(self):
-        self.next = ""
+        self.type = ""
         
     def finalize_options(self):
         pass
     
-
     def run(self):      
-        version = self.sources.readVersion()
-        print("Releasing version: %s" % version)
-        #self.scm.commit("Releasing version %s" % version)
-        self.scm.tag(version)
-        newVersion = self.nextVersion(version)
-        self.sources.writeVersion(newVersion)
-        print("Preparing for version: " + str(newVersion))
-        self.scm.commit("Preparing version %s" % newVersion)
-                
-    def nextVersion(self, version):
-        if self.next == "micro":
-            return version.nextMicroRelease()
-        elif self.next == "minor":
-            return version.nextMinorRelease()
-        elif self.next == "major":
-            return version.nextMajorRelease()
+        releasedVersion = self.release()
+        self.prepareNextRelease(releasedVersion)
+
+    def release(self):
+        currentVersion = self.sources.readVersion()
+        print("Current version: %s" % currentVersion)
+        releasedVersion = self.releasedVersion(currentVersion)
+        print("Releasing version %s" % releasedVersion)
+        if currentVersion != releasedVersion:
+            self.sources.writeVersion(releasedVersion)
+            self.scm.commit("Releasing version %s" % releasedVersion)
+        self.scm.tag(releasedVersion)
+        return releasedVersion
+
+    def releasedVersion(self, currentVersion):
+        if self.type == "micro":
+            releasedVersion = currentVersion
+        elif self.type == "minor":
+            releasedVersion = currentVersion.nextMinorRelease()
+        elif self.type == "major":
+            releasedVersion = currentVersion.nextMajorRelease()
         else:
-            raise ValueError("Unknown type of release '%s' (options are %s)." % (self.next, ["micro", "minor", "major"]))
+            raise ValueError("Unknown release kind '%s' (options are 'micro', 'minor' or 'major')" % self.type)
+        return releasedVersion
+
+    def prepareNextRelease(self, releasedVersion):
+        newVersion = releasedVersion.nextMicroRelease()
+        self.sources.writeVersion(newVersion)
+        print("Preparing version " + str(newVersion))
+        self.scm.commit("Preparing version %s" % newVersion)                
+        
