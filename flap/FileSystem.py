@@ -74,8 +74,8 @@ class File:
     
     def filesThatMatches(self, pattern):
         path = Path.fromText(str(self._path) + "/" + str(pattern)) 
-        dir = self.fileSystem.open(path.container())
-        return [ file for file in dir.files() if re.search(path.fullname(), str(file.path())) ]
+        directory = self.fileSystem.open(path.container())
+        return [ file for file in directory.files() if re.search(path.fullname(), str(file.path())) ]
     
     def __repr__(self):
         return self.path()
@@ -133,9 +133,6 @@ class FileSystem:
     
     def load(self, path):
         pass
-    
-   
-
 
 
 class OSFileSystem(FileSystem):
@@ -212,7 +209,7 @@ class InMemoryFileSystem(FileSystem):
         self.createDirectory(path.container())
         
     def filesIn(self, path):
-        return [ self.drive[p] for p in self.drive.keys() if p in path ]
+        return [ self.drive[p] for p in self.drive.keys() if p in path and len(p.parts()) == len(path.parts()) + 1 ]
         
     def open(self, path):
         if path in self.drive.keys():

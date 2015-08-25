@@ -175,6 +175,22 @@ class FlapTests(TestCase):
 
         self.verifyFile(ROOT/"result"/"merged.tex", expected)
         self.verifyFile(ROOT/"result"/"foo.pdf", "xyz")
+
+
+    def testMultilinesPath(self):
+        content = ("A \\input{img/foo/%\n"
+                   "bar/%\n"
+                   "baz} B")
+        self.fileSystem.createFile(ROOT/"project"/"main.tex", content)
+        self.fileSystem.createFile(ROOT/"project"/"img"/"foo"/"bar"/"baz.tex", "xyz")
+    
+        self.assertFalse(self.fileSystem.open(ROOT/"project"/"img"/"foo"/"bar"/"baz.tex").isMissing())
+         
+        self.flap.flatten(ROOT/"project"/"main.tex", ROOT/"result")
+    
+        expected = "A xyz B"
+
+        self.verifyFile(ROOT/"result"/"merged.tex", expected)
     
     
     def testLinksToGraphicsAreRecursivelyAdjusted(self):

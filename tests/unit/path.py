@@ -17,7 +17,7 @@
 
 import unittest
 
-from tempfile import tempdir
+from tempfile import gettempdir
 from flap.path import Path, ROOT, TEMP
 
 
@@ -30,7 +30,7 @@ class PathTests(unittest.TestCase):
         
     def testTemp(self):
         path = TEMP
-        self.assertTrue(path.fullname() in tempdir)
+        self.assertTrue(path.fullname() in gettempdir())
         
     def testPathToFile(self):
         path = (ROOT / "test" / "source.tex")
@@ -39,6 +39,11 @@ class PathTests(unittest.TestCase):
         self.assertEqual(path.container(), (ROOT / "test"))
         self.assertEqual(path.fullname(), "source.tex")
 
+    def testAppendingAPath(self):
+        path1 = ROOT / "dir/test"
+        path2 = ROOT / "dir" / "test"
+        
+        self.assertEqual(path1, path2)
 
     def testHasExtension(self):
         path = ROOT / "source.tex"
@@ -78,6 +83,10 @@ class PathTests(unittest.TestCase):
         
         self.assertEqual(path.parts(), ["C:", "Users", "franckc", "pub", "JOCC", "main.tex"])
 
-
+    def testPathWithNewlines(self):
+        path = Path.fromText("/Root/Foo\nBar\nBaz/home")
+        
+        self.assertEquals(path.parts(), ["Root", "FooBarBaz", "home"])
+        
 if __name__ == "__main__":
     unittest.main()

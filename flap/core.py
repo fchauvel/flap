@@ -230,6 +230,7 @@ class IncludeFlattener(RegexReplacer):
     def suffixFragment(self, fragment, match):
         return Fragment(fragment.file(), fragment.lineNumber(), "\\clearpage ")
       
+
         
 class InputFlattener(RegexReplacer):
     """

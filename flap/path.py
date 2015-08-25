@@ -28,15 +28,15 @@ class Path:
         path = ROOT
         for eachPart in parts:
             if eachPart:
-                path = path / eachPart
+                path = Path(path, eachPart)
         return path
 
     FILE_NAME = re.compile("(.+)\\.([^\\.]+)$")
    
     def __init__(self, parent, name):
         self._container = parent
-        self._name = name
-        self._match = Path.FILE_NAME.match(name)
+        self._name = name.replace("\n", "")
+        self._match = Path.FILE_NAME.match(self._name)
         
     def isRoot(self):
         return self._container is None
@@ -70,7 +70,11 @@ class Path:
         return self != other and self.__str__() in other.__str__()
 
     def __truediv__(self, other):
-        return Path(self, other)
+        otherPath = Path.fromText(other)
+        result = self
+        for eachPart in otherPath.parts():
+            result = Path(result, eachPart)
+        return result
 
     def __repr__(self):
         return "%s/%s" % (self._container.__repr__(), self.fullname())
