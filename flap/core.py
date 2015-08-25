@@ -237,7 +237,7 @@ class InputFlattener(RegexReplacer):
 
 class IncludeFlattener(InputFlattener):
     """
-    Traverse the fragments available and search for nest `\include{file.tex}`. It
+    Traverse the fragments available and search for next `\include{file.tex}`. It
     replaces them by the content of the file and append a \clearpage after.
     """
     def __init__(self, delegate, flap):
@@ -265,22 +265,31 @@ class IncludeGraphicsAdjuster(RegexReplacer):
         return re.compile(pattern)
     
     def replacementsFor(self, fragment, match):
-        path = Path.fromText(match.group(1).strip())
+        path = Path.fromText(match.group(1))
+        graphic = self.selectGraphicFile(fragment, match, path)
+        self.notify(Fragment(fragment.file(), fragment[:match.start()].text().count("\n") + 1, match.group(0)), graphic)
+        graphicInclusion = match.group(0).replace(match.group(1), graphic.basename())
+        return [ Fragment(fragment.file(), fragment.lineNumber(), graphicInclusion) ]
+
+    def selectGraphicFile(self, fragment, match, path):
         graphics = fragment.file().container().filesThatMatches(path)
         if not graphics:
             raise ValueError("Unable to find file for graphic '%s' in '%s'" % (match.group(1), fragment.file().container().path()))
-        else:
-            graphic = graphics[0]
-            self.notify(Fragment(fragment.file(), fragment[:match.start()].text().count("\n") + 1, match.group(0)), graphic)
-            graphicInclusion = match.group(0).replace(match.group(1), graphic.basename())
-            return [ Fragment(fragment.file(), fragment.lineNumber(), graphicInclusion) ]
+        graphic = None
+        for eachExtension in self.extensionsByPriority():
+            for eachGraphic in graphics:
+                if eachGraphic.extension() == eachExtension:
+                    graphic = eachGraphic
+        if not graphic:
+            raise ValueError("Unable to find file for graphic '%s' in '%s'" % (match.group(1), fragment.file().container().path()))
+        return graphic
+    
+    def extensionsByPriority(self):
+        return ["pdf", "eps", "png", "jpg"]
 
     def notify(self, fragment, graphic):
         return self.flap.onIncludeGraphics(fragment, graphic)
 
-
-
-      
 
 
 class IncludeSVGFixer(IncludeGraphicsAdjuster):
@@ -293,8 +302,12 @@ class IncludeSVGFixer(IncludeGraphicsAdjuster):
         pattern = r"\\includesvg\s*(?:\[(?:[^\]]+)\])*\{([^\}]+)\}"
         return re.compile(pattern)
 
+    def extensionsByPriority(self):
+        return ["svg"]
+
     def notify(self, fragment, graphic):
         return self.flap.onIncludeSVG(fragment, graphic)
+
 
 class Flap:
     """

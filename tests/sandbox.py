@@ -24,8 +24,8 @@ from flap.FileSystem import OSFileSystem
 
   
 @skip("Sandbox")        
-class SandboxTest(TestCase):
-    
+class SandboxTest(TestCase):        
+        
     
     def testCallingGit(self):
         environment = os.environ.copy()

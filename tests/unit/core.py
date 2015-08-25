@@ -160,6 +160,23 @@ class FlapTests(TestCase):
         self.verifyFile(ROOT/"result"/"foo.svg", "xyz")
     
     
+    def testSVGFilesAreCopiedEvenWhenJPGAreAvailable(self):
+        self.fileSystem.createFile(ROOT/"project"/"main.tex", r"A \includesvg{img/foo} Z")
+        
+        images = [ ROOT / "project" / "img" / "foo.eps",
+                   ROOT / "project" / "img" / "foo.svg"]
+        
+        self.fileSystem.createFile(images[0], "xyz")        
+        self.fileSystem.createFile(images[1], "abc")
+        
+        self.fileSystem.filesIn = MagicMock()
+        self.fileSystem.filesIn.return_value = [ self.fileSystem.open(eachImage) for eachImage in images ]
+
+        self.flap.flatten(ROOT/"project"/"main.tex", ROOT/"result")
+                 
+        self.verifyFile(ROOT/"result"/"merged.tex", r"A \includesvg{foo} Z")
+        self.verifyFile(ROOT/"result"/"foo.svg", "abc")
+    
     def testMultilinesDirectives(self):
         content = ("A"
                    "\includegraphics[width=8cm]{%\n"
@@ -263,6 +280,7 @@ class FlapTests(TestCase):
         """
 
         self.verifyFile(ROOT/"result"/"merged.tex", merged)
+        
         
 class Matcher(object):
             
