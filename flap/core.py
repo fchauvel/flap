@@ -132,8 +132,8 @@ class FileWrapper(Processor):
         return self._file
         
     def fragments(self):
-        yield from [ Fragment(self._file) ]
-
+        #yield from [ Fragment(self._file) ] Replaced for compatibility with Py3.2
+        yield Fragment(self._file)
 
 class ProcessorDecorator(Processor):
     """
@@ -174,13 +174,15 @@ class RegexReplacer(ProcessorDecorator):
     def fragments(self):
         self.pattern = self.preparePattern()
         for eachFragment in self._delegate.fragments():
-            yield from self.processFragment(eachFragment)
+            #yield from self.processFragment(eachFragment) --> Compatibility with Py3.2
+            for f in self.processFragment(eachFragment): yield f
 
     def processFragment(self, fragment):
         current = 0
         for eachMatch in self.allMatches(fragment):
             yield fragment[current:eachMatch.start()] 
-            yield from self.replacementsFor(fragment, eachMatch)
+            #yield from self.replacementsFor(fragment, eachMatch) Compatibility with Py3.2
+            for f in self.replacementsFor(fragment, eachMatch): yield f
             yield self.suffixFragment(fragment, eachMatch)
             current = eachMatch.end()
         yield fragment[current:]
