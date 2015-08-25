@@ -16,11 +16,12 @@
 #
 
 from unittest import TestCase, main
-from unittest.mock import MagicMock, call, patch, ANY
+from unittest.mock import Mock, MagicMock, call, patch, ANY
 
 from flap.util import Version, Release, SourceControl, Sources 
 from distutils.dist import Distribution
-
+from setuptools.command.bdist_egg import bdist_egg
+        
 class VersionTest(TestCase):
     
     def makeVersion(self, text):
@@ -97,8 +98,10 @@ class ReleaseTest(TestCase):
 
     def release(self, sources, scm, kind):
         release = Release(Distribution(), scm, sources)
+        release.runCommand = MagicMock()
         release.type = kind
         release.run()
+        return release
     
     def createSCM(self):
         scm = SourceControl()
@@ -110,31 +113,35 @@ class ReleaseTest(TestCase):
         sources = self.createSourceWithVersion("1.3.3")
         scm = self.createSCM()
         
-        self.release(sources, scm, "micro")
-        
+        release = self.release(sources, scm, "micro")
+     
+        release.runCommand.assert_called_with(bdist_egg) 
         scm.tag.assert_called_once_with(Version(1, 3, 3))
         sources.readVersion.assert_called_once_with()
         sources.writeVersion.assert_called_once_with(Version(1, 3, 4))
         scm.commit.assert_called_once_with("Preparing version 1.3.4")
-     
+        
     def testMinorRelease(self):
         sources = self.createSourceWithVersion("1.3.3")
         scm = self.createSCM()
         
-        self.release(sources, scm, "minor")
-        
+        release = self.release(sources, scm, "minor")
+     
+        release.runCommand.assert_called_with(bdist_egg) 
         sources.readVersion.assert_called_once_with()
         scm.tag.assert_called_once_with(Version(1, 4, 0))
         sources.writeVersion.assert_has_calls([call(Version(1, 4, 0)), call(Version(1,4,1))])
         scm.commit.assert_has_calls([call("Releasing version 1.4.0"), 
                                      call("Preparing version 1.4.1")])
 
+
     def testMajorRelease(self):
         sources = self.createSourceWithVersion("1.3.3")        
         scm = self.createSCM()
         
-        self.release(sources, scm, "major")
-        
+        release = self.release(sources, scm, "major")
+     
+        release.runCommand.assert_called_with(bdist_egg) 
         sources.readVersion.assert_called_once_with()
         scm.tag.assert_called_once_with(Version(2, 0, 0))
         sources.writeVersion.assert_has_calls([call(Version(2, 0, 0)), call(Version(2,0,1))])

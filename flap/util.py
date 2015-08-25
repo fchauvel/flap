@@ -19,7 +19,7 @@ import re
 import os
 import subprocess
 from setuptools import Command
-
+from setuptools.command.bdist_egg import bdist_egg
 import flap
 
 
@@ -122,6 +122,7 @@ class Release(Command):
     
     def run(self):      
         releasedVersion = self.release()
+        
         self.prepareNextRelease(releasedVersion)
 
     def release(self):
@@ -133,6 +134,7 @@ class Release(Command):
             self.sources.writeVersion(releasedVersion)
             self.scm.commit("Releasing version %s" % releasedVersion)
         self.scm.tag(releasedVersion)
+        self.build()
         return releasedVersion
 
     def releasedVersion(self, currentVersion):
@@ -145,6 +147,9 @@ class Release(Command):
         else:
             raise ValueError("Unknown release kind '%s' (options are 'micro', 'minor' or 'major')" % self.type)
         return releasedVersion
+
+    def build(self):
+        self.runCommand(bdist_egg)
 
     def prepareNextRelease(self, releasedVersion):
         newVersion = releasedVersion.nextMicroRelease()
