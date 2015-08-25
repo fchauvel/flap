@@ -84,10 +84,9 @@ class SourceControlTest(TestCase):
             scm.tag(Version(2, 0, 1))
         mock.assert_has_calls([call(["git.exe", "tag", "-a", "v2.0.1", "-m", "\"Version 2.0.1\""], env=ANY, shell=True)])
 
+
 class ReleaseTest(TestCase):
     
-    
-
     def createSourceWithVersion(self, text):
         sources = Sources()
         sources.readVersion = MagicMock()
