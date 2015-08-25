@@ -209,27 +209,6 @@ class RegexReplacer(ProcessorDecorator):
         """
         pass
     
-class IncludeFlattener(RegexReplacer):
-    """
-    Traverse the fragments available and search for nest `\include{file.tex}`. It
-    replaces them by the content of the file and append a \clearpage after.
-    """
-    def __init__(self, delegate, flap):
-        super().__init__(delegate, flap)
-
-    def preparePattern(self):
-        return re.compile(r"\\include{([^}]+)}")
-   
-    def replacementsFor(self, fragment, match):
-        self.flap.onInclude(Fragment(fragment.file(), fragment[:match.start()].text().count("\n") + 1, match.group(0)))
-        includedFile = self.file().sibling(match.group(1) + ".tex")
-        if includedFile.isMissing():
-            raise ValueError("The file '%s' could not be found." % includedFile.path())
-        return Processor.inputMerger(includedFile, self.flap).fragments() 
-    
-    def suffixFragment(self, fragment, match):
-        return Fragment(fragment.file(), fragment.lineNumber(), "\\clearpage ")
-      
 
         
 class InputFlattener(RegexReplacer):
@@ -244,13 +223,31 @@ class InputFlattener(RegexReplacer):
         
     def preparePattern(self):
         return re.compile(r"\\input\{([^}]+)\}")
-            
+   
     def replacementsFor(self, fragment, match):
-        self.flap.onInput(Fragment(fragment.file(), fragment[:match.start()].text().count("\n") + 1, match.group(0)))
+        self.flap.onInput(self.asFragment(fragment, match))
         includedFile = self.file().sibling(match.group(1) + ".tex")
         if includedFile.isMissing():
             raise ValueError("The file '%s' could not be found." % includedFile.path())
         return Processor.inputMerger(includedFile, self.flap).fragments()
+
+    def asFragment(self, fragment, match):
+        return Fragment(fragment.file(), fragment[:match.start()].text().count("\n") + 1, match.group(0))
+
+
+class IncludeFlattener(InputFlattener):
+    """
+    Traverse the fragments available and search for nest `\include{file.tex}`. It
+    replaces them by the content of the file and append a \clearpage after.
+    """
+    def __init__(self, delegate, flap):
+        super().__init__(delegate, flap)
+
+    def preparePattern(self):
+        return re.compile(r"\\include{([^}]+)}")
+    
+    def suffixFragment(self, fragment, match):
+        return Fragment(fragment.file(), fragment.lineNumber(), "\\clearpage ")
 
 
 
@@ -280,6 +277,11 @@ class IncludeGraphicsAdjuster(RegexReplacer):
 
     def notify(self, fragment, graphic):
         return self.flap.onIncludeGraphics(fragment, graphic)
+
+
+
+      
+
 
 class IncludeSVGFixer(IncludeGraphicsAdjuster):
     """
