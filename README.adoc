@@ -79,18 +79,17 @@ $> coverage report --omit="*test*,*setup*"
 === How to Release?
 Below is the reminder of the steps to follows, and the associated shell commands:
 
-. Increase the version number in the file '+flap/__init__.py+'. You can see the current
-version number using `python setup.py --version`.
+. Ensure that all tests pass just fine with `python setup.py test`
 
-. Ensure that all tests pass just fine with: `python setup.py test`
+. Commit and push all changes necessary to get the tests to pass.
 
-. Commit and push all changes made to get the tests to pass.
+. Release using `python setup.py release --type=micro`. The setup script handles 
+both the version number and the tagging process. The 'type' option specifies 
+whether we are doing a major, minor, or a micro release. 
 
-. Tag the sources with appropriate version number: `git tag -a vX.X -m "the new version"`
+. Push the changes using `git push --follow-tags`. Pushing manually permits 
+to easily back-off if the release process fails.
 
-. Build a source distribution `python setup.py sdist`
-
-. Build an Python egg `python setup.py bdist_egg`
-
-. Create a new release, specifying the tag and upload both distribution on the https://github.com/fchauvel/flap/releases[GitHub release page]
+. Create a new release, specifying the tag and upload the appropriate binaries
+from `./dist` on the https://github.com/fchauvel/flap/releases[GitHub release page]
 
