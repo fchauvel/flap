@@ -82,8 +82,7 @@ class SourceControlTest(TestCase):
         with patch("subprocess.call", mock):
             scm = SourceControl()
             scm.tag(Version(2, 0, 1))
-        mock.assert_has_calls([call(["git.exe", "tag", "-a", "v2.0.1", "-m", "\"Version 2.0.1\""], env=ANY, shell=True),
-                               call(["git.exe", "push", "--tag"], env=ANY, shell=True)])
+        mock.assert_has_calls([call(["git.exe", "tag", "-a", "v2.0.1", "-m", "\"Version 2.0.1\""], env=ANY, shell=True)])
 
 class ReleaseTest(TestCase):
     
@@ -98,7 +97,7 @@ class ReleaseTest(TestCase):
 
     def release(self, sources, scm, kind):
         release = Release(Distribution(), scm, sources)
-        release.runCommand = MagicMock()
+        release.run_command = MagicMock()
         release.type = kind
         release.run()
         return release
@@ -115,7 +114,7 @@ class ReleaseTest(TestCase):
         
         release = self.release(sources, scm, "micro")
      
-        release.runCommand.assert_called_with(bdist_egg) 
+        release.run_command.assert_called_with("bdist_egg") 
         scm.tag.assert_called_once_with(Version(1, 3, 3))
         sources.readVersion.assert_called_once_with()
         sources.writeVersion.assert_called_once_with(Version(1, 3, 4))
@@ -127,7 +126,7 @@ class ReleaseTest(TestCase):
         
         release = self.release(sources, scm, "minor")
      
-        release.runCommand.assert_called_with(bdist_egg) 
+        release.run_command.assert_called_with("bdist_egg") 
         sources.readVersion.assert_called_once_with()
         scm.tag.assert_called_once_with(Version(1, 4, 0))
         sources.writeVersion.assert_has_calls([call(Version(1, 4, 0)), call(Version(1,4,1))])
@@ -141,7 +140,7 @@ class ReleaseTest(TestCase):
         
         release = self.release(sources, scm, "major")
      
-        release.runCommand.assert_called_with(bdist_egg) 
+        release.run_command.assert_called_with("bdist_egg") 
         sources.readVersion.assert_called_once_with()
         scm.tag.assert_called_once_with(Version(2, 0, 0))
         sources.writeVersion.assert_has_calls([call(Version(2, 0, 0)), call(Version(2,0,1))])

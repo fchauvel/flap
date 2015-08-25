@@ -101,8 +101,6 @@ class SourceControl:
     def tag(self, version):
         command = ["git.exe", "tag", "-a", "v" + str(version), "-m", "\"Version %s\"" % str(version) ]
         subprocess.call(command, env=self.environment, shell=True)
-        command = ["git.exe", "push", "--tag"]
-        subprocess.call(command, env=self.environment, shell=True)
     
     
 class Release(Command):
@@ -149,7 +147,7 @@ class Release(Command):
         return releasedVersion
 
     def build(self):
-        self.runCommand(bdist_egg)
+        self.run_command("bdist_egg")
 
     def prepareNextRelease(self, releasedVersion):
         newVersion = releasedVersion.nextMicroRelease()
