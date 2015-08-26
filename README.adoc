@@ -3,9 +3,9 @@
 :Email:     franck.chauvel@gmail.com
 
 image:https://img.shields.io/github/release/fchauvel/flap.svg[]
+image:https://img.shields.io/github/license/fchauvel/flap.svg[]
 image:https://img.shields.io/codeship/ad32e1e0-27d8-0133-8e78-7af7072ae828.svg[]
 image:https://img.shields.io/codecov/c/github/fchauvel/flap/master.svg[]
-image:https://img.shields.io/github/license/fchauvel/flap.svg[]
 
 Flap is a simple utility that flattens LaTeX projects. It takes a well organised LaTeX project 
 &mdash; one you so carefully crafted &mdash; and merged it into a vulgar single LaTeX file 

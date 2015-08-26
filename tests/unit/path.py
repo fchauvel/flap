@@ -31,7 +31,8 @@ class PathTests(unittest.TestCase):
     def testTemp(self):
         path = TEMP
         self.assertTrue(path.fullname() in gettempdir())
-        
+
+
     def testPathToFile(self):
         path = (ROOT / "test" / "source.tex")
         
@@ -87,6 +88,11 @@ class PathTests(unittest.TestCase):
         path = Path.fromText("/Root/Foo\nBar\nBaz/home")
         
         self.assertEquals(path.parts(), ["Root", "FooBarBaz", "home"])
-        
+
+    def test_remove_trailing_spaces(self):
+        path = Path.fromText("/text/ blabla /test.txt")
+        self.assertEqual(path, ROOT/"text"/"blabla"/"test.txt")
+
+
 if __name__ == "__main__":
     unittest.main()

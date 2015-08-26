@@ -95,7 +95,7 @@ class SourceControl:
     def commit(self, message):
         command = ["git.exe", "add", "-u"]
         subprocess.call(command, env=self.environment, shell=True)
-        command = ["git.exe", "commit", "-m", "\"%s\"" % message ]
+        command = ["git.exe", "commit", "-m", "%s" % message ]
         subprocess.call(command, env=self.environment, shell=True)
     
     def tag(self, version):

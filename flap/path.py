@@ -28,7 +28,7 @@ class Path:
         path = ROOT
         for eachPart in parts:
             if eachPart:
-                path = Path(path, eachPart)
+                path = Path(path, eachPart.strip())
         return path
 
     FILE_NAME = re.compile("(.+)\\.([^\\.]+)$")

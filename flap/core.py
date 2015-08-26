@@ -68,7 +68,6 @@ class Listener:
         pass
     
 
-
 class Fragment:
     """
     A fragment of text, taken from a line in a file
@@ -82,7 +81,6 @@ class Fragment:
             raise ValueError("Missing file '%s'" % file.fullname())
         self._file = file
         self._text = text if text is not None else self._file.content()
-        
 
     def lineNumber(self):
         return self._lineNumber
@@ -268,25 +266,25 @@ class IncludeGraphicsAdjuster(RegexReplacer):
     
     def replacementsFor(self, fragment, match):
         path = Path.fromText(match.group(1))
-        graphic = self.selectGraphicFile(fragment, match, path)
+        graphic = self.select_image_file(fragment, match, path)
         self.notify(Fragment(fragment.file(), fragment[:match.start()].text().count("\n") + 1, match.group(0)), graphic)
         graphicInclusion = match.group(0).replace(match.group(1), graphic.basename())
         return [ Fragment(fragment.file(), fragment.lineNumber(), graphicInclusion) ]
 
-    def selectGraphicFile(self, fragment, match, path):
-        graphics = fragment.file().container().filesThatMatches(path)
+    def select_image_file(self, fragment, match, path):
+        graphics = fragment.file().container().files_that_matches(path)
         if not graphics:
-            raise ValueError("Unable to find file for graphic '%s' in '%s'" % (match.group(1), fragment.file().container().path()))
+            raise ValueError("Unable to find any file for graphic '%s' in '%s'" % (match.group(1), fragment.file().container().path()))
         graphic = None
-        for eachExtension in self.extensionsByPriority():
+        for eachExtension in self.extensions_by_priority():
             for eachGraphic in graphics:
                 if eachGraphic.extension() == eachExtension:
                     graphic = eachGraphic
         if not graphic:
-            raise ValueError("Unable to find file for graphic '%s' in '%s'" % (match.group(1), fragment.file().container().path()))
+            raise ValueError("Unable to find an appropriate file for graphic '%s' in '%s'" % (match.group(1), fragment.file().container().path()))
         return graphic
     
-    def extensionsByPriority(self):
+    def extensions_by_priority(self):
         return ["pdf", "eps", "png", "jpg"]
 
     def notify(self, fragment, graphic):
@@ -304,7 +302,7 @@ class IncludeSVGFixer(IncludeGraphicsAdjuster):
         pattern = r"\\includesvg\s*(?:\[(?:[^\]]+)\])*\{([^\}]+)\}"
         return re.compile(pattern)
 
-    def extensionsByPriority(self):
+    def extensions_by_priority(self):
         return ["svg"]
 
     def notify(self, fragment, graphic):

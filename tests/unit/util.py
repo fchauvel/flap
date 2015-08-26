@@ -75,7 +75,7 @@ class SourceControlTest(TestCase):
             scm = SourceControl()
             scm.commit("my message")
         mock.assert_has_calls([call(["git.exe", "add", "-u"], env=ANY, shell=True),
-                               call(["git.exe", "commit", "-m", "\"my message\""], env=ANY, shell=True)])
+                               call(["git.exe", "commit", "-m", "my message"], env=ANY, shell=True)])
 
     def testTag(self):
         mock = MagicMock()

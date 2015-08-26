@@ -72,7 +72,7 @@ class File:
     def files(self):
         return []
     
-    def filesThatMatches(self, pattern):
+    def files_that_matches(self, pattern):
         path = Path.fromText(str(self._path) + "/" + str(pattern)) 
         directory = self.fileSystem.open(path.container())
         return [ file for file in directory.files() if re.search(path.fullname(), str(file.path())) ]
