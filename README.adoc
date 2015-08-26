@@ -2,8 +2,10 @@
 :Author:    Franck Chauvel
 :Email:     franck.chauvel@gmail.com
 
+image:https://img.shields.io/github/release/fchauvel/flap.svg[]
 image:https://img.shields.io/codeship/ad32e1e0-27d8-0133-8e78-7af7072ae828.svg[]
-image:http://codecov.io/github/fchauvel/flap/coverage.svg?branch=master[]
+image:https://img.shields.io/codecov/c/github/fchauvel/flap/master.svg[]
+image:https://img.shields.io/github/license/fchauvel/flap.svg[]
 
 Flap is a simple utility that flattens LaTeX projects. It takes a well organised LaTeX project 
 &mdash; one you so carefully crafted &mdash; and merged it into a vulgar single LaTeX file 
@@ -15,11 +17,11 @@ manuscripts, and I got tired to flatten the sources by hand.
 == Usage Example
 
 Consider for instance one of my typical LaTeX project, which I organize as follows. 
-We placed the LaTeX sources at the root level, but images are stored in sub 
-directory named `img`. In addition, the LaTeX sources we wrote each section in 
+I placed the LaTeX sources at the root level, but images are stored in sub 
+directory named `img`. In addition, in the LaTeX sources I wrote, each section in 
 a separate TeX file, such as `introduction.tex`, `abstract.tex` and so on.
 
-We want to merge all the TeX sources into a single fat file, where all graphics
+I want to merge all the TeX sources into a single fat file, where all graphics
 are now in the same directory. 
 
 FLaP does just that, as shown below:
