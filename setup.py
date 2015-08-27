@@ -39,7 +39,7 @@ setup(name='FLaP',
                     "Environment :: Console",
                     "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
                     "Natural Language :: English",
-                    "Topic :: Text Processing :: Markup :: LaTeX"
+                    "Topic :: Text Processing :: Markup :: LaTeX",
                     "Programming Language :: Python :: 3.2"
                     ]
      )
