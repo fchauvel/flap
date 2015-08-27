@@ -20,7 +20,7 @@ from unittest.mock import MagicMock
 
 from flap.FileSystem import InMemoryFileSystem, File, MissingFile
 from flap.core import Flap, Fragment, Listener, CommentsRemover, Processor, IncludeSVGFixer
-from flap.path import ROOT, TEMP
+from flap.path import Path, ROOT, TEMP
 
 
 class FragmentTest(TestCase):
@@ -86,228 +86,261 @@ class CommentRemoverTest(TestCase):
         self.assertEqual(result[0].text(), expectation)
 
 
-class FlapTests(TestCase):
+class FLaPTest(TestCase):
+    """
+    Provide some helper methods for create file in an in memory file system
+    """
+
     def setUp(self):
         self.fileSystem = InMemoryFileSystem()
-        self.flap = Flap(self.fileSystem)
+        self._prepare_listener()
+        self.flap = Flap(self.fileSystem, self.listener)
+
+    def _prepare_listener(self):
+        self.listener = Listener()
+        self.listener.onFlattenComplete = MagicMock()
+        self.listener.onInput = MagicMock()
+        self.listener.onIncludeGraphics = MagicMock()
 
     def verifyFile(self, path, content):
         result = self.fileSystem.open(path)
-        self.assertTrue(result.exists())
-        self.assertEqual(result.content(), content)
+        self.assertTrue(result.exists(), "Missing file '%s'" % path)
+        self.assertEqual(result.content(), content, "Wrong merged")
 
-    def testMergeInputDirectives(self):
-        self.fileSystem.createFile(ROOT / "project" / "main.tex", r"blahblah \input{foo} blah")
-        self.fileSystem.createFile(ROOT / "project" / "foo.tex", "bar")
+    def create_file(self, location, content):
+        path = Path.fromText(location)
+        self.fileSystem.createFile(path, content)
 
+    def create_main_file(self, content):
+        self.create_file("project/main.tex", content)
+
+    def create_image(self, location):
+        path = Path.fromText("project/" + location)
+        self.fileSystem.createFile(path, "image")
+
+    def create_tex_file(self, location, content):
+        self.create_file("project/" + location, content)
+
+    def open(self, location):
+        return self.fileSystem.open(Path.fromText("project/"+ location))
+
+    def run_flap(self):
         self.flap.flatten(ROOT / "project" / "main.tex", ROOT / "result")
 
-        self.verifyFile(ROOT / "result" / "merged.tex", "blahblah bar blah")
+    def verify_merged(self, content):
+        self.verifyFile(ROOT / "result" / "merged.tex", content)
 
-    def testMergeInputDirectiveRecursively(self):
-        self.fileSystem.createFile(ROOT / "project" / "main.tex", "A \input{foo} Z")
-        self.fileSystem.createFile(ROOT / "project" / "foo.tex", "B \input{bar} Y")
-        self.fileSystem.createFile(ROOT / "project" / "bar.tex", "blah")
+    def verify_image(self, path):
+        self.verifyFile(ROOT / "result" / path, "image")
 
-        self.flap.flatten(ROOT / "project" / "main.tex", ROOT / "result")
+    def verify_listener(self, handler, fileName, lineNumber, text):
+        fragment = handler.call_args[0][0]
+        self.assertEqual(fragment.file().fullname(), fileName)
+        self.assertEqual(fragment.lineNumber(), lineNumber)
+        self.assertEqual(fragment.text().strip(), text)
 
-        self.verifyFile(ROOT / "result" / "merged.tex", "A B blah Y Z")
 
-    def testIncludeDirectivesAreMerged(self):
-        self.fileSystem.createFile(ROOT / "project" / "main.tex", "blahblah \include{foo} blah")
-        self.fileSystem.createFile(ROOT / "project" / "foo.tex", "bar")
+class InputMergerTests(FLaPTest):
 
-        self.flap.flatten(ROOT / "project" / "main.tex", ROOT / "result")
+    def test_simple_merge(self):
+        self.create_main_file(r"blahblah \input{foo} blah")
+        self.create_tex_file("foo.tex", "bar")
 
-        self.verifyFile(ROOT / "result" / "merged.tex", "blahblah bar\clearpage  blah")
+        self.run_flap()
 
-    def testMissingFileAreReported(self):
-        self.fileSystem.createFile(ROOT / "project" / "main.tex", "blahblah \input{foo} blah")
+        self.verify_merged("blahblah bar blah")
 
-        with self.assertRaises(ValueError):
-            self.flap.flatten(ROOT / "project" / "main.tex", ROOT / "result")
+    def test_recursive_merge(self):
+        self.create_main_file("A \input{foo} Z")
+        self.create_tex_file("foo.tex", "B \input{bar} Y")
+        self.create_tex_file("bar.tex", "blah")
 
-    def testLinksToGraphicsAreAdjusted(self):
-        self.fileSystem.createFile(ROOT / "project" / "main.tex", r"A \includegraphics[width=3cm]{img/foo} Z")
-        self.fileSystem.createFile(ROOT / "project" / "img" / "foo.pdf", "xyz")
+        self.run_flap()
 
-        self.flap.flatten(ROOT / "project" / "main.tex", ROOT / "result")
+        self.verify_merged("A B blah Y Z")
 
-        self.verifyFile(ROOT / "result" / "merged.tex", r"A \includegraphics[width=3cm]{foo} Z")
-        self.verifyFile(ROOT / "result" / "foo.pdf", "xyz")
+    def test_commented_lines_are_ignored(self):
+        self.create_main_file("\n"
+                              "blah blah blah\n"
+                              "% \input{foo} \n"
+                              "blah blah blah\n"
+                              "")
+        self.create_tex_file("foo.tex", "included content")
 
-    def testReferenceToLocalImageAreNotAdjusted(self):
-        source = r"""
+        self.run_flap()
+
+        self.verify_merged("\n"
+                           "blah blah blah\n"
+                           "\n"
+                           "blah blah blah\n"
+                           "")
+
+    def test_multi_lines_path(self):
+        self.create_main_file("""A \\input{img/foo/%
+                   bar/%
+                   baz} B""")
+        self.create_tex_file("img/foo/bar/baz.tex", "xyz")
+
+        self.run_flap()
+
+        self.verify_merged("A xyz B")
+
+    def test_input_directives_are_reported(self):
+        self.create_main_file("""blah blabh
+        \input{foo}""")
+        self.create_tex_file("foo.tex", "blah blah")
+
+        self.run_flap()
+
+        self.verify_listener(self.listener.onInput, "main.tex", 2, "\input{foo}")
+
+
+class IncludeMergeTest(FLaPTest):
+
+    def test_simple_merge(self):
+        self.create_main_file("blahblah \include{foo} blah")
+        self.create_tex_file("foo.tex", "bar")
+
+        self.run_flap()
+
+        self.verify_merged("blahblah bar\clearpage  blah")
+
+
+class IncludeGraphicsProcessorTest(FLaPTest):
+    """
+    Tests the processing of \includegraphics directive
+    """
+
+    def test_links_to_graphics_are_adjusted(self):
+        self.create_main_file(r"A \includegraphics[width=3cm]{img/foo} Z")
+        self.create_image("img/foo.pdf")
+
+        self.run_flap()
+
+        self.verify_merged(r"A \includegraphics[width=3cm]{foo} Z")
+        self.verify_image("foo.pdf")
+
+    def test_path_to_local_images_are_not_adjusted(self):
+        self.create_main_file(r"""
         \includegraphics[interpolate,width=11.445cm]{%
             startingPlace}
-        """
-        self.fileSystem.createFile(ROOT / "project" / "main.tex", source)
-        self.fileSystem.createFile(ROOT / "project" / "startingPlace.pdf", "xyz")
+        """)
+        self.create_image("startingPlace.pdf")
 
-        self.flap.flatten(ROOT / "project" / "main.tex", ROOT / "result")
+        self.run_flap()
 
-        expected = r"""
+        self.verify_merged(r"""
         \includegraphics[interpolate,width=11.445cm]{startingPlace}
-        """
+        """)
+        self.verify_image("startingPlace.pdf")
 
-        self.verifyFile(ROOT / "result" / "merged.tex", expected)
-        self.verifyFile(ROOT / "result" / "startingPlace.pdf", "xyz")
+    def test_paths_are_recursively_adjusted(self):
+        self.create_main_file(r"AA \input{foo} AA")
+        self.create_tex_file("foo.tex", r"BB \includegraphics[width=3cm]{img/foo} BB")
+        self.create_image("img/foo.pdf")
 
-    def testLinksToSVGAreAdjusted(self):
-        self.fileSystem.createFile(ROOT / "project" / "main.tex", r"A \includesvg{img/foo} Z")
-        self.fileSystem.createFile(ROOT / "project" / "img" / "foo.svg", "xyz")
+        self.run_flap()
 
-        self.flap.flatten(ROOT / "project" / "main.tex", ROOT / "result")
+        self.verify_merged(r"AA BB \includegraphics[width=3cm]{foo} BB AA")
+        self.verify_image("foo.pdf")
 
-        self.verifyFile(ROOT / "result" / "merged.tex", r"A \includesvg{foo} Z")
-        self.verifyFile(ROOT / "result" / "foo.svg", "xyz")
-
-    def testSVGFilesAreCopiedEvenWhenJPGAreAvailable(self):
-        self.fileSystem.createFile(ROOT / "project" / "main.tex", r"A \includesvg{img/foo} Z")
-
-        images = [ROOT / "project" / "img" / "foo.eps",
-                  ROOT / "project" / "img" / "foo.svg"]
-
-        self.fileSystem.createFile(images[0], "xyz")
-        self.fileSystem.createFile(images[1], "abc")
-
-        self.fileSystem.filesIn = MagicMock()
-        self.fileSystem.filesIn.return_value = [self.fileSystem.open(eachImage) for eachImage in images]
-
-        self.flap.flatten(ROOT / "project" / "main.tex", ROOT / "result")
-
-        self.verifyFile(ROOT / "result" / "merged.tex", r"A \includesvg{foo} Z")
-        self.verifyFile(ROOT / "result" / "foo.svg", "abc")
-
-    def testMultilinesDirectives(self):
+    def test_multi_lines_directives(self):
         content = ("A"
                    "\includegraphics[width=8cm]{%\n"
                    "img/foo%\n"
                    "}\n"
                    "B")
-        self.fileSystem.createFile(ROOT / "project" / "main.tex", content)
-        self.fileSystem.createFile(ROOT / "project" / "img" / "foo.pdf", "xyz")
+        self.create_main_file(content)
+        self.create_image("img/foo.pdf")
 
-        self.flap.flatten(ROOT / "project" / "main.tex", ROOT / "result")
+        self.run_flap()
 
-        expected = "A\\includegraphics[width=8cm]{foo}\nB"
+        self.verify_merged("A\\includegraphics[width=8cm]{foo}\nB")
+        self.verify_image("foo.pdf")
 
-        self.verifyFile(ROOT / "result" / "merged.tex", expected)
-        self.verifyFile(ROOT / "result" / "foo.pdf", "xyz")
+    def test_includegraphics_are_reported(self):
+        self.create_main_file("""
+        \includegraphics{foo}""")
+        self.create_image("foo.pdf")
 
-    def testMultilinesPath(self):
-        content = ("A \\input{img/foo/%\n"
-                   "bar/%\n"
-                   "baz} B")
-        self.fileSystem.createFile(ROOT / "project" / "main.tex", content)
-        self.fileSystem.createFile(ROOT / "project" / "img" / "foo" / "bar" / "baz.tex", "xyz")
+        self.run_flap()
 
-        self.assertFalse(self.fileSystem.open(ROOT / "project" / "img" / "foo" / "bar" / "baz.tex").isMissing())
+        self.verify_listener(self.listener.onIncludeGraphics, "main.tex", 2, "\\includegraphics{foo}")
 
-        self.flap.flatten(ROOT / "project" / "main.tex", ROOT / "result")
 
-        expected = "A xyz B"
+class SVGIncludeTest(FLaPTest):
 
-        self.verifyFile(ROOT / "result" / "merged.tex", expected)
+    def testLinksToSVGAreAdjusted(self):
+        self.create_main_file(r"A \includesvg{img/foo} Z")
+        self.create_image("img/foo.svg")
+
+        self.run_flap()
+
+        self.verify_merged(r"A \includesvg{foo} Z")
+        self.verify_image("foo.svg")
+
+    def testSVGFilesAreCopiedEvenWhenJPGAreAvailable(self):
+        self.create_main_file(r"A \includesvg{img/foo} Z")
+
+        images = ["img/foo.eps", "img/foo.svg"]
+        for eachImage in images :
+            self.create_image(eachImage)
+
+        self.fileSystem.filesIn = MagicMock()
+        self.fileSystem.filesIn.return_value = [ self.open(eachImage) for eachImage in images ]
+
+        self.run_flap()
+
+        self.verify_merged(r"A \includesvg{foo} Z")
+        self.verify_image("foo.svg")
+
+
+class OverpicAdjuster(FLaPTest):
+    """
+    Specification of the processor for 'overpic' environment
+    """
 
     def test_overpic_environment_are_adjusted(self):
-        text = r"""
+        self.create_main_file(r"""
         \begin{overpic}[scale=0.25,unit=1mm,grid,tics=10]{%
         img/picture}
         blablabla
         \end{overpic}
-        """
+        """)
+        self.create_image("img/picture.pdf")
 
-        self.fileSystem.createFile(ROOT / "project" / "main.tex", text)
-        self.fileSystem.createFile(ROOT / "project" / "img" / "picture.pdf", "xyz")
+        self.run_flap()
 
-        self.flap.flatten(ROOT / "project" / "main.tex", ROOT / "result")
-
-        expected  = r"""
+        self.verify_merged(r"""
         \begin{overpic}[scale=0.25,unit=1mm,grid,tics=10]{picture}
         blablabla
         \end{overpic}
-        """
-
-        self.verifyFile(ROOT / "result" / "merged.tex", expected)
-        self.verifyFile(ROOT / "result" / "picture.pdf", "xyz")
+        """)
+        self.verify_image("picture.pdf")
 
 
-    def testLinksToGraphicsAreRecursivelyAdjusted(self):
-        self.fileSystem.createFile(ROOT / "project" / "main.tex", r"AA \input{foo} AA")
-        self.fileSystem.createFile(ROOT / "project" / "foo.tex", r"BB \includegraphics[width=3cm]{img/foo} BB")
-        self.fileSystem.createFile(ROOT / "project" / "img" / "foo.pdf", "xyz")
+class MiscalenousTests(FLaPTest):
 
-        self.flap.flatten(ROOT / "project" / "main.tex", ROOT / "result")
+    def test_missing_file_are_reported(self):
+        self.create_main_file("blahblah \input{foo} blah")
 
-        self.verifyFile(ROOT / "result" / "merged.tex", r"AA BB \includegraphics[width=3cm]{foo} BB AA")
-        self.verifyFile(ROOT / "result" / "foo.pdf", "xyz")
+        with self.assertRaises(ValueError):
+            self.run_flap()
 
-    def testClassFilesAreCopied(self):
-        self.fileSystem.createFile(ROOT / "project" / "style.cls", "whatever")
-        self.fileSystem.createFile(ROOT / "project" / "main.tex", "xxx")
+    def test_resources_are_copied(self):
+        self.create_main_file("xxx")
+        self.create_tex_file("style.cls", "whatever")
 
-        self.flap.flatten(ROOT / "project" / "main.tex", ROOT / "result")
+        self.run_flap()
 
         self.verifyFile(ROOT / "result" / "style.cls", "whatever")
 
-    def testFlapNotifiesWhenMergeIsComplete(self):
-        self.fileSystem.createFile(ROOT / "project" / "main.tex", "xxx")
+    def test_reports_completion(self):
+        self.create_main_file("xxx")
 
-        listener = Listener()
-        listener.onFlattenComplete = MagicMock()
-        flap = Flap(self.fileSystem, listener)
+        self.run_flap()
 
-        flap.flatten(ROOT / "project" / "main.tex", ROOT / "result")
-
-        listener.onFlattenComplete.assert_called_once_with()
-
-    def testFlapNotifiesWhenAnInputDirectiveIsMet(self):
-        self.fileSystem.createFile(ROOT / "project" / "main.tex", """blah blabh
-        \input{foo}""")
-        self.fileSystem.createFile(ROOT / "project" / "foo.tex", "blah blah")
-
-        listener = Listener()
-        listener.onInput = MagicMock()
-        flap = Flap(self.fileSystem, listener)
-
-        flap.flatten(ROOT / "project" / "main.tex", ROOT / "result")
-
-        fragment = listener.onInput.call_args[0][0]
-
-        self.assertEqual(fragment.file().fullname(), "main.tex")
-        self.assertEqual(fragment.lineNumber(), 2)
-        self.assertEqual(fragment.text().strip(), "\input{foo}")
-
-    def testFlapIgnoreLinesThatAreCommentedOut(self):
-        content = """
-            blah blah blah
-            % \input{foo}
-            blah blah blah
-        """
-        self.fileSystem.createFile(ROOT / "project" / "main.tex", content)
-        self.fileSystem.createFile(ROOT / "project" / "foo.tex", "included content")
-
-        self.flap.flatten(ROOT / "project" / "main.tex", ROOT / "result")
-
-        merged = """
-            blah blah blah
-            
-            blah blah blah
-        """
-
-        self.verifyFile(ROOT / "result" / "merged.tex", merged)
-
-
-class Matcher(object):
-    def __init__(self, model):
-        self.model = model
-
-    def __eq__(self, other):
-        return (self.model.file().fullname == other.file().fullname()
-                and self.model.lineNumber() == other.lineNumber()
-                and self.model.text() == other.text())
-
+        self.listener.onFlattenComplete.assert_called_once_with()
 
 if __name__ == "__main__":
     main()
