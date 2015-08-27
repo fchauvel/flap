@@ -210,6 +210,29 @@ class FlapTests(TestCase):
 
         self.verifyFile(ROOT / "result" / "merged.tex", expected)
 
+    def test_overpic_environment_are_adjusted(self):
+        text = r"""
+        \begin{overpic}[scale=0.25,unit=1mm,grid,tics=10]{%
+        img/picture}
+        blablabla
+        \end{overpic}
+        """
+
+        self.fileSystem.createFile(ROOT / "project" / "main.tex", text)
+        self.fileSystem.createFile(ROOT / "project" / "img" / "picture.pdf", "xyz")
+
+        self.flap.flatten(ROOT / "project" / "main.tex", ROOT / "result")
+
+        expected  = r"""
+        \begin{overpic}[scale=0.25,unit=1mm,grid,tics=10]{picture}
+        blablabla
+        \end{overpic}
+        """
+
+        self.verifyFile(ROOT / "result" / "merged.tex", expected)
+        self.verifyFile(ROOT / "result" / "picture.pdf", "xyz")
+
+
     def testLinksToGraphicsAreRecursivelyAdjusted(self):
         self.fileSystem.createFile(ROOT / "project" / "main.tex", r"AA \input{foo} AA")
         self.fileSystem.createFile(ROOT / "project" / "foo.tex", r"BB \includegraphics[width=3cm]{img/foo} BB")

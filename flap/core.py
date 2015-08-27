@@ -114,8 +114,12 @@ class Processor:
         return InputFlattener(CommentsRemover(FileWrapper(file)), proxy)
 
     @staticmethod
-    def flapPipeline(proxy):
-        return IncludeSVGFixer(IncludeGraphicsAdjuster(IncludeFlattener(Processor.inputMerger(proxy.file(), proxy), proxy), proxy), proxy)
+    def flap_pipeline(proxy):
+        processors = [IncludeFlattener, IncludeGraphicsAdjuster, IncludeSVGFixer, OverpicAdjuster]
+        pipeline = Processor.inputMerger(proxy.file(), proxy)
+        for eachProcessor in processors:
+            pipeline = eachProcessor(pipeline, proxy)
+        return pipeline
 
 
 class FileWrapper(Processor):
@@ -132,6 +136,7 @@ class FileWrapper(Processor):
     def fragments(self):
         #yield from [ Fragment(self._file) ] Replaced for compatibility with Py3.2
         yield Fragment(self._file)
+
 
 class ProcessorDecorator(Processor):
     """
@@ -210,7 +215,6 @@ class RegexReplacer(ProcessorDecorator):
         pass
     
 
-        
 class InputFlattener(RegexReplacer):
     """
     Detects fragments that contains an input directive (such as '\input{foo}). 
@@ -291,6 +295,18 @@ class IncludeGraphicsAdjuster(RegexReplacer):
         return self.flap.onIncludeGraphics(fragment, graphic)
 
 
+class OverpicAdjuster(IncludeGraphicsAdjuster):
+    """
+    Adjust 'overpic' environment. Only the opening clause is adjusted.
+    """
+
+    def __init__(self, delegate, proxy):
+        super().__init__(delegate, proxy)
+
+    def preparePattern(self):
+        pattern = r"\\begin{overpic}\s*(?:\[(?:[^\]]+)\])*\{([^\}]+)\}"
+        return re.compile(pattern)
+
 
 class IncludeSVGFixer(IncludeGraphicsAdjuster):
     """
@@ -336,7 +352,7 @@ class Flap:
         return self._root
         
     def mergeLaTeXSource(self):
-        pipeline = Processor.flapPipeline(self)
+        pipeline = Processor.flap_pipeline(self)
         fragments = pipeline.fragments()
         merge = ''.join([ f.text() for f in fragments ])
         self._fileSystem.createFile(self._output / "merged.tex", merge)
