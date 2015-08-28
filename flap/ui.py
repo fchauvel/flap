@@ -41,24 +41,24 @@ class UI(Listener):
     def onStartup(self):
         self.show("FLaP v" + flap.__version__ + " -- Flat LaTeX Projects")
         
-    def onInput(self, fragment):
+    def on_input(self, fragment):
         self.showFragment(fragment)
         
-    def onIncludeGraphics(self, fragment):
+    def on_include_graphics(self, fragment):
         self.showFragment(fragment)
         
-    def onIncludeSVG(self, fragment):
+    def on_include_SVG(self, fragment):
         self.showFragment(fragment)
         
-    def onInclude(self, fragment):
+    def on_include(self, fragment):
         self.showFragment(fragment)
         
-    def onFlattenComplete(self):
+    def on_flatten_complete(self):
         self.show("Flatten complete.")
         
     def showFragment(self, fragment):
         if self.showDetails:
-            text = "+ in '%s' line %d: '%s'" % (fragment.file().fullname(), fragment.lineNumber(), fragment.text().strip())
+            text = "+ in '%s' line %d: '%s'" % (fragment.file().fullname(), fragment.line_number(), fragment.text().strip())
             self.show(text)
 
     def show(self, message):

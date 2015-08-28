@@ -44,22 +44,22 @@ class UiTest(TestCase):
     @patch('sys.stdout', new_callable=StringIO)
     def testUiReportsInputDirectives(self, mock):
         ui = self.makeUI(mock)     
-        self.runTest(ui.onInput, mock, ["main.tex", "3", "foo"])
+        self.runTest(ui.on_input, mock, ["main.tex", "3", "foo"])
     
     @patch('sys.stdout', new_callable=StringIO)
     def testUiReportsIncludeSVGDirectives(self, mock):
         ui = self.makeUI(mock)
-        self.runTest(ui.onIncludeSVG, mock, ["main.tex", "3", "foo"])
+        self.runTest(ui.on_include_SVG, mock, ["main.tex", "3", "foo"])
 
     @patch('sys.stdout', new_callable=StringIO)
     def testUiReportsInclude(self, mock):
         ui = self.makeUI(mock)        
-        self.runTest(ui.onInclude, mock,["main.tex", "3", "foo"])        
+        self.runTest(ui.on_include, mock,["main.tex", "3", "foo"])
         
     @patch('sys.stdout', new_callable=StringIO)
     def testUiReportsIncludeGraphics(self, mock):
         ui = self.makeUI(mock)
-        self.runTest(ui.onIncludeGraphics, mock, ["main.tex", "3", "foo"])
+        self.runTest(ui.on_include_graphics, mock, ["main.tex", "3", "foo"])
 
     def runTest(self, operation, mock, expectedOutputs):
         operation(Fragment(File(None, ROOT/"main.tex", None), 3, "foo"))
@@ -71,7 +71,7 @@ class UiTest(TestCase):
     def testUiReportsCompletion(self, mock):
         ui = self.makeUI(mock)
         
-        ui.onFlattenComplete()
+        ui.on_flatten_complete()
 
         self.verifyOutputContains(mock, "complete")        
 
@@ -80,7 +80,7 @@ class UiTest(TestCase):
         ui = self.makeUI(mock)
         ui.disableDetails()
 
-        ui.onIncludeGraphics(Fragment(File(None, ROOT/"main.tex", None), 3, "foo"))
+        ui.on_include_graphics(Fragment(File(None, ROOT/"main.tex", None), 3, "foo"))
 
         self.assertFalse(mock.getvalue())
 

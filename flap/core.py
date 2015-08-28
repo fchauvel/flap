@@ -24,7 +24,7 @@ class Listener:
     Handle events emitted by FLaP.
     """
     
-    def onInput(self, fragment):
+    def on_input(self, fragment):
         """
         Triggered when an input directive was found in the LaTeX source.
         
@@ -33,7 +33,7 @@ class Listener:
         """
         pass
     
-    def onInclude(self, fragment):
+    def on_include(self, fragment):
         """
         Triggered when an '\include' directive was found in the LaTeX source.
         
@@ -42,7 +42,7 @@ class Listener:
         """
         pass
     
-    def onIncludeGraphics(self, fragment):
+    def on_include_graphics(self, fragment):
         """
         Triggered when an 'includegraphics' directive is detected in the LaTeX source.
         
@@ -51,7 +51,7 @@ class Listener:
         """
         pass
 
-    def onIncludeSVG(self, fragment):
+    def on_include_SVG(self, fragment):
         """
         Triggered when an 'includesvg' directive is detected in the LaTeX source.
         
@@ -61,7 +61,7 @@ class Listener:
         pass
 
     
-    def onFlattenComplete(self):
+    def on_flatten_complete(self):
         """
         Triggered when the flattening process is complete.
         """
@@ -82,7 +82,7 @@ class Fragment:
         self._file = file
         self._text = text if text is not None else self._file.content()
 
-    def lineNumber(self):
+    def line_number(self):
         return self._lineNumber
 
     def file(self):
@@ -91,7 +91,7 @@ class Fragment:
     def text(self):
         return self._text
     
-    def isCommentedOut(self):
+    def is_commented_out(self):
         return self._text.strip().startswith("%")
 
     def __getitem__(self, key):
@@ -110,13 +110,13 @@ class Processor:
         pass
 
     @staticmethod
-    def inputMerger(file, proxy):
+    def input_merger(file, proxy):
         return InputFlattener(CommentsRemover(FileWrapper(file)), proxy)
 
     @staticmethod
     def flap_pipeline(proxy):
         processors = [IncludeFlattener, IncludeGraphicsAdjuster, IncludeSVGFixer, OverpicAdjuster]
-        pipeline = Processor.inputMerger(proxy.file(), proxy)
+        pipeline = Processor.input_merger(proxy.file(), proxy)
         for eachProcessor in processors:
             pipeline = eachProcessor(pipeline, proxy)
         return pipeline
@@ -134,7 +134,6 @@ class FileWrapper(Processor):
         return self._file
         
     def fragments(self):
-        #yield from [ Fragment(self._file) ] Replaced for compatibility with Py3.2
         yield Fragment(self._file)
 
 
@@ -157,11 +156,11 @@ class CommentsRemover(ProcessorDecorator):
         super().__init__(delegate)
     
     def fragments(self):
-        for eachFragment in self._delegate.fragments():
-            text = eachFragment.text()
-            withoutComments = re.sub(r"%(?:[^\n])*\n", "\n", text)
-            eachFragment._text = withoutComments
-            yield eachFragment
+        for each_fragment in self._delegate.fragments():
+            text = each_fragment.text()
+            without_comments = re.sub(r"%(?:[^\n])*\n", "\n", text)
+            each_fragment._text = without_comments
+            yield each_fragment
 
 
 class RegexReplacer(ProcessorDecorator):
@@ -175,45 +174,49 @@ class RegexReplacer(ProcessorDecorator):
         self.flap = flap
 
     def fragments(self):
-        self.pattern = self.preparePattern()
-        for eachFragment in self._delegate.fragments():
-            #yield from self.processFragment(eachFragment) --> Compatibility with Py3.2
-            for f in self.processFragment(eachFragment): yield f
+        self.pattern = self.prepare_pattern()
+        for each_fragment in self._delegate.fragments():
+            for f in self.process_fragment(each_fragment): yield f
 
-    def processFragment(self, fragment):
+    def process_fragment(self, fragment):
         current = 0
-        for eachMatch in self.allMatches(fragment):
+        for eachMatch in self.all_matches(fragment):
             yield fragment[current:eachMatch.start()] 
-            #yield from self.replacementsFor(fragment, eachMatch) Compatibility with Py3.2
-            for f in self.replacementsFor(fragment, eachMatch): yield f
-            yield self.suffixFragment(fragment, eachMatch)
+            for f in self.replacements_for(fragment, eachMatch): yield f
+            yield self.suffix_fragment(fragment, eachMatch)
             current = eachMatch.end()
         yield fragment[current:]
 
-    def replacementsFor(self, fragment, match):
+    def replacements_for(self, fragment, match):
         """
         :return: The list of fragments that replace the given match
         """
         pass
 
-    def suffixFragment(self, fragment, match):
+    def suffix_fragment(self, fragment, match):
         """
         :return: An additional fragment that shall be appended just after the replacement
         """
-        return Fragment(fragment.file(), fragment.lineNumber(), "")
+        return Fragment(fragment.file(), fragment.line_number(), "")
 
-    def allMatches(self, fragment):
+    def all_matches(self, fragment):
         """
         :return: All the occurrence of the pattern in the given fragment
         """
         return self.pattern.finditer(fragment.text())
 
-    def preparePattern(self):
+    def prepare_pattern(self):
         """
         :return: The compiled pattern that is to be matched and replaced
         """
         pass
-    
+
+    def extract(self, container, match):
+        """
+        :return: a sub fragment corresponding to the given match in the container fragment
+        """
+        return Fragment(container.file(), container[:match.start()].text().count("\n") + 1, match.group(0))
+
 
 class InputFlattener(RegexReplacer):
     """
@@ -225,18 +228,15 @@ class InputFlattener(RegexReplacer):
     def __init__(self, delegate, flap):
         super().__init__(delegate, flap)
         
-    def preparePattern(self):
+    def prepare_pattern(self):
         return re.compile(r"\\input\{([^}]+)\}")
    
-    def replacementsFor(self, fragment, match):
-        self.flap.onInput(self.asFragment(fragment, match))
+    def replacements_for(self, fragment, match):
+        self.flap.on_input(self.extract(fragment, match))
         includedFile = self.file().sibling(match.group(1) + ".tex")
         if includedFile.isMissing():
             raise ValueError("The file '%s' could not be found." % includedFile.path())
-        return Processor.inputMerger(includedFile, self.flap).fragments()
-
-    def asFragment(self, fragment, match):
-        return Fragment(fragment.file(), fragment[:match.start()].text().count("\n") + 1, match.group(0))
+        return Processor.input_merger(includedFile, self.flap).fragments()
 
 
 class IncludeFlattener(InputFlattener):
@@ -247,12 +247,11 @@ class IncludeFlattener(InputFlattener):
     def __init__(self, delegate, flap):
         super().__init__(delegate, flap)
 
-    def preparePattern(self):
+    def prepare_pattern(self):
         return re.compile(r"\\include{([^}]+)}")
     
-    def suffixFragment(self, fragment, match):
-        return Fragment(fragment.file(), fragment.lineNumber(), "\\clearpage ")
-
+    def suffix_fragment(self, fragment, match):
+        return Fragment(fragment.file(), fragment.line_number(), "\\clearpage ")
 
 
 class IncludeGraphicsAdjuster(RegexReplacer):
@@ -264,26 +263,26 @@ class IncludeGraphicsAdjuster(RegexReplacer):
     def __init__(self, delegate, flap):
         super().__init__(delegate, flap)
         
-    def preparePattern(self):
+    def prepare_pattern(self):
         pattern = r"\\includegraphics\s*(?:\[(?:[^\]]+)\])*\{([^\}]+)\}"
         return re.compile(pattern)
     
-    def replacementsFor(self, fragment, match):
+    def replacements_for(self, fragment, match):
         path = Path.fromText(match.group(1))
         graphic = self.select_image_file(fragment, match, path)
-        self.notify(Fragment(fragment.file(), fragment[:match.start()].text().count("\n") + 1, match.group(0)), graphic)
+        self.notify(self.extract(fragment, match), graphic)
         graphicInclusion = match.group(0).replace(match.group(1), graphic.basename())
-        return [ Fragment(fragment.file(), fragment.lineNumber(), graphicInclusion) ]
+        return [ Fragment(fragment.file(), fragment.line_number(), graphicInclusion) ]
 
     def select_image_file(self, fragment, match, path):
         graphics = fragment.file().container().files_that_matches(path)
         if not graphics:
             raise ValueError("Unable to find any file for graphic '%s' in '%s'" % (match.group(1), fragment.file().container().path()))
         graphic = None
-        for eachExtension in self.extensions_by_priority():
-            for eachGraphic in graphics:
-                if eachGraphic.extension() == eachExtension:
-                    graphic = eachGraphic
+        for each_extension in self.extensions_by_priority():
+            for each_graphic in graphics:
+                if each_graphic.extension() == each_extension:
+                    graphic = each_graphic
         if not graphic:
             raise ValueError("Unable to find an appropriate file for graphic '%s' in '%s'" % (match.group(1), fragment.file().container().path()))
         return graphic
@@ -292,7 +291,7 @@ class IncludeGraphicsAdjuster(RegexReplacer):
         return ["pdf", "eps", "png", "jpg"]
 
     def notify(self, fragment, graphic):
-        return self.flap.onIncludeGraphics(fragment, graphic)
+        return self.flap.on_include_graphics(fragment, graphic)
 
 
 class OverpicAdjuster(IncludeGraphicsAdjuster):
@@ -303,7 +302,7 @@ class OverpicAdjuster(IncludeGraphicsAdjuster):
     def __init__(self, delegate, proxy):
         super().__init__(delegate, proxy)
 
-    def preparePattern(self):
+    def prepare_pattern(self):
         pattern = r"\\begin{overpic}\s*(?:\[(?:[^\]]+)\])*\{([^\}]+)\}"
         return re.compile(pattern)
 
@@ -314,7 +313,7 @@ class IncludeSVGFixer(IncludeGraphicsAdjuster):
     where the link to the file is corrected.
     """
             
-    def preparePattern(self):
+    def prepare_pattern(self):
         pattern = r"\\includesvg\s*(?:\[(?:[^\]]+)\])*\{([^\}]+)\}"
         return re.compile(pattern)
 
@@ -322,7 +321,7 @@ class IncludeSVGFixer(IncludeGraphicsAdjuster):
         return ["svg"]
 
     def notify(self, fragment, graphic):
-        return self.flap.onIncludeSVG(fragment, graphic)
+        return self.flap.on_include_SVG(fragment, graphic)
 
 
 class Flap:
@@ -338,12 +337,12 @@ class Flap:
                
     def flatten(self, root, output):
         self._output = output
-        self.openFile(root)
-        self.mergeLaTeXSource()
-        self.copyResourceFiles()
-        self._listener.onFlattenComplete()
+        self.open_file(root)
+        self.merge_latex_source()
+        self.copy_resource_files()
+        self._listener.on_flatten_complete()
         
-    def openFile(self, source):
+    def open_file(self, source):
         self._root = self._fileSystem.open(source)
         if self._root.isMissing():
             raise ValueError("The file '%s' could not be found." % source)
@@ -351,35 +350,34 @@ class Flap:
     def file(self):
         return self._root
         
-    def mergeLaTeXSource(self):
+    def merge_latex_source(self):
         pipeline = Processor.flap_pipeline(self)
         fragments = pipeline.fragments()
         merge = ''.join([ f.text() for f in fragments ])
         self._fileSystem.createFile(self._output / "merged.tex", merge)
             
-    def copyResourceFiles(self):
+    def copy_resource_files(self):
         project = self._root.container()
         for eachFile in project.files():
-            if self.isResource(eachFile):
+            if self.is_resource(eachFile):
                 self._fileSystem.copy(eachFile, self._output)
 
-    def isResource(self, eachFile):
+    def is_resource(self, eachFile):
         return eachFile.hasExtension() and eachFile.extension() in Flap.RESOURCE_FILES
-
 
     RESOURCE_FILES = ["cls", "sty", "bib", "bst"]       
         
-    def onInput(self, fragment):
-        self._listener.onInput(fragment)
+    def on_input(self, fragment):
+        self._listener.on_input(fragment)
     
-    def onIncludeGraphics(self, fragment, graphicFile):
+    def on_include_graphics(self, fragment, graphicFile):
         self._fileSystem.copy(graphicFile, self._output)
-        self._listener.onIncludeGraphics(fragment)   
+        self._listener.on_include_graphics(fragment)
         
-    def onInclude(self, fragment):
-        self._listener.onInclude(fragment)
+    def on_include(self, fragment):
+        self._listener.on_include(fragment)
         
-    def onIncludeSVG(self, fragment, graphicFile):
+    def on_include_SVG(self, fragment, graphicFile):
         self._fileSystem.copy(graphicFile, self._output)
-        self._listener.onIncludeSVG(fragment)   
+        self._listener.on_include_SVG(fragment)
     

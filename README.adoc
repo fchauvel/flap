@@ -74,6 +74,7 @@ Here is a list of features, which are not yet supported:
  * Adjust copyright and credits in flap.__init__.py
  * Improve error reporting
  * Automate the publication ofn pypi
+ * Upload documentation on http://pythonhosted.org/
 
 === Setting up for Development
 

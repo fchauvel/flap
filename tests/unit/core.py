@@ -33,7 +33,7 @@ class FragmentTest(TestCase):
         self.fragment = Fragment(self.file, 13, "blah blah")
 
     def testShouldExposeLineNumber(self):
-        self.assertEqual(self.fragment.lineNumber(), 13)
+        self.assertEqual(self.fragment.line_number(), 13)
 
     def testShouldRejectNegativeOrZeroLineNumber(self):
         with self.assertRaises(ValueError):
@@ -50,7 +50,7 @@ class FragmentTest(TestCase):
         self.assertEqual(self.fragment.text(), "blah blah")
 
     def testShouldDetectComments(self):
-        self.assertFalse(self.fragment.isCommentedOut())
+        self.assertFalse(self.fragment.is_commented_out())
 
     def testShouldBeSliceable(self):
         self.assertEqual(self.fragment[0:4].text(), "blah")
@@ -98,9 +98,9 @@ class FLaPTest(TestCase):
 
     def _prepare_listener(self):
         self.listener = Listener()
-        self.listener.onFlattenComplete = MagicMock()
-        self.listener.onInput = MagicMock()
-        self.listener.onIncludeGraphics = MagicMock()
+        self.listener.on_flatten_complete = MagicMock()
+        self.listener.on_input = MagicMock()
+        self.listener.on_include_graphics = MagicMock()
 
     def verifyFile(self, path, content):
         result = self.fileSystem.open(path)
@@ -136,7 +136,7 @@ class FLaPTest(TestCase):
     def verify_listener(self, handler, fileName, lineNumber, text):
         fragment = handler.call_args[0][0]
         self.assertEqual(fragment.file().fullname(), fileName)
-        self.assertEqual(fragment.lineNumber(), lineNumber)
+        self.assertEqual(fragment.line_number(), lineNumber)
         self.assertEqual(fragment.text().strip(), text)
 
 
@@ -192,7 +192,7 @@ class InputMergerTests(FLaPTest):
 
         self.run_flap()
 
-        self.verify_listener(self.listener.onInput, "main.tex", 2, "\input{foo}")
+        self.verify_listener(self.listener.on_input, "main.tex", 2, "\input{foo}")
 
 
 class IncludeMergeTest(FLaPTest):
@@ -265,7 +265,7 @@ class IncludeGraphicsProcessorTest(FLaPTest):
 
         self.run_flap()
 
-        self.verify_listener(self.listener.onIncludeGraphics, "main.tex", 2, "\\includegraphics{foo}")
+        self.verify_listener(self.listener.on_include_graphics, "main.tex", 2, "\\includegraphics{foo}")
 
 
 class SVGIncludeTest(FLaPTest):
@@ -319,7 +319,7 @@ class OverpicAdjuster(FLaPTest):
         self.verify_image("picture.pdf")
 
 
-class MiscalenousTests(FLaPTest):
+class MiscellaneousTests(FLaPTest):
 
     def test_missing_file_are_reported(self):
         self.create_main_file("blahblah \input{foo} blah")
@@ -340,7 +340,7 @@ class MiscalenousTests(FLaPTest):
 
         self.run_flap()
 
-        self.listener.onFlattenComplete.assert_called_once_with()
+        self.listener.on_flatten_complete.assert_called_once_with()
 
 if __name__ == "__main__":
     main()
