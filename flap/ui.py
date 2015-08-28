@@ -18,9 +18,9 @@
 import sys
 
 import flap
+from flap.FileSystem import OSFileSystem
 from flap.core import Flap, Listener
 from flap.path import Path
-from flap.FileSystem import OSFileSystem
 
 
 class UI(Listener):
@@ -64,7 +64,6 @@ class UI(Listener):
     def show(self, message):
         print(message, file=self.output)
         
-        
 
 class Controller:
     """
@@ -94,7 +93,17 @@ class Controller:
                 verbose = True
             else:
                 output = each
-        return (Path.fromText(rootFile), Path.fromText(output), verbose)
-        
+        return Path.fromText(rootFile), Path.fromText(output), verbose
+
+
+def main(arguments):
+    """
+    Entry point of the FLaP utility.
+
+    :param arguments: the command line arguments
+    """
+    Controller(OSFileSystem()).run(arguments)
+
+
 if __name__ == "__main__":
-    Controller(OSFileSystem()).run(sys.argv)
+    print("Pouet!")

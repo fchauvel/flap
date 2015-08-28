@@ -17,9 +17,11 @@
 
 from unittest import TestCase, main
 
+from flap.ui import main
 from flap.FileSystem import OSFileSystem
 from flap.path import TEMP
-from flap.ui import Controller
+
+
 
 class OSFileSystemTest(TestCase):
     
@@ -39,8 +41,7 @@ class OSFileSystemTest(TestCase):
         file = self.createAndOpenTestFile()
         
         self.assertEqual(file.content(), self.content)
-        
-        
+
     def testCopyAndOpenFile(self):
         file = self.createAndOpenTestFile()
         
@@ -50,7 +51,6 @@ class OSFileSystemTest(TestCase):
         copy = self.fileSystem.open(copyPath / "test.txt")
         
         self.assertEqual(copy.content(), self.content)
-
 
 
 class Test(TestCase):
@@ -71,10 +71,10 @@ class Test(TestCase):
         self.fileSystem.createFile(self.source / "img" / "plot.pdf", "\\input{result}")
         self.fileSystem.createFile(self.source / "style.sty", "some style crap")
         
-    def testFlattenLatexProject(self):
+    def test_flatten_latex_project(self):
         root = self.fileSystem.forOS(TEMP / "flap" / "project" / "main.tex")
         output = self.fileSystem.forOS(TEMP / "flap" / "output")
-        Controller(self.fileSystem).run(["-v", root, output])
+        main(["-v", root, output])
         
         file = self.fileSystem.open(self.output / "merged.tex")
         self.assertEqual(file.content(), 

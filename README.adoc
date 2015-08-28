@@ -27,8 +27,8 @@ are now in the same directory.
 
 FLaP does just that, as shown below:
 ----
-$> python -m flap.ui -v C:\\users\\franckc\\pub\\main.tex C:\\temp\\result
-FLaP v0.1
+$> python -m flap -v C:\\users\\franckc\\pub\\main.tex C:\\temp\\result
+FLaP v0.2.3
 + in 'main.tex' line 39: '\input{configuration}'
 + in 'main.tex' line 116: '\input{abstract}'
 + in 'main.tex' line 158: '\input{introduction}'
@@ -41,8 +41,13 @@ FLaP v0.1
 Flatten complete.
 ----
 
-Note the usage of the verbose mode (`-v`). By default, the details are not 
+Note the usage of the verbose mode (`-v`). By default, the details are not
 displayed.
+
+Prior to version 0.2.3, the executable package was `flap.ui`, with a usage like:
+----
+$> python -m flap.ui -v C:\\users\\franckc\\pub\\main.tex C:\\temp\\result
+----
 
 
 == Contact
@@ -62,9 +67,10 @@ Here is a list of features, which are not yet supported:
  * Support the use of `\includeonly{f1, f2}`
  * Support for backward relative links in directives, for instance `\input{../img/foo}`.
  * Adjust copyright and credits in flap.__init__.py
+ * Improve error reporting
  * Automate the publication ofn pypi
 
-=== Setting up a Development Environment
+=== Setting up for Development
 
 FLaP does not requires any specific packages. Yet, for checking code coverage, I
 suggest you install the coverage module (ideally in a virtual environment):
@@ -72,10 +78,11 @@ suggest you install the coverage module (ideally in a virtual environment):
 ----
 $> virtualenv venv
 $> .\venv\Scripts\activate.bat
-$> pip install coverage
+$> python setup.py develop
 ----
 You can then check the test coverage using the following commands:
 ----
+$> pip install coverage
 $> coverage run setup.py test
 $> coverage report --omit="*test*,*setup*"
 ----
