@@ -19,7 +19,7 @@ manuscripts, and I got tired to flatten the sources by hand.
 
 Consider for instance one of my typical LaTeX project, which I organize as follows. 
 I placed the LaTeX sources at the root level, but images are stored in sub 
-directory named `img`. In addition, in the LaTeX sources I wrote, each section in 
+directory named `img`. In addition, in the LaTeX sources, I wrote each section in
 a separate TeX file, such as `introduction.tex`, `abstract.tex` and so on.
 
 I want to merge all the TeX sources into a single fat file, where all graphics
@@ -62,6 +62,7 @@ Here is a list of features, which are not yet supported:
  * Support the use of `\includeonly{f1, f2}`
  * Support for backward relative links in directives, for instance `\input{../img/foo}`.
  * Adjust copyright and credits in flap.__init__.py
+ * Automate the publication ofn pypi
 
 === Setting up a Development Environment
 
@@ -96,3 +97,14 @@ to easily back-off if the release process fails.
 . Create a new release, specifying the tag and upload the appropriate binaries
 from `./dist` on the https://github.com/fchauvel/flap/releases[GitHub release page]
 
+=== How to Publish on Pypi?
+You must have an account on both the Pypi server and the test server, and the associated credentials in the `~\.pypirc`.
+More details are available in http://peterdowns.com/posts/first-time-with-pypi.html[this tutorial].
+
+. Try to register the project on pipy `python setup.py register -r pypitest`. Remove any error
+reported until the registration is a full success.
+
+. Try to upload the binaries `python setup.py sdist upload -r pypitest`
+
+. Once it works on the test server, you can do the same on Pypi Live, using `python setup.py register -r pypi`
+for registration and `python setup.py sdist upload -r pypi`
