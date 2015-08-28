@@ -15,6 +15,11 @@ in a flat directory.
 *Why?* Some publishers require such a flat structure when you submit the sources of your 
 manuscripts, and I got tired to flatten the sources by hand.
 
+== Installation
+The easiest way to install FLaP is to use pip using `pip install flap`.
+
+Alternatively, you may download the sources distribution and use `python setup.py install`
+
 == Usage Example
 
 Consider for instance one of my typical LaTeX project, which I organize as follows. 
