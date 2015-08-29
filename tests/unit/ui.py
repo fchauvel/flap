@@ -17,12 +17,11 @@
 
 import re
 from unittest import TestCase, main
-from unittest.mock import patch
-
+from mock import patch
 import flap
 from io import StringIO
 from flap.path import ROOT
-from flap.core import Fragment
+from flap.engine import Fragment
 from flap.FileSystem import File
 from flap.ui import UI 
 
@@ -66,7 +65,6 @@ class UiTest(TestCase):
         for eachOutput in expectedOutputs:
             self.verifyOutputContains(mock, eachOutput)        
 
-    
     @patch('sys.stdout', new_callable=StringIO)
     def testUiReportsCompletion(self, mock):
         ui = self.makeUI(mock)

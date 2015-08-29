@@ -25,8 +25,7 @@ from flap.FileSystem import OSFileSystem
   
 @skip("Sandbox")        
 class SandboxTest(TestCase):        
-        
-    
+
     def testCallingGit(self):
         environment = os.environ.copy()
         environment["PATH"] += """;C:/Program Files (x86)/Git/bin/"""

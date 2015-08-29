@@ -16,12 +16,12 @@
 #
 
 from unittest import TestCase, main
-from unittest.mock import Mock, MagicMock, call, patch, ANY
+from mock import Mock, MagicMock, call, patch, ANY
 
 from flap.util import Version, Release, SourceControl, Sources 
 from distutils.dist import Distribution
-from setuptools.command.bdist_egg import bdist_egg
-        
+
+
 class VersionTest(TestCase):
     
     def makeVersion(self, text):

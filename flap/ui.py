@@ -19,7 +19,7 @@ import sys
 
 import flap
 from flap.FileSystem import OSFileSystem
-from flap.core import Flap, Listener
+from flap.engine import Flap, Listener
 from flap.path import Path
 
 

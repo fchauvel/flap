@@ -22,7 +22,6 @@ from flap.FileSystem import OSFileSystem
 from flap.path import TEMP
 
 
-
 class OSFileSystemTest(TestCase):
     
     def setUp(self):
