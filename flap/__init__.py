@@ -15,5 +15,5 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-__version__ = "0.2.3"
+__version__ = "0.2.4"
 
