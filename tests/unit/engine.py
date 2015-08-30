@@ -279,6 +279,16 @@ class SVGIncludeTest(FLaPTest):
         self.verify_merged(r"A \includesvg{foo} Z")
         self.verify_image("foo.svg")
 
+    def test_includesvg_in_separated_file(self):
+        self.create_main_file("A \\input{parts/foo} A")
+        self.create_tex_file("parts/foo.tex", "B \\includesvg{img/sources/test} B")
+        self.create_image("img/sources/test.svg")
+
+        self.run_flap()
+
+        self.verify_merged("A B \\includesvg{test} B A")
+        self.verify_image("test.svg")
+
     def testSVGFilesAreCopiedEvenWhenJPGAreAvailable(self):
         self.create_main_file(r"A \includesvg{img/foo} Z")
 

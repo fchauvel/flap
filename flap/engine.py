@@ -275,7 +275,7 @@ class IncludeGraphicsAdjuster(RegexReplacer):
         return [ Fragment(fragment.file(), fragment.line_number(), graphicInclusion) ]
 
     def select_image_file(self, fragment, match, path):
-        graphics = fragment.file().container().files_that_matches(path)
+        graphics = self.flap.file().container().files_that_matches(path)
         if not graphics:
             raise ValueError("Unable to find any file for graphic '%s' in '%s'" % (match.group(1), fragment.file().container().path()))
         graphic = None
@@ -380,4 +380,3 @@ class Flap:
     def on_include_SVG(self, fragment, graphicFile):
         self._fileSystem.copy(graphicFile, self._output)
         self._listener.on_include_SVG(fragment)
-    
