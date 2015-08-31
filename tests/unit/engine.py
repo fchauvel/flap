@@ -140,6 +140,33 @@ class FLaPTest(TestCase):
         self.assertEqual(fragment.text().strip(), text)
 
 
+class TestEndinputRemover(FLaPTest):
+    """
+    Specify the behaviour of the Endinput remover
+    """
+
+    def test_endinput_mask_subsequent_content(self):
+        self.create_main_file("aaa\n"
+                              "\\endinput\n"
+                              "ccc")
+        self.run_flap()
+        self.verify_merged("aaa\n")
+
+    def test_endinput_in_a_separate_tex_file(self):
+        self.create_main_file("aaa\n"
+                              "\\input{foo}\n"
+                              "ccc")
+        self.create_tex_file("foo.tex", "bbb\n"
+                                        "bbb\n"
+                                        "\\endinput\n"
+                                        "zzz")
+        self.run_flap()
+        self.verify_merged("aaa\n"
+                           "bbb\n"
+                           "bbb\n\n"
+                           "ccc")
+
+
 class InputMergerTests(FLaPTest):
 
     def test_simple_merge(self):
