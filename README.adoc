@@ -96,7 +96,8 @@ $> coverage report --omit="*test*,*setup*"
 === How to Release?
 Below is the reminder of the steps to follows, and the associated shell commands:
 
-. Ensure that all tests pass just fine with `python setup.py test`
+. Ensure that all tests pass just fine with `python setup.py test`. If you have several installation of python on your
+machine, use `tox`, to run the test using Py32, Py33 and Py34.
 
 . Commit and push all changes necessary to get the tests to pass.
 
