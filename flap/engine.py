@@ -111,7 +111,7 @@ class Processor:
 
     @staticmethod
     def input_merger(file, proxy):
-        return InputFlattener(CommentsRemover(FileWrapper(file)), proxy)
+        return InputFlattener(EndInputProcessor(CommentsRemover(FileWrapper(file)), proxy), proxy)
 
     @staticmethod
     def flap_pipeline(proxy):
@@ -292,6 +292,19 @@ class IncludeGraphicsAdjuster(RegexReplacer):
 
     def notify(self, fragment, graphic):
         return self.flap.on_include_graphics(fragment, graphic)
+
+
+class EndInputProcessor(RegexReplacer):
+    """
+    Discard whatever comes after an `\endinput` command.
+    """
+
+    def prepare_pattern(self):
+        pattern = r"\\endinput.+\Z"
+        return re.compile(pattern, re.DOTALL)
+
+    def replacements_for(self, fragment, match):
+        return []
 
 
 class OverpicAdjuster(IncludeGraphicsAdjuster):
