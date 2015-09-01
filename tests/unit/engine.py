@@ -166,6 +166,7 @@ class TestEndinputRemover(FLaPTest):
                            "bbb\n\n"
                            "ccc")
 
+
 class InputMergerTests(FLaPTest):
 
     def test_simple_merge(self):
@@ -246,19 +247,42 @@ class IncludeGraphicsProcessorTest(FLaPTest):
         self.verify_merged(r"A \includegraphics[width=3cm]{foo} Z")
         self.verify_image("foo.pdf")
 
+    def test_pats_with_extension(self):
+        self.create_main_file(r"A \includegraphics[width=3cm]{img/foo.pdf} Z")
+        self.create_image("img/foo.pdf")
+
+        self.run_flap()
+
+        self.verify_merged(r"A \includegraphics[width=3cm]{foo} Z")
+        self.verify_image("foo.pdf")
+
     def test_path_to_local_images_are_not_adjusted(self):
-        self.create_main_file(r"""
-        \includegraphics[interpolate,width=11.445cm]{%
-            startingPlace}
-        """)
+        self.create_main_file("\\includegraphics[interpolate,width=11.445cm]{%\n"
+                              "startingPlace}")
         self.create_image("startingPlace.pdf")
 
         self.run_flap()
 
-        self.verify_merged(r"""
-        \includegraphics[interpolate,width=11.445cm]{startingPlace}
-        """)
+        self.verify_merged("\\includegraphics[interpolate,width=11.445cm]{startingPlace}")
         self.verify_image("startingPlace.pdf")
+
+    def test_link_to_graphic_in_a_separate_file(self):
+        self.create_main_file("aaa\n"
+                              "\\input{slides/foo}\n"
+                              "bbb")
+        self.create_tex_file("slides/foo.tex", "ccc\n"
+                                               "\\includegraphics{foo}\n"
+                                               "ddd")
+        self.create_image("foo.pdf")
+
+        self.run_flap()
+
+        self.verify_merged("aaa\n"
+                           "ccc\n"
+                           "\\includegraphics{foo}\n"
+                           "ddd\n"
+                           "bbb")
+        self.verify_image("foo.pdf")
 
     def test_paths_are_recursively_adjusted(self):
         self.create_main_file(r"AA \input{foo} AA")
@@ -356,6 +380,24 @@ class OverpicAdjuster(FLaPTest):
 
 
 class MiscellaneousTests(FLaPTest):
+
+    def test_indentation_is_preserved(self):
+        self.create_main_file("\t\\input{part}")
+        self.create_tex_file("part.tex", "\n"
+                                         "\\begin{center}\n"
+                                         "\t\\includegraphics[width=4cm]{img/foo}\n"
+                                         "  \\includegraphics[width=5cm]{img/foo}\n"
+                                         "\\end{center}")
+        self.create_image("img/foo.pdf")
+
+        self.run_flap()
+
+        self.verify_merged("\t\n"
+                           "\\begin{center}\n"
+                           "\t\\includegraphics[width=4cm]{foo}\n"
+                           "  \\includegraphics[width=5cm]{foo}\n"
+                           "\\end{center}")
+        self.verify_image("foo.pdf")
 
     def test_missing_file_are_reported(self):
         self.create_main_file("blahblah \input{foo} blah")

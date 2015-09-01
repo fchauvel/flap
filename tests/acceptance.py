@@ -52,7 +52,7 @@ class OSFileSystemTest(TestCase):
         self.assertEqual(copy.content(), self.content)
 
 
-class Test(TestCase):
+class AcceptanceTest(TestCase):
 
     def setUp(self):
         self.fileSystem = OSFileSystem()
@@ -67,12 +67,13 @@ class Test(TestCase):
                 """)
         self.fileSystem.createFile(self.source / "result.tex", "\\includegraphics{img/plot}")
         self.fileSystem.createFile(self.source / "explanations.tex", "blablah")
-        self.fileSystem.createFile(self.source / "img" / "plot.pdf", "\\input{result}")
+        self.fileSystem.createFile(self.source / "img" / "plot.pdf", "image")
         self.fileSystem.createFile(self.source / "style.sty", "some style crap")
         
     def test_flatten_latex_project(self):
         root = self.fileSystem.forOS(TEMP / "flap" / "project" / "main.tex")
         output = self.fileSystem.forOS(TEMP / "flap" / "output")
+
         main(["-v", root, output])
         
         file = self.fileSystem.open(self.output / "merged.tex")
