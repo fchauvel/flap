@@ -123,10 +123,9 @@ class ReleaseTest(TestCase):
     def _verify_command_invocations(self, release):
         release.run_command.assert_has_calls([
             call("bdist_egg"),
-            call("register -r pypitest"),
-            call("sdist upload -r pypitest"),
-            call("register -r pypi"),
-            call("sdist upload -r pypi")
+            call("sdist"),
+            call("register"),
+            call("upload"),
         ])
 
     def testMinorRelease(self):

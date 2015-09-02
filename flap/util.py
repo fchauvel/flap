@@ -149,12 +149,11 @@ class Release(Command):
 
     def build(self):
         self.run_command("bdist_egg")
+        self.run_command("sdist")
 
     def publish(self):
-        self.run_command("register -r pypitest")
-        self.run_command("sdist upload -r pypitest")
-        self.run_command("register -r pypi")
-        self.run_command("sdist upload -r pypi")
+        self.run_command("register")
+        self.run_command("upload")
 
     def prepareNextRelease(self, releasedVersion):
         newVersion = releasedVersion.nextMicroRelease()
