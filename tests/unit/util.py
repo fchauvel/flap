@@ -112,20 +112,31 @@ class ReleaseTest(TestCase):
         scm = self.createSCM()
         
         release = self.release(sources, scm, "micro")
-     
-        release.run_command.assert_called_with("bdist_egg") 
+
+        self._verify_command_invocations(release)
+
         scm.tag.assert_called_once_with(Version(1, 3, 3))
         sources.readVersion.assert_called_once_with()
         sources.writeVersion.assert_called_once_with(Version(1, 3, 4))
         scm.commit.assert_called_once_with("Preparing version 1.3.4")
-        
+
+    def _verify_command_invocations(self, release):
+        release.run_command.assert_has_calls([
+            call("bdist_egg"),
+            call("register -r pypitest"),
+            call("sdist upload -r pypitest"),
+            call("register -r pypi"),
+            call("sdist upload -r pypi")
+        ])
+
     def testMinorRelease(self):
         sources = self.createSourceWithVersion("1.3.3")
         scm = self.createSCM()
         
         release = self.release(sources, scm, "minor")
-     
-        release.run_command.assert_called_with("bdist_egg") 
+
+        self._verify_command_invocations(release)
+
         sources.readVersion.assert_called_once_with()
         scm.tag.assert_called_once_with(Version(1, 4, 0))
         sources.writeVersion.assert_has_calls([call(Version(1, 4, 0)), call(Version(1,4,1))])
@@ -138,8 +149,9 @@ class ReleaseTest(TestCase):
         scm = self.createSCM()
         
         release = self.release(sources, scm, "major")
-     
-        release.run_command.assert_called_with("bdist_egg") 
+
+        self._verify_command_invocations(release)
+
         sources.readVersion.assert_called_once_with()
         scm.tag.assert_called_once_with(Version(2, 0, 0))
         sources.writeVersion.assert_has_calls([call(Version(2, 0, 0)), call(Version(2,0,1))])

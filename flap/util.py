@@ -133,6 +133,7 @@ class Release(Command):
             self.scm.commit("Releasing version %s" % releasedVersion)
         self.scm.tag(releasedVersion)
         self.build()
+        self.publish()
         return releasedVersion
 
     def releasedVersion(self, currentVersion):
@@ -148,6 +149,12 @@ class Release(Command):
 
     def build(self):
         self.run_command("bdist_egg")
+
+    def publish(self):
+        self.run_command("register -r pypitest")
+        self.run_command("sdist upload -r pypitest")
+        self.run_command("register -r pypi")
+        self.run_command("sdist upload -r pypi")
 
     def prepareNextRelease(self, releasedVersion):
         newVersion = releasedVersion.nextMicroRelease()
