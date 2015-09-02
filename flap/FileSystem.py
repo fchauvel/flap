@@ -18,7 +18,7 @@
 import os
 import re
 
-from flap.path import Path
+from flap.path import Path, ROOT
 
 class File:
    
@@ -139,9 +139,10 @@ class OSFileSystem(FileSystem):
     
     def __init__(self):
         super().__init__()
+        self.current_directory = Path.fromText(os.getcwd())
         
     def forOS(self, path):
-        return os.path.sep.join(path.parts())
+        return os.path.sep.join([eachPart.fullname() for eachPart in path.parts()])
             
         
     def createFile(self, path, content):
@@ -177,14 +178,13 @@ class OSFileSystem(FileSystem):
         source = self.forOS(file.path())
         target = self.forOS(destination / file.fullname())
         shutil.copyfile(source, target)
-        
+
 
     def load(self, path):
         assert path, "Invalid path (found '%s')" % path
         osPath = self.forOS(path)
         with open(osPath) as file:
             return file.read()
-    
 
 
 class InMemoryFileSystem(FileSystem):
@@ -192,9 +192,13 @@ class InMemoryFileSystem(FileSystem):
     def __init__(self, pathSeparator = os.path.sep):
         super().__init__()
         self.drive = {}
-        self.pathSeparator = pathSeparator 
+        self._current_directory = ROOT
+        self.pathSeparator = pathSeparator
 
-    
+    def move_to_directory(self, path):
+        self._current_directory = path.absolute_from(self._current_directory)
+
+
     def createDirectory(self, path):
         if path in self.drive.keys():
             if self.drive[path].isFile():
@@ -202,22 +206,24 @@ class InMemoryFileSystem(FileSystem):
         self.drive[path] = Directory(self, path)
         if not path.isRoot():
             self.createDirectory(path.container())
-        
-    
+
     def createFile(self, path, content):
-        self.drive[path] = File(self, path, content)
-        self.createDirectory(path.container())
+        absolute = path.absolute_from(self._current_directory)
+        self.drive[absolute] = File(self, absolute, content)
+        self.createDirectory(absolute.container())
         
     def filesIn(self, path):
         return [ self.drive[p] for p in self.drive.keys() if p in path and len(p.parts()) == len(path.parts()) + 1 ]
         
     def open(self, path):
-        if path in self.drive.keys():
-            return self.drive[path]
+        absolute = path.absolute_from(self._current_directory)
+        if absolute in self.drive.keys():
+            return self.drive[absolute]
         else:
-            return MissingFile(path)
-        
+            return MissingFile(absolute)
+
     def copy(self, file, destination):
         path = destination / file.path().fullname()
-        self.drive[path] = File(self, path, file.content())
+        absolute = path.absolute_from(self._current_directory)
+        self.drive[absolute] = File(self, absolute, file.content())
         

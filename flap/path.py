@@ -24,90 +24,123 @@ class Path:
     @staticmethod
     def fromText(text):
         pattern = re.compile("[\\\\/]+")
-        parts = pattern.split(text)
-        path = ROOT
-        for eachPart in parts:
-            if eachPart:
-                path = Path(path, eachPart.strip())
-        return path
+        parts = [Unit(eachPart) for eachPart in pattern.split(text)]
+        return Path(parts)
 
-    FILE_NAME = re.compile("(.+)\\.([^\\.]+)$")
-   
-    def __init__(self, parent, name):
-        self._container = parent
-        self._name = name.replace("\n", "")
-        self._match = Path.FILE_NAME.match(self._name)
-        
-    def isRoot(self):
-        return self._container is None
+    def __init__(self, parts):
+        if not parts:
+            raise ValueError("Invalid path, no part given")
+        self._parts = parts
+
+    def resource(self):
+        return self._parts[-1]
 
     def fullname(self):
-        return self._name
+        return self.resource().fullname()
 
     def basename(self):
-        if not self.hasExtension():
-            raise ValueError("No basename in '%s'" % self.fullname())
-        return self._match.group(1)
-        
+        return self.resource().basename()
+
     def extension(self):
-        if not self.hasExtension():
-            raise ValueError("No extension in '%s'" % self.fullname())
-        return self._match.group(2)
+        return self.resource().extension()
     
     def hasExtension(self):
-        return self._match and not self._match.group(2) is None
+        return self.resource().has_any_extension()
 
     def container(self):
-        return self._container
-    
+        return Path(self._parts[:-1])
+
+    def isRoot(self):
+        return self.resource().is_root()
+
+    def is_absolute(self):
+        return self._parts[0].is_root()
+
+    def absolute_from(self, current_directory):
+        parts = self.parts()
+        if parts[0].is_current_directory():
+            parts = current_directory.parts() + parts[1:]
+        elif parts[0].is_parent_directory():
+            parts = current_directory.container().parts() + parts[1:]
+        elif not parts[0].is_root():
+            parts = current_directory.parts() + parts
+        return Path.fromText("/".join([each.fullname() for each in parts]))
+
     def parts(self):
-        if self.isRoot():
-            return []
-        else:
-            return self.container().parts() + [self.fullname()]
+        return self._parts
     
     def __contains__(self, other): 
         return self != other and self.__str__() in other.__str__()
 
     def __truediv__(self, other):
-        otherPath = Path.fromText(other)
-        result = self
-        for eachPart in otherPath.parts():
-            result = Path(result, eachPart)
-        return result
+        if isinstance(other, str):
+            return Path(self._parts + Path.fromText(other)._parts)
+        elif isinstance(other, Path):
+            return Path(self._parts + other._parts)
 
     def __repr__(self):
-        return "%s/%s" % (self._container.__repr__(), self.fullname())
+        return "/".join([eachPart.fullname() for eachPart in self._parts])
     
     def __str__(self):
         return self.__repr__()
 
     def __eq__(self, other):
-        return self._name == other.fullname() and self._container == other._container
+        return isinstance(other, Path) and self._parts == other._parts
 
     def __hash__(self):
         return self.__str__().__hash__()
-    
-    
-    
-class Root(Path):
-    
-    def __init__(self):
-        super().__init__(None, "root")
 
-    def container(self):
-        raise ValueError("The root directory has no container")
+
+class Unit:
+    """
+    A fragment of path, such as home, dir amd test.txt in /home/dir/test.txt
+    """
+
+    NAMES = re.compile("(.+)\\.([^\\.]+)$")
+    DRIVE = re.compile("\\w\:")
+
+    def __init__(self, name):
+        self._name = name.replace("\n", "").strip()
+        self._match = re.match(Unit.NAMES, self._name)
+
+    def fullname(self):
+        return self._name
+
+    def basename(self):
+        if not self.has_any_extension():
+            raise ValueError("No basename in '%s'" % self.fullname())
+        return self._match.group(1)
+
+    def extension(self):
+        if not self.has_any_extension():
+            raise ValueError("No extension in '%s'" % self.fullname())
+        return self._match.group(2)
+
+    def has_any_extension(self):
+        return self._match and not self._match.group(2) is None
+
+    def has_extension(self, extension):
+        return self.has_any_extension() and self.extension() == extension
+
+    def is_root(self):
+        return re.match(Unit.DRIVE, self._name) or self._name == ""
+
+    def is_current_directory(self):
+        return self._name == "."
+
+    def is_parent_directory(self):
+        return self._name == ".."
 
     def __repr__(self):
-        return "/"
-    
+        return self._name
+
     def __eq__(self, other):
-        return other.isRoot()
+        return isinstance(other, Unit) and other._name == self._name
 
     def __hash__(self):
         return self._name.__hash__()
 
 
-ROOT = Root()
+ROOT = Path([Unit("")])
 
 TEMP = Path.fromText(tempfile.gettempdir())

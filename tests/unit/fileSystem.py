@@ -24,9 +24,10 @@ from flap.path import Path, ROOT
 class InMemoryFileSystemTest(unittest.TestCase):
 
     def setUp(self):
-        self.fileSystem = InMemoryFileSystem() 
+        self.fileSystem = InMemoryFileSystem()
+        self.current_directory = Path.fromText("/temp")
        
-    def testThatCreatedFilesExist(self):
+    def test_file_creation(self):
         path = Path.fromText("dir/test/source.tex")
         self.fileSystem.createFile(path, "blah")
         
@@ -35,14 +36,12 @@ class InMemoryFileSystemTest(unittest.TestCase):
         self.assertTrue(file.exists())
         self.assertTrue(file.contains("blah"))
 
-
     def testThatMissingFileDoNotExist(self):
         path = Path.fromText("file\\that\\do\\not\\exist.txt")
         
         file = self.fileSystem.open(path)
         
         self.assertFalse(file.exists())
-
 
     def testContainingDirectoryIsAvailable(self):
         path = Path.fromText("my\\dir\\test.txt")
@@ -51,8 +50,7 @@ class InMemoryFileSystemTest(unittest.TestCase):
         file = self.fileSystem.open(path) 
         
         self.assertEqual(file.container().path(), ROOT / "my" / "dir")
-        
-        
+
     def testFullNameIsAvailable(self):
         path = Path.fromText("/my/dir/test.txt")
 
@@ -61,8 +59,7 @@ class InMemoryFileSystemTest(unittest.TestCase):
         file = self.fileSystem.open(path)
         
         self.assertEqual(file.fullname(), "test.txt")
-        
-        
+
     def testBasenameIsAvailable(self):
         path = Path.fromText("my/dir/test.txt")
         self.fileSystem.createFile(path, "whatever")
@@ -70,8 +67,7 @@ class InMemoryFileSystemTest(unittest.TestCase):
         file = self.fileSystem.open(path)
         
         self.assertEqual(file.basename(), "test")
-        
-        
+
     def testDirectoryContainsFiles(self):
         self.fileSystem.createFile(Path.fromText("dir/test.txt"), "x")
         self.fileSystem.createFile(Path.fromText("dir/test2.txt"), "y")
@@ -97,8 +93,7 @@ class InMemoryFileSystemTest(unittest.TestCase):
         file = self.fileSystem.open(Path.fromText("dir"))
         
         self.assertEqual(len(file.files_that_matches("test")), 2)
-        
-        
+
     def testCopyingFile(self):
         source = Path.fromText("dir/test.txt")
         self.fileSystem.createFile(source, "whatever")
@@ -117,7 +112,16 @@ class InMemoryFileSystemTest(unittest.TestCase):
         directory = self.fileSystem.open(Path.fromText("dir/foo"))
         results = directory.files_that_matches("bar/test")
         self.assertEqual(len(results), 1)
-        
+
+    def test_finding_files_in_the_current_directory(self):
+        path = Path.fromText("/root/foo/bar/test.txt")
+        self.fileSystem.createFile(path, "blahblah blah")
+
+        self.fileSystem.move_to_directory(Path.fromText("/root/foo"))
+        file = self.fileSystem.open(Path.fromText("bar/test.txt"))
+
+        self.assertEqual(file.content(), "blahblah blah")
+
         
 if __name__ == "__main__":
     unittest.main()

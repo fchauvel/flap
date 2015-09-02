@@ -15,7 +15,7 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from unittest import TestCase, main
+from unittest import TestCase, main, skip
 from mock import MagicMock
 
 from flap.FileSystem import InMemoryFileSystem, File, MissingFile
@@ -95,6 +95,8 @@ class FLaPTest(TestCase):
         self.fileSystem = InMemoryFileSystem()
         self._prepare_listener()
         self.flap = Flap(self.fileSystem, self.listener)
+        self.project_directory = "project"
+        self.main_tex_file = "main.tex"
 
     def _prepare_listener(self):
         self.listener = Listener()
@@ -112,20 +114,20 @@ class FLaPTest(TestCase):
         self.fileSystem.createFile(path, content)
 
     def create_main_file(self, content):
-        self.create_file("project/main.tex", content)
+        self.create_file(self.project_directory + "/" + self.main_tex_file, content)
 
     def create_image(self, location):
-        path = Path.fromText("project/" + location)
+        path = Path.fromText(self.project_directory + "/" + location)
         self.fileSystem.createFile(path, "image")
 
     def create_tex_file(self, location, content):
-        self.create_file("project/" + location, content)
+        self.create_file(self.project_directory + "/" + location, content)
 
     def open(self, location):
-        return self.fileSystem.open(Path.fromText("project/"+ location))
+        return self.fileSystem.open(Path.fromText(self.project_directory + "/" + location))
 
     def run_flap(self):
-        self.flap.flatten(ROOT / "project" / "main.tex", ROOT / "result")
+        self.flap.flatten(ROOT / self.project_directory / self.main_tex_file, ROOT / "result")
 
     def verify_merged(self, content):
         self.verifyFile(ROOT / "result" / "merged.tex", content)
@@ -138,6 +140,9 @@ class FLaPTest(TestCase):
         self.assertEqual(fragment.file().fullname(), fileName)
         self.assertEqual(fragment.line_number(), lineNumber)
         self.assertEqual(fragment.text().strip(), text)
+
+    def move_to_directory(self, directory):
+        self.fileSystem.move_to_directory(Path.fromText(directory))
 
 
 class TestEndinputRemover(FLaPTest):
@@ -247,11 +252,21 @@ class IncludeGraphicsProcessorTest(FLaPTest):
         self.verify_merged(r"A \includegraphics[width=3cm]{foo} Z")
         self.verify_image("foo.pdf")
 
-    def test_pats_with_extension(self):
+    def test_paths_with_extension(self):
         self.create_main_file(r"A \includegraphics[width=3cm]{img/foo.pdf} Z")
         self.create_image("img/foo.pdf")
 
         self.run_flap()
+
+        self.verify_merged(r"A \includegraphics[width=3cm]{foo} Z")
+        self.verify_image("foo.pdf")
+
+    def test_local_paths(self):
+        self.create_main_file("A \\includegraphics[width=3cm]{foo} Z")
+        self.create_image("foo.pdf")
+
+        self.move_to_directory(self.project_directory)
+        self.flap.flatten(Path.fromText("main.tex"), ROOT / "result")
 
         self.verify_merged(r"A \includegraphics[width=3cm]{foo} Z")
         self.verify_image("foo.pdf")

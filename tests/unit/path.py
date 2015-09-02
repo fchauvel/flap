@@ -22,22 +22,15 @@ from flap.path import Path, ROOT, TEMP
 
 
 class PathTests(unittest.TestCase):
-    
 
-    def testRoot(self):
-        path = ROOT
-        self.assertTrue(path.isRoot())
-        
     def testTemp(self):
         path = TEMP
         self.assertTrue(path.fullname() in gettempdir())
 
-
-    def testPathToFile(self):
+    def test_path_to_file(self):
         path = (ROOT / "test" / "source.tex")
         
-        self.assertFalse(path.isRoot())
-        self.assertEqual(path.container(), (ROOT / "test"))
+        self.assertEqual(path.container(), ROOT / "test")
         self.assertEqual(path.fullname(), "source.tex")
 
     def testAppendingAPath(self):
@@ -50,20 +43,45 @@ class PathTests(unittest.TestCase):
         path = ROOT / "source.tex"
         
         self.assertTrue(path.hasExtension())
-    
-        
-    def testBasename(self):
+
+    def test_basename(self):
         path = ROOT / "source.tex"
         
         self.assertEqual(path.basename(), "source")
-  
-        
-    def testContainement(self):
+
+    def test_as_absolute_with_current(self):
+        path = Path.fromText("./test/foo.txt")
+
+        absolute_path = path.absolute_from(Path.fromText("/home/franck"))
+
+        self.assertEqual(absolute_path, Path.fromText("/home/franck/test/foo.txt"))
+
+    def test_as_absolute_with_implicit_current(self):
+        path = Path.fromText("test/foo.txt")
+
+        absolute_path = path.absolute_from(Path.fromText("/home/franck"))
+
+        self.assertEqual(absolute_path, Path.fromText("/home/franck/test/foo.txt"))
+
+    def test_as_absolute_with_parent(self):
+        path = Path.fromText("../test/foo.txt")
+
+        absolute_path = path.absolute_from(Path.fromText("/home/franck"))
+
+        self.assertEqual(absolute_path, Path.fromText("/home/test/foo.txt"))
+
+    def test_as_absolute_with_absolute_path(self):
+        path = Path.fromText("/home/test/foo.txt")
+
+        absolute_path = path.absolute_from(Path.fromText("/home/franck"))
+
+        self.assertEqual(absolute_path, Path.fromText("/home/test/foo.txt"))
+
+    def testContainment(self):
         path1 = ROOT / "dir" / "file.txt"
         path2 = ROOT / "dir"
 
         self.assertTrue(path1 in path2)
-
         
     def testContainmentUnderEquality(self):
         path1 = ROOT / "dir" / "file.txt"
@@ -72,27 +90,38 @@ class PathTests(unittest.TestCase):
         self.assertFalse(path1 in path2)
         self.assertFalse(path2 in path1) 
 
-
     def testPathBuilding(self):
         path = Path.fromText("\\Users\\franckc\\file.txt")
         
         self.assertEqual(path, ROOT / "Users" / "franckc" / "file.txt")
 
-
     def testParts(self):
         path = Path.fromText("C:\\Users\\franckc\\pub\\JOCC\\main.tex")
-        
-        self.assertEqual(path.parts(), ["C:", "Users", "franckc", "pub", "JOCC", "main.tex"])
+
+        parts = [each.fullname() for each in path.parts()]
+        self.assertEqual(parts, ["C:", "Users", "franckc", "pub", "JOCC", "main.tex"])
 
     def testPathWithNewlines(self):
         path = Path.fromText("/Root/Foo\nBar\nBaz/home")
         
-        self.assertEquals(path.parts(), ["Root", "FooBarBaz", "home"])
+        parts = [each.fullname() for each in path.parts()]
+        self.assertEqual(parts, ["", "Root", "FooBarBaz", "home"])
 
     def test_remove_trailing_spaces(self):
         path = Path.fromText("/text/ blabla /test.txt")
-        self.assertEqual(path, ROOT/"text"/"blabla"/"test.txt")
+        self.assertEqual(path, Path.fromText("/text/blabla/test.txt"))
 
+    def test_is_absolute_on_unix_paths(self):
+        path = Path.fromText("/home/franck/test.tex")
+        self.assertTrue(path.is_absolute())
+
+    def test_is_absolute_on_windows_paths(self):
+        path = Path.fromText("C:\\Users\\franckc\\file.txt")
+        self.assertTrue(path.is_absolute())
+
+    def test_is_absolute_with_relative(self):
+        path = Path.fromText("franck/test.tex")
+        self.assertFalse(path.is_absolute())
 
 if __name__ == "__main__":
     unittest.main()
