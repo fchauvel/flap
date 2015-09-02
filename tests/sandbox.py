@@ -23,7 +23,7 @@ from flap.ui import Controller, UI
 from flap.FileSystem import OSFileSystem
 
   
-@skip("Sandbox")        
+@skip("Sandbox")
 class SandboxTest(TestCase):        
 
     def testCallingGit(self):

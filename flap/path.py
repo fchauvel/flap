@@ -48,6 +48,11 @@ class Path:
         return self.resource().has_any_extension()
 
     def container(self):
+        if len(self._parts) == 1:
+            if self._parts[0].is_root():
+                raise ValueError("The root directory has no parent")
+            else:
+                return Path([Unit(".")])
         return Path(self._parts[:-1])
 
     def isRoot(self):

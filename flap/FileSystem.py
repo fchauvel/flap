@@ -134,6 +134,9 @@ class FileSystem:
     def load(self, path):
         pass
 
+    def move_to_directory(self, path):
+        pass
+
 
 class OSFileSystem(FileSystem):
     
@@ -143,7 +146,9 @@ class OSFileSystem(FileSystem):
         
     def forOS(self, path):
         return os.path.sep.join([eachPart.fullname() for eachPart in path.parts()])
-            
+
+    def move_to_directory(self, path):
+        os.chdir(self.forOS(path))
         
     def createFile(self, path, content):
         osDirPath = self.forOS(path.container())
@@ -178,7 +183,6 @@ class OSFileSystem(FileSystem):
         source = self.forOS(file.path())
         target = self.forOS(destination / file.fullname())
         shutil.copyfile(source, target)
-
 
     def load(self, path):
         assert path, "Invalid path (found '%s')" % path
@@ -226,4 +230,4 @@ class InMemoryFileSystem(FileSystem):
         path = destination / file.path().fullname()
         absolute = path.absolute_from(self._current_directory)
         self.drive[absolute] = File(self, absolute, file.content())
-        
+

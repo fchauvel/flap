@@ -15,7 +15,7 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from unittest import TestCase, main
+from unittest import TestCase
 
 from flap.ui import main
 from flap.FileSystem import OSFileSystem
@@ -57,18 +57,20 @@ class AcceptanceTest(TestCase):
     def setUp(self):
         self.fileSystem = OSFileSystem()
         self.workingDir = TEMP / "flap"
+        self.fileSystem.deleteDirectory(self.workingDir)
         self.source = self.workingDir / "project"
         self.output = self.workingDir / "output"
-        self.fileSystem.deleteDirectory(self.workingDir)
-        self.fileSystem.createFile(self.source / "main.tex", 
-                """
-                \\input{result}
-                \\include{explanations}
-                """)
+        self.fileSystem.createFile(self.source / "main.tex", "\n"
+                                                             "\\input{result}\n"
+                                                             "\\include{explanations}\n")
+
         self.fileSystem.createFile(self.source / "result.tex", "\\includegraphics{img/plot}")
         self.fileSystem.createFile(self.source / "explanations.tex", "blablah")
         self.fileSystem.createFile(self.source / "img" / "plot.pdf", "image")
         self.fileSystem.createFile(self.source / "style.sty", "some style crap")
+
+    def tearDown(self):
+        self.fileSystem.move_to_directory(TEMP)
         
     def test_flatten_latex_project(self):
         root = self.fileSystem.forOS(TEMP / "flap" / "project" / "main.tex")
@@ -77,15 +79,31 @@ class AcceptanceTest(TestCase):
         main(["-v", root, output])
         
         file = self.fileSystem.open(self.output / "merged.tex")
-        self.assertEqual(file.content(), 
-                """
-                \\includegraphics{plot}
-                blablah\\clearpage 
-                """)
+        self.assertEqual(file.content(),"\n"
+                                        "\\includegraphics{plot}\n"
+                                        "blablah\\clearpage \n")
+
         
         styFile = self.fileSystem.open(self.output / "style.sty")
         self.assertEqual(styFile.content(), "some style crap")
 
+    def test_flatten_latex_project_locally(self):
+        root = self.fileSystem.forOS(TEMP / "flap" / "project" / "main.tex")
+        output = self.fileSystem.forOS(TEMP / "flap" / "output")
+
+        self.fileSystem.move_to_directory(TEMP / "flap" / "project")
+        main(["-v", "main.tex", output])
+
+        file = self.fileSystem.open(self.output / "merged.tex")
+        self.assertEqual(file.content(),"\n"
+                                        "\\includegraphics{plot}\n"
+                                        "blablah\\clearpage \n")
+
+        styFile = self.fileSystem.open(self.output / "style.sty")
+        self.assertEqual(styFile.content(), "some style crap")
+
+    def test_bidon(self):
+        self.assertTrue(True)
 
 if __name__ == "__main__":
     main() 
