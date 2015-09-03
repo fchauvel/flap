@@ -15,8 +15,11 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from unittest import TestCase
+from unittest import TestCase, main as testmain
 
+from mock import patch
+from io import StringIO
+from re import search
 from flap.ui import main
 from flap.FileSystem import OSFileSystem
 from flap.path import TEMP
@@ -83,7 +86,6 @@ class AcceptanceTest(TestCase):
                                         "\\includegraphics{plot}\n"
                                         "blablah\\clearpage \n")
 
-        
         styFile = self.fileSystem.open(self.output / "style.sty")
         self.assertEqual(styFile.content(), "some style crap")
 
@@ -102,8 +104,18 @@ class AcceptanceTest(TestCase):
         styFile = self.fileSystem.open(self.output / "style.sty")
         self.assertEqual(styFile.content(), "some style crap")
 
-    def test_bidon(self):
-        self.assertTrue(True)
+    def test_usage_is_shown(self):
+        mock = StringIO()
+        def patched_show(message):
+            mock.write(message)
+        with patch("flap.ui.UI.show", side_effect=patched_show):
+            main([])
+        output = mock.getvalue()
+        self.assertNotEqual("", output, "No output detected")
+        self.assertTrue(search(r"Usage\:", output), output)
+        self.assertTrue(search(r"python -m flap <path/to/tex_file> <output/directory>", output), output)
+
+
 
 if __name__ == "__main__":
-    main() 
+    testmain()

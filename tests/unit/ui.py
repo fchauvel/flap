@@ -39,7 +39,6 @@ class UiTest(TestCase):
         ui.onStartup()
         self.verifyOutputContains(mock, flap.__version__)
 
-
     @patch('sys.stdout', new_callable=StringIO)
     def testUiReportsInputDirectives(self, mock):
         ui = self.makeUI(mock)     

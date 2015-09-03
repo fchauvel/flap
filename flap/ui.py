@@ -29,7 +29,7 @@ class UI(Listener):
     """
     
     def __init__(self, output=sys.stdout):
-        self.output = output
+        self._output = output
         self.showDetails = False
     
     def enableDetails(self):
@@ -62,8 +62,11 @@ class UI(Listener):
             self.show(text)
 
     def show(self, message):
-        print(message, file=self.output)
+        print(message, file=self._output)
         
+    def show_usage(self):
+        self.show("Usage: python -m flap <path/to/tex_file> <output/directory>")
+
 
 class Controller:
     """
@@ -76,12 +79,15 @@ class Controller:
         self.flap = Flap(fileSystem, ui)
         
     def run(self, arguments):
-        (rootFile, output, isVerbose) = self.parse(arguments)
-        if isVerbose:
-            self.ui.enableDetails()
-        self.ui.onStartup()
-        self.flap.flatten(rootFile, output)
-        
+        if len(arguments) < 2 or len(arguments) > 3:
+            self.ui.show_usage()
+        else:
+            (rootFile, output, isVerbose) = self.parse(arguments)
+            if isVerbose:
+                self.ui.enableDetails()
+            self.ui.onStartup()
+            self.flap.flatten(rootFile, output)
+
     def parse(self, arguments):
         rootFile = "main.tex"
         output = "/temp/"

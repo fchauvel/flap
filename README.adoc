@@ -73,7 +73,6 @@ Should you need any further information, feel free to email mailto:franck.chauve
 Here is a list of features, which are not yet supported:
 
 . Support for backward relative links in directives, for instance `\input{../img/foo}`.
-. Add a usage message when parameters are not given
 . Support for star-form of directives, such as `\includegraphics*{foo}`
 . Support for `\graphicspath` directive
 . Support use of `\includeonly{f1, f2}`
