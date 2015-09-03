@@ -15,16 +15,21 @@ in a flat directory.
 *Why?* Some publishers require such a flat structure when you submit the sources of your 
 manuscripts, and I got tired to flatten the sources by hand.
 
+*Another one?* There already a couple of tools that merge latex project such as http://www.ctan.org/pkg/latexpand[latexpand],
+http://www.ctan.org/pkg/flatex[flatex] or http://www.ctan.org/pkg/flatten[flatten]. As far as I know, they only merge
+TeX files, without moving graphics around. I learned recently about
+http://www.ctan.org/pkg/texdirflatten[texdirflatten], which seems to be an alternative, but I haven't tried it.
+
 == Installation
-The easiest way to install FLaP is to use pip using `pip install flap`.
+FLaP *requires* Python 3 (3.2, 3.3 and 3.4 are tested). The easiest way to install FLaP is to use pip using `pip install flap`.
 
 Alternatively, you may download the sources distribution and use `python setup.py install`
 
 == Usage Example
 
 Consider for instance one of my typical LaTeX project, which I organize as follows. 
-I placed the LaTeX sources at the root level, but images are stored in sub 
-directory named `img`. In addition, in the LaTeX sources, I wrote each section in
+I placed the LaTeX sources at the root level, but images are stored in a separate
+directory named `img`. In addition, I wrote each section in
 a separate TeX file, such as `introduction.tex`, `abstract.tex` and so on.
 
 I want to merge all the TeX sources into a single fat file, where all graphics
@@ -67,7 +72,6 @@ Should you need any further information, feel free to email mailto:franck.chauve
 
 Here is a list of features, which are not yet supported:
 
-. Automate the publication of pypi
 . Support for backward relative links in directives, for instance `\input{../img/foo}`.
 . Add a usage message when parameters are not given
 . Support for star-form of directives, such as `\includegraphics*{foo}`
