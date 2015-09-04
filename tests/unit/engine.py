@@ -107,7 +107,7 @@ class FLaPTest(TestCase):
     def verifyFile(self, path, content):
         result = self.fileSystem.open(path)
         self.assertTrue(result.exists(), "Missing file '%s'" % path)
-        self.assertEqual(result.content(), content, "Wrong merged")
+        self.assertEqual(content, result.content(),  "Wrong merged")
 
     def create_file(self, location, content):
         path = Path.fromText(location)
@@ -237,6 +237,27 @@ class IncludeMergeTest(FLaPTest):
 
         self.verify_merged("blahblah bar\clearpage  blah")
 
+    def test_include_only_effect(self):
+        self.create_main_file("bla blab"
+                              "\includeonly{foo, baz}"
+                              "bla bla"
+                              "\include{foo}"
+                              "\include{bar}"
+                              "bla bla"
+                              "\include{baz}"
+                              "bla")
+        self.create_tex_file("foo.tex", "foo")
+        self.create_tex_file("bar.tex", "bar")
+        self.create_tex_file("baz.tex", "baz")
+
+        self.run_flap()
+
+        self.verify_merged("bla blab"
+                           "bla bla"
+                           "foo\\clearpage "
+                           "bla bla"
+                           "baz\\clearpage "
+                           "bla")
 
 class IncludeGraphicsProcessorTest(FLaPTest):
     """

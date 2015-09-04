@@ -16,6 +16,7 @@
 #
 
 import re
+import itertools
 from flap.path import Path
 
 
@@ -115,7 +116,11 @@ class Processor:
 
     @staticmethod
     def flap_pipeline(proxy):
-        processors = [IncludeFlattener, IncludeGraphicsAdjuster, IncludeSVGFixer, OverpicAdjuster]
+        processors = [IncludeFlattener,
+                      IncludeOnlyProcessor,
+                      IncludeGraphicsAdjuster,
+                      IncludeSVGFixer,
+                      OverpicAdjuster]
         pipeline = Processor.input_merger(proxy.file(), proxy)
         for eachProcessor in processors:
             pipeline = eachProcessor(pipeline, proxy)
@@ -183,7 +188,6 @@ class RegexReplacer(ProcessorDecorator):
         for eachMatch in self.all_matches(fragment):
             yield fragment[current:eachMatch.start()] 
             for f in self.replacements_for(fragment, eachMatch): yield f
-            yield self.suffix_fragment(fragment, eachMatch)
             current = eachMatch.end()
         yield fragment[current:]
 
@@ -192,12 +196,6 @@ class RegexReplacer(ProcessorDecorator):
         :return: The list of fragments that replace the given match
         """
         pass
-
-    def suffix_fragment(self, fragment, match):
-        """
-        :return: An additional fragment that shall be appended just after the replacement
-        """
-        return Fragment(fragment.file(), fragment.line_number(), "")
 
     def all_matches(self, fragment):
         """
@@ -239,6 +237,21 @@ class InputFlattener(RegexReplacer):
         return Processor.input_merger(includedFile, self.flap).fragments()
 
 
+class IncludeOnlyProcessor(RegexReplacer):
+    """
+    Detects 'includeonly' directives and notify the engine to later discard it.
+    """
+
+    def prepare_pattern(self):
+        pattern = r"\\includeonly\{([^\}]+)\}"
+        return re.compile(pattern)
+
+    def replacements_for(self, fragment, match):
+        included_files = re.split(",", match.group(1))
+        self.flap.on_include_only(included_files)
+        return []
+
+
 class IncludeFlattener(InputFlattener):
     """
     Traverse the fragments available and search for next `\include{file.tex}`. It
@@ -249,9 +262,13 @@ class IncludeFlattener(InputFlattener):
 
     def prepare_pattern(self):
         return re.compile(r"\\include{([^}]+)}")
-    
-    def suffix_fragment(self, fragment, match):
-        return Fragment(fragment.file(), fragment.line_number(), "\\clearpage ")
+
+    def replacements_for(self, fragment, match):
+        if self.flap.is_ignored(match.group(1)):
+            return []
+        else:
+            return itertools.chain(super().replacements_for(fragment, match),
+                                   [Fragment(fragment.file(), fragment.line_number(), "\\clearpage ")])
 
 
 class IncludeGraphicsAdjuster(RegexReplacer):
@@ -347,6 +364,7 @@ class Flap:
     def __init__(self, fileSystem, listener=Listener()):
         self._fileSystem = fileSystem
         self._listener = listener
+        self._included_files = []
                
     def flatten(self, root, output):
         self._output = output
@@ -378,6 +396,9 @@ class Flap:
     def is_resource(self, eachFile):
         return eachFile.hasExtension() and eachFile.extension() in Flap.RESOURCE_FILES
 
+    def is_ignored(self, file):
+        return self._included_files and file not in self._included_files
+
     RESOURCE_FILES = ["cls", "sty", "bib", "bst"]       
         
     def on_input(self, fragment):
@@ -393,3 +414,6 @@ class Flap:
     def on_include_SVG(self, fragment, graphicFile):
         self._fileSystem.copy(graphicFile, self._output)
         self._listener.on_include_SVG(fragment)
+
+    def on_include_only(self, included_files):
+        self._included_files = [eachFile.strip() for eachFile in included_files]
