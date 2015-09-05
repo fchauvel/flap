@@ -51,4 +51,3 @@ Here is a list of features, which are not yet supported:
 . Support for `\graphicspath` directive
 . Adjust copyright and credits in flap.__init__.py
 . Improve error reporting, especially when file are not found
-. Upload documentation on http://pythonhosted.org/
