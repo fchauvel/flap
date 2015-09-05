@@ -27,38 +27,13 @@ Alternatively, you may download the sources distribution and use `python setup.p
 
 == Usage Example
 
-Consider for instance one of my typical LaTeX project, which I organize as follows. 
-I placed the LaTeX sources at the root level, but images are stored in a separate
-directory named `img`. In addition, I wrote each section in
-a separate TeX file, such as `introduction.tex`, `abstract.tex` and so on.
+Use FLaP in the command line:
 
-I want to merge all the TeX sources into a single fat file, where all graphics
-are now in the same directory. 
-
-FLaP does just that, as shown below:
 ----
-$> python -m flap -v C:\\users\\franckc\\pub\\main.tex C:\\temp\\result
-FLaP v0.2.3
-+ in 'main.tex' line 39: '\input{configuration}'
-+ in 'main.tex' line 116: '\input{abstract}'
-+ in 'main.tex' line 158: '\input{introduction}'
-+ in 'main.tex' line 160: '\input{motivations}'
-+ in 'motivations.tex' line 20: '\includegraphics[width=8cm]{img/sensapp}'
-+ in 'motivations.tex' line 79: '\includegraphics[width=7cm]{img/topologies}'
-...
-+ in 'random.tex' line 31: '\includegraphics[width=8cm]{img/graphs}'
-+ in 'main.tex' line 222: '\input{convergence}'
-Flatten complete.
+$> python3 -m flap project/main.tex output/directory
 ----
 
-Note the usage of the verbose mode (`-v`). By default, the details are not
-displayed.
-
-Prior to version 0.2.3, the executable package was `flap.ui`, with a usage like:
-----
-$> python -m flap.ui -v C:\\users\\franckc\\pub\\main.tex C:\\temp\\result
-----
-
+See also the link:https://pythonhosted.org/FLaP/[online documentation].
 
 == Contact
 
@@ -66,7 +41,6 @@ If you get the change to give it a try, please report any bugs, issues or featur
 the link:https://github.com/fchauvel/flap/issues[issue tracker].
 Should you need any further information, feel free to email mailto:franck.chauvel@gmail.com[me]
 
-== Development Info
 
 === TODO
 
@@ -78,50 +52,3 @@ Here is a list of features, which are not yet supported:
 . Adjust copyright and credits in flap.__init__.py
 . Improve error reporting, especially when file are not found
 . Upload documentation on http://pythonhosted.org/
-
-=== Setting up for Development
-
-FLaP does not requires any specific packages. Yet, for checking code coverage, I
-suggest you install the coverage module (ideally in a virtual environment):
-
-----
-$> virtualenv venv
-$> .\venv\Scripts\activate.bat
-$> python setup.py develop
-----
-You can then check the test coverage using the following commands:
-----
-$> pip install coverage
-$> coverage run setup.py test
-$> coverage report --omit="*test*,*setup*"
-----
-
-=== How to Release?
-Below is the reminder of the steps to follows, and the associated shell commands:
-
-. Ensure that all tests pass just fine with `python setup.py test`. If you have several installation of python on your
-machine, use `tox`, to run the test using Py32, Py33 and Py34.
-
-. Commit and push all changes necessary to get the tests to pass.
-
-. Release using `python setup.py release --type=micro`. The setup script handles 
-both the version number and the tagging process. The 'type' option specifies 
-whether we are doing a major, minor, or a micro release. 
-
-. Push the changes using `git push --follow-tags`. Pushing manually permits 
-to easily back-off if the release process fails.
-
-. Create a new release, specifying the tag and upload the appropriate binaries
-from `./dist` on the https://github.com/fchauvel/flap/releases[GitHub release page]
-
-=== How to Publish on Pypi?
-You must have an account on both the Pypi server and the test server, and the associated credentials in the `~\.pypirc`.
-More details are available in http://peterdowns.com/posts/first-time-with-pypi.html[this tutorial].
-
-. Try to register the project on pipy `python setup.py register -r pypitest`. Remove any error
-reported until the registration is a full success.
-
-. Try to upload the binaries `python setup.py sdist upload -r pypitest`
-
-. Once it works on the test server, you can do the same on Pypi Live, using `python setup.py register -r pypi`
-for registration and `python setup.py sdist upload -r pypi`

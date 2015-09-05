@@ -1,4 +1,5 @@
 site_name: FLaP
+docs_dir: sources
 repo_url: https://github.com/fchauvel/flap
 pages:
  - "Home": home.md

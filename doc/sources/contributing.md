@@ -25,6 +25,12 @@ FLaP comes along with a test suite that helps find bugs, regressions especially.
 
     $> python setup.py test
 
+Alternatively, you can use [Tox](https://testrun.org/tox/latest/) to test over several Python platform. The current 
+configuration (see file `tox.ini`) will run the test suite using Python 3.2, 3.3 and 3.4.
+
+    $> tox          # Test all platforms
+    $> tox -e py32  # To test a specific platform
+
 ## Releasing 
 
 Below is the reminder of the steps to follows, and the associated shell commands:
