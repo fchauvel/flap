@@ -1,5 +1,6 @@
 site_name: FLaP
 repo_url: https://github.com/fchauvel/flap
+docs_dir: docs
 pages:
  - "Home": index.md
  - "User Guide":

@@ -1,6 +1,13 @@
 # Contributing
 
-## Setting up a Development Environment
+## Trying FLaP
+
+The simplest way to contribute is to try FLaP and to report any bugs, issues, feature request, typo or missing documentation using 
+the [issue tracker](https://github.com/fchauvel/flap/issues). This **really** helps a lot.
+
+## Extending FLaP
+
+### Setting up a Development Environment
 
 FLaP does not requires any specific packages. Yet, for checking code coverage, I
 suggest you install the coverage module (ideally in a virtual environment):
@@ -19,7 +26,7 @@ The easieast way to work, is also to install FLaP in development mode, using:
 
     $> python setup.py develop
 
-## Testing
+### Testing
 
 FLaP comes along with a test suite that helps find bugs, regressions especially. To run the test suite, type:
 
@@ -31,7 +38,7 @@ configuration (see file `tox.ini`) will run the test suite using Python 3.2, 3.3
     $> tox          # Test all platforms
     $> tox -e py32  # To test a specific platform
 
-## Releasing 
+### Releasing 
 
 Below is the reminder of the steps to follows, and the associated shell commands:
 
@@ -61,7 +68,7 @@ Below is the reminder of the steps to follows, and the associated shell commands
 1. Create a new release, specifying the tag and upload the appropriate binaries
    from `./dist` on the [GitHub release page](https://github.com/fchauvel/flap/releases)
 
-## Publishing the Documentation
+### Publishing the Documentation
 
 To update the documentation &mdash; this very website &mdash; follows the following commands. You may want to check out
 the documentation of [MkDocs](http://www.mkdocs.org/).
