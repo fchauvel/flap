@@ -48,6 +48,5 @@ Here is a list of features, which are not yet supported:
 
 . Support for backward relative links in directives, for instance `\input{../img/foo}`.
 . Support for star-form of directives, such as `\includegraphics*{foo}`
-. Support for `\graphicspath` directive
 . Adjust copyright and credits in flap.__init__.py
 . Improve error reporting, especially when file are not found

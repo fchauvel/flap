@@ -259,6 +259,25 @@ class IncludeMergeTest(FLaPTest):
                            "baz\\clearpage "
                            "bla")
 
+
+class GraphicPathTest(FLaPTest):
+    """
+    Specification of the graphic path processing
+    """
+
+    def test_graphic_are_adjusted_accordingly(self):
+        self.create_main_file("\\graphicspath{img/}"
+                              "blabla"
+                              "\\includegraphics[witdh=5cm]{plot}"
+                              "blabla")
+        self.create_image("img/plot.pdf")
+
+        self.run_flap()
+
+        self.verify_merged("blabla"
+                           "\\includegraphics[witdh=5cm]{plot}"
+                           "blabla")
+
 class IncludeGraphicsProcessorTest(FLaPTest):
     """
     Tests the processing of \includegraphics directive

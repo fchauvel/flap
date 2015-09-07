@@ -118,6 +118,7 @@ class Processor:
     def flap_pipeline(proxy):
         processors = [IncludeFlattener,
                       IncludeOnlyProcessor,
+                      GraphicsPathProcessor,
                       IncludeGraphicsAdjuster,
                       IncludeSVGFixer,
                       OverpicAdjuster]
@@ -271,6 +272,25 @@ class IncludeFlattener(InputFlattener):
                                    [Fragment(fragment.file(), fragment.line_number(), "\\clearpage ")])
 
 
+class GraphicsPathProcessor(RegexReplacer):
+    """
+    Detect the \graphicspath directive and adjust the following \includegraphics
+    inclusions accordingly.
+    """
+    def __init__(self, delegate, flap):
+        super().__init__(delegate, flap)
+
+    def prepare_pattern(self):
+        return re.compile(r"\\graphicspath{([^}]+)}")
+
+    def replacements_for(self, fragment, match):
+        """
+        A \graphicspath directive is not replaced by anything.
+        """
+        self.flap.set_graphics_directory(match.group(1))
+        return []
+
+
 class IncludeGraphicsAdjuster(RegexReplacer):
     """
     Detects "\includegraphics". When one is detected, it produces a new fragment
@@ -292,7 +312,8 @@ class IncludeGraphicsAdjuster(RegexReplacer):
         return [ Fragment(fragment.file(), fragment.line_number(), graphicInclusion) ]
 
     def select_image_file(self, fragment, match, path):
-        graphics = self.flap.file().container().files_that_matches(path)
+        directory = self.flap.get_graphics_directory()
+        graphics = directory.files_that_matches(path)
         if not graphics:
             raise ValueError("Unable to find any file for graphic '%s' in '%s'" % (match.group(1), fragment.file().container().path()))
         graphic = None
@@ -365,6 +386,7 @@ class Flap:
         self._fileSystem = fileSystem
         self._listener = listener
         self._included_files = []
+        self._graphics_directory = None
                
     def flatten(self, root, output):
         self._output = output
@@ -417,3 +439,13 @@ class Flap:
 
     def on_include_only(self, included_files):
         self._included_files = [eachFile.strip() for eachFile in included_files]
+
+    def set_graphics_directory(self, texPath):
+        path = self.file().container().path() / texPath
+        self._graphics_directory = self._fileSystem.open(path)
+
+    def get_graphics_directory(self):
+        if self._graphics_directory:
+            return self._graphics_directory
+        else:
+            return self.file().container()

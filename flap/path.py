@@ -25,6 +25,8 @@ class Path:
     def fromText(text):
         pattern = re.compile("[\\\\/]+")
         parts = [Unit(eachPart) for eachPart in pattern.split(text)]
+        if parts[-1].is_root(): # Remove the last one, if it is "" (e.g., in project/img/)
+            parts = parts[:-1]
         return Path(parts)
 
     def __init__(self, parts):

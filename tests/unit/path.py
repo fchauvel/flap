@@ -95,17 +95,24 @@ class PathTests(unittest.TestCase):
         
         self.assertEqual(path, ROOT / "Users" / "franckc" / "file.txt")
 
+    def test_parsing_directory(self):
+        path = Path.fromText("project/img/")
+
+        parts = [each.fullname() for each in path.parts()]
+        self.assertEqual(parts, ["project", "img"], "Wrong parts!")
+
     def testParts(self):
         path = Path.fromText("C:\\Users\\franckc\\pub\\JOCC\\main.tex")
 
+        self.verify_parts(path, ["C:", "Users", "franckc", "pub", "JOCC", "main.tex"])
+
+    def verify_parts(self, path, expectedParts, ):
         parts = [each.fullname() for each in path.parts()]
-        self.assertEqual(parts, ["C:", "Users", "franckc", "pub", "JOCC", "main.tex"])
+        self.assertEqual(parts, expectedParts)
 
     def testPathWithNewlines(self):
         path = Path.fromText("/Root/Foo\nBar\nBaz/home")
-        
-        parts = [each.fullname() for each in path.parts()]
-        self.assertEqual(parts, ["", "Root", "FooBarBaz", "home"])
+        self.verify_parts(path, ["", "Root", "FooBarBaz", "home"])
 
     def test_remove_trailing_spaces(self):
         path = Path.fromText("/text/ blabla /test.txt")

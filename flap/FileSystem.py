@@ -20,6 +20,7 @@ import re
 
 from flap.path import Path, ROOT
 
+
 class File:
    
     def __init__(self, fileSystem, path, content):
@@ -173,8 +174,7 @@ class OSFileSystem(FileSystem):
 
     def filesIn(self, path):
         return [ self.open(path / each) for each in os.listdir(self.forOS(path)) ]         
-    
-    
+
     def copy(self, file, destination):
         import shutil
         targetDir = self.forOS(destination)
@@ -201,7 +201,6 @@ class InMemoryFileSystem(FileSystem):
 
     def move_to_directory(self, path):
         self._current_directory = path.absolute_from(self._current_directory)
-
 
     def createDirectory(self, path):
         if path in self.drive.keys():
