@@ -4,7 +4,8 @@ docs_dir: docs
 pages:
  - "Home": index.md
  - "User Guide":
-   - installation.md
-   - example.md
+   - "Installation": installation.md
+   - "Usage Example": example.md
+   - "Supported Commands": features.md
  - Contributing: contributing.md
 theme: flatly

@@ -15,7 +15,7 @@ in a flat directory.
    manuscripts, and I got tired to flatten the sources by hand.
 
  * __Yet Another One?__ 
-   There already a couple of tools that merge latex projects such as [latexpand](http://www.ctan.org/pkg/latexpand),
+   There is already a couple of tools that merge latex projects such as [latexpand](http://www.ctan.org/pkg/latexpand),
    [flatex](http://www.ctan.org/pkg/flatex) or [flatten](http://www.ctan.org/pkg/flatten). As far as I know, they only merge
    TeX files, without moving graphics around. I learned recently about
    [texdirflatten](http://www.ctan.org/pkg/texdirflatten), which seems to be an alternative, but I haven't tried it.
