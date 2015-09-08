@@ -20,6 +20,7 @@ from unittest import TestCase, main as testmain
 from mock import patch
 from io import StringIO
 from re import search
+from os import symlink
 from flap.ui import main
 from flap.FileSystem import OSFileSystem
 from flap.path import TEMP
@@ -71,6 +72,8 @@ class AcceptanceTest(TestCase):
         self.fileSystem.createFile(self.source / "explanations.tex", "blablah")
         self.fileSystem.createFile(self.source / "img" / "plot.pdf", "image")
         self.fileSystem.createFile(self.source / "style.sty", "some style crap")
+        self.fileSystem.createFile(self.workingDir / "test.cls", "a LaTeX class")
+        symlink(self.fileSystem.forOS(self.workingDir / "test.cls"), self.fileSystem.forOS(self.source / "test.cls"))
 
     def tearDown(self):
         self.fileSystem.move_to_directory(TEMP)
@@ -79,6 +82,7 @@ class AcceptanceTest(TestCase):
         root = self.fileSystem.forOS(TEMP / "flap" / "project" / "main.tex")
         output = self.fileSystem.forOS(TEMP / "flap" / "output")
 
+        print(root)
         main(["-v", root, output])
         
         file = self.fileSystem.open(self.output / "merged.tex")
