@@ -42,21 +42,25 @@ class UI(Listener):
         self.show("FLaP v" + flap.__version__ + " -- Flat LaTeX Projects")
         
     def on_input(self, fragment):
-        self.showFragment(fragment)
+        self._show_fragment(fragment)
         
     def on_include_graphics(self, fragment):
-        self.showFragment(fragment)
+        self._show_fragment(fragment)
         
     def on_include_SVG(self, fragment):
-        self.showFragment(fragment)
+        self._show_fragment(fragment)
         
     def on_include(self, fragment):
-        self.showFragment(fragment)
+        self._show_fragment(fragment)
         
     def on_flatten_complete(self):
         self.show("Flatten complete.")
-        
-    def showFragment(self, fragment):
+
+    def on_missing_graphic(self, fragment):
+        self.show("Error: Unable to find graphic file for %s" % fragment.text().strip())
+        self.show("Check %s, line %d" % (fragment.file().fullname(), fragment.line_number()))
+
+    def _show_fragment(self, fragment):
         if self.showDetails:
             text = "+ in '%s' line %d: '%s'" % (fragment.file().fullname(), fragment.line_number(), fragment.text().strip())
             self.show(text)

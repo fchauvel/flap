@@ -23,7 +23,7 @@ from io import StringIO
 from flap.path import ROOT
 from flap.engine import Fragment
 from flap.FileSystem import File
-from flap.ui import UI 
+from flap.ui import UI, Controller
 
 
 class UiTest(TestCase):
@@ -34,46 +34,51 @@ class UiTest(TestCase):
         return ui
     
     @patch('sys.stdout', new_callable=StringIO)
-    def testUiShowVersionNumber(self, mock):
+    def test_ui_displays_version_number(self, mock):
         ui = self.makeUI(mock)        
         ui.onStartup()
-        self.verifyOutputContains(mock, flap.__version__)
+        self.verify_output_contains(mock, flap.__version__)
 
     @patch('sys.stdout', new_callable=StringIO)
-    def testUiReportsInputDirectives(self, mock):
+    def test_ui_reports_input(self, mock):
         ui = self.makeUI(mock)     
-        self.runTest(ui.on_input, mock, ["main.tex", "3", "foo"])
+        self.run_test(ui.on_input, mock, ["main.tex", "3", "foo"])
     
     @patch('sys.stdout', new_callable=StringIO)
-    def testUiReportsIncludeSVGDirectives(self, mock):
+    def test_ui_reports_includesvg(self, mock):
         ui = self.makeUI(mock)
-        self.runTest(ui.on_include_SVG, mock, ["main.tex", "3", "foo"])
+        self.run_test(ui.on_include_SVG, mock, ["main.tex", "3", "foo"])
 
     @patch('sys.stdout', new_callable=StringIO)
-    def testUiReportsInclude(self, mock):
+    def test_ui_reports_include(self, mock):
         ui = self.makeUI(mock)        
-        self.runTest(ui.on_include, mock,["main.tex", "3", "foo"])
+        self.run_test(ui.on_include, mock,["main.tex", "3", "foo"])
         
     @patch('sys.stdout', new_callable=StringIO)
-    def testUiReportsIncludeGraphics(self, mock):
+    def test_ui_reports_includegraphics(self, mock):
         ui = self.makeUI(mock)
-        self.runTest(ui.on_include_graphics, mock, ["main.tex", "3", "foo"])
+        self.run_test(ui.on_include_graphics, mock, ["main.tex", "3", "foo"])
 
-    def runTest(self, operation, mock, expectedOutputs):
-        operation(Fragment(File(None, ROOT/"main.tex", None), 3, "foo"))
-        for eachOutput in expectedOutputs:
-            self.verifyOutputContains(mock, eachOutput)        
+    @patch("sys.stdout", new_callable=StringIO)
+    def test_ui_reports_missing_image(self, mock):
+        ui = self.makeUI(mock)
+        self.run_test(ui.on_missing_graphic, mock,["main.tex", "3", "foo"])
 
     @patch('sys.stdout', new_callable=StringIO)
-    def testUiReportsCompletion(self, mock):
+    def test_ui_reports_completion(self, mock):
         ui = self.makeUI(mock)
-        
+
         ui.on_flatten_complete()
 
-        self.verifyOutputContains(mock, "complete")        
+        self.verify_output_contains(mock, "complete")
+
+    def run_test(self, operation, mock, expectedOutputs):
+        operation(Fragment(File(None, ROOT/"main.tex", None), 3, "foo"))
+        for eachOutput in expectedOutputs:
+            self.verify_output_contains(mock, eachOutput)
 
     @patch('sys.stdout', new_callable=StringIO)
-    def testDisablingFragmentReport(self, mock):
+    def test_disabling_reporting(self, mock):
         ui = self.makeUI(mock)
         ui.disableDetails()
 
@@ -81,7 +86,8 @@ class UiTest(TestCase):
 
         self.assertFalse(mock.getvalue())
 
-    def verifyOutputContains(self, mock, pattern):
+
+    def verify_output_contains(self, mock, pattern):
         output = mock.getvalue()
         self.assertIsNotNone(re.search(pattern, output), output)
         

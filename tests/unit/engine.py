@@ -103,6 +103,7 @@ class FLaPTest(TestCase):
         self.listener.on_flatten_complete = MagicMock()
         self.listener.on_input = MagicMock()
         self.listener.on_include_graphics = MagicMock()
+        self.listener.on_missing_graphic = MagicMock()
 
     def verifyFile(self, path, content):
         result = self.fileSystem.open(path)
@@ -372,6 +373,14 @@ class IncludeGraphicsProcessorTest(FLaPTest):
 
         self.verify_listener(self.listener.on_include_graphics, "main.tex", 2, "\\includegraphics{foo}")
 
+    def test_missing_graphics_are_reported(self):
+        self.create_main_file("""
+        \includegraphics{foo}""")
+
+        self.run_flap()
+
+        self.verify_listener(self.listener.on_missing_graphic, "main.tex", 2, "\\includegraphics{foo}")
+
 
 class SVGIncludeTest(FLaPTest):
 
@@ -474,6 +483,7 @@ class MiscellaneousTests(FLaPTest):
         self.run_flap()
 
         self.listener.on_flatten_complete.assert_called_once_with()
+
 
 if __name__ == "__main__":
     main()

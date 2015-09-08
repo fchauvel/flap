@@ -67,6 +67,15 @@ class Listener:
         Triggered when the flattening process is complete.
         """
         pass
+
+    def on_missing_graphic(self, fragment):
+        """
+        Triggered when a graphic file referred in the given fragment could not be found
+
+        :param fragment: the text fragment of interest
+        :type fragment: Fragment
+        """
+        pass
     
 
 class Fragment:
@@ -306,23 +315,23 @@ class IncludeGraphicsAdjuster(RegexReplacer):
     
     def replacements_for(self, fragment, match):
         path = Path.fromText(match.group(1))
-        graphic = self.select_image_file(fragment, match, path)
+        graphic = self.find_image_file(fragment, match, path)
         self.notify(self.extract(fragment, match), graphic)
         graphicInclusion = match.group(0).replace(match.group(1), graphic.basename())
         return [ Fragment(fragment.file(), fragment.line_number(), graphicInclusion) ]
 
-    def select_image_file(self, fragment, match, path):
+    def find_image_file(self, fragment, match, path):
         directory = self.flap.get_graphics_directory()
         graphics = directory.files_that_matches(path)
         if not graphics:
-            raise ValueError("Unable to find any file for graphic '%s' in '%s'" % (match.group(1), fragment.file().container().path()))
+            raise MissingGraphicFile(self.extract(fragment, match), match.group(1))
         graphic = None
         for each_extension in self.extensions_by_priority():
             for each_graphic in graphics:
                 if each_graphic.extension() == each_extension:
                     graphic = each_graphic
         if not graphic:
-            raise ValueError("Unable to find an appropriate file for graphic '%s' in '%s'" % (match.group(1), fragment.file().container().path()))
+            raise MissingGraphicFile(self.extract(fragment, match), match.group(1))
         return graphic
     
     def extensions_by_priority(self):
@@ -390,10 +399,13 @@ class Flap:
                
     def flatten(self, root, output):
         self._output = output
-        self.open_file(root)
-        self.merge_latex_source()
-        self.copy_resource_files()
-        self._listener.on_flatten_complete()
+        try:
+            self.open_file(root)
+            self.merge_latex_source()
+            self.copy_resource_files()
+            self._listener.on_flatten_complete()
+        except MissingGraphicFile as error:
+            self._listener.on_missing_graphic(error.fragment())
         
     def open_file(self, source):
         self._root = self._fileSystem.open(source)
@@ -449,3 +461,16 @@ class Flap:
             return self._graphics_directory
         else:
             return self.file().container()
+
+
+class MissingGraphicFile(Exception):
+    """
+    Exception thrown when a graphic file cannot be found
+    """
+    def __init__(self, fragment, file_name):
+        super().__init__()
+        self._fragment = fragment
+        self._file_name = file_name
+
+    def fragment(self):
+        return self._fragment
