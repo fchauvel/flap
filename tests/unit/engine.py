@@ -19,7 +19,7 @@ from unittest import TestCase, main, skip
 from mock import MagicMock
 
 from flap.FileSystem import InMemoryFileSystem, File, MissingFile
-from flap.engine import Flap, Fragment, Listener, CommentsRemover, Processor
+from flap.engine import Flap, Fragment, Listener, CommentsRemover, Processor, MissingGraphicFile
 from flap.path import Path, ROOT, TEMP
 
 
@@ -279,6 +279,7 @@ class GraphicPathTest(FLaPTest):
                            "\\includegraphics[witdh=5cm]{plot}"
                            "blabla")
 
+
 class IncludeGraphicsProcessorTest(FLaPTest):
     """
     Tests the processing of \includegraphics directive
@@ -373,13 +374,14 @@ class IncludeGraphicsProcessorTest(FLaPTest):
 
         self.verify_listener(self.listener.on_include_graphics, "main.tex", 2, "\\includegraphics{foo}")
 
-    def test_missing_graphics_are_reported(self):
+    def test_missing_graphics_are_detected(self):
         self.create_main_file("""
         \includegraphics{foo}""")
 
-        self.run_flap()
+        with self.assertRaises(MissingGraphicFile):
+            self.run_flap()
 
-        self.verify_listener(self.listener.on_missing_graphic, "main.tex", 2, "\\includegraphics{foo}")
+
 
 
 class SVGIncludeTest(FLaPTest):

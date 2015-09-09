@@ -19,7 +19,7 @@ import sys
 
 import flap
 from flap.FileSystem import OSFileSystem
-from flap.engine import Flap, Listener
+from flap.engine import Flap, Listener, MissingGraphicFile
 from flap.path import Path
 
 
@@ -72,38 +72,59 @@ class UI(Listener):
         self.show("Usage: python -m flap <path/to/tex_file> <output/directory>")
 
 
+class Factory:
+    """
+    Encapsulate the construction of FLaP, UI and FileSystem objects
+    """
+
+    def __init__(self, file_system = OSFileSystem(), ui=UI()):
+        self._file_system = file_system
+        self._ui = ui
+        self._flap = Flap(self._file_system, self._ui)
+
+    def ui(self):
+        return self._ui
+
+    def flap(self):
+        return self._flap
+
+
 class Controller:
     """
     Controller, as in the Model-View-Controller pattern. Receive command, and 
     update the view accordingly 
     """
     
-    def __init__(self, fileSystem, ui=UI()):
-        self.ui = ui
-        self.flap = Flap(fileSystem, ui)
+    def __init__(self, factory=Factory()):
+        self.ui = factory.ui()
+        self.flap = factory.flap()
         
     def run(self, arguments):
         if len(arguments) < 2 or len(arguments) > 3:
             self.ui.show_usage()
         else:
-            (rootFile, output, isVerbose) = self.parse(arguments)
-            if isVerbose:
+            (root_file, output, verbose) = self.parse(arguments)
+            if verbose:
                 self.ui.enableDetails()
             self.ui.onStartup()
-            self.flap.flatten(rootFile, output)
+            try:
+                self.flap.flatten(root_file, output)
+
+            except MissingGraphicFile as error:
+                self.ui.on_missing_graphic(error.fragment())
 
     def parse(self, arguments):
-        rootFile = "main.tex"
+        root_file = "main.tex"
         output = "/temp/"
         verbose = False
         for each in arguments:
             if each.endswith(".tex"):
-                rootFile = each
+                root_file = each
             elif each == "-v" or each == "--verbose":
                 verbose = True
             else:
                 output = each
-        return Path.fromText(rootFile), Path.fromText(output), verbose
+        return Path.fromText(root_file), Path.fromText(output), verbose
 
 
 def main(arguments):
@@ -112,8 +133,8 @@ def main(arguments):
 
     :param arguments: the command line arguments
     """
-    Controller(OSFileSystem()).run(arguments)
+    Controller().run(arguments)
 
 
 if __name__ == "__main__":
-    print("Pouet!")
+    main(sys.argv)  # For compatibility with versions prior to 0.2.3

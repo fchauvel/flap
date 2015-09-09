@@ -22,7 +22,7 @@ from flap.path import Path
 
 class Listener:
     """
-    Handle events emitted by FLaP.
+    Handle events emitted by FLaP. Errors are raised as exceptions.
     """
     
     def on_input(self, fragment):
@@ -65,15 +65,6 @@ class Listener:
     def on_flatten_complete(self):
         """
         Triggered when the flattening process is complete.
-        """
-        pass
-
-    def on_missing_graphic(self, fragment):
-        """
-        Triggered when a graphic file referred in the given fragment could not be found
-
-        :param fragment: the text fragment of interest
-        :type fragment: Fragment
         """
         pass
     
@@ -399,14 +390,11 @@ class Flap:
                
     def flatten(self, root, output):
         self._output = output
-        try:
-            self.open_file(root)
-            self.merge_latex_source()
-            self.copy_resource_files()
-            self._listener.on_flatten_complete()
-        except MissingGraphicFile as error:
-            self._listener.on_missing_graphic(error.fragment())
-        
+        self.open_file(root)
+        self.merge_latex_source()
+        self.copy_resource_files()
+        self._listener.on_flatten_complete()
+
     def open_file(self, source):
         self._root = self._fileSystem.open(source)
         if self._root.isMissing():
