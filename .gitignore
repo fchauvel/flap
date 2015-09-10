@@ -63,3 +63,6 @@ site/
 # PyBuilder
 target/
 /venv/
+
+#PyCharm
+.idea/
