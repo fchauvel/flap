@@ -19,7 +19,7 @@ from unittest import TestCase, main, skip
 from mock import MagicMock
 
 from flap.FileSystem import InMemoryFileSystem, File, MissingFile
-from flap.engine import Flap, Fragment, Listener, CommentsRemover, Processor, GraphicNotFound
+from flap.engine import Flap, Fragment, Listener, CommentsRemover, Processor, GraphicNotFound, TexFileNotFound
 from flap.path import Path, ROOT, TEMP
 
 
@@ -226,6 +226,14 @@ class InputMergerTests(FLaPTest):
         self.run_flap()
 
         self.verify_listener(self.listener.on_input, "main.tex", 2, "\input{foo}")
+
+    def test_missing_tex_file_are_detected(self):
+        self.create_main_file("""
+        \input{foo}""")
+
+        with self.assertRaises(TexFileNotFound):
+            self.run_flap()
+
 
 
 class IncludeMergeTest(FLaPTest):
@@ -465,12 +473,6 @@ class MiscellaneousTests(FLaPTest):
                            "\\end{center}")
         self.verify_image("foo.pdf")
 
-    def test_missing_file_are_reported(self):
-        self.create_main_file("blahblah \input{foo} blah")
-
-        with self.assertRaises(ValueError):
-            self.run_flap()
-
     def test_resources_are_copied(self):
         self.create_main_file("xxx")
         self.create_tex_file("style.cls", "whatever")
@@ -478,13 +480,6 @@ class MiscellaneousTests(FLaPTest):
         self.run_flap()
 
         self.verifyFile(ROOT / "result" / "style.cls", "whatever")
-
-    def test_reports_completion(self):
-        self.create_main_file("xxx")
-
-        self.run_flap()
-
-        self.listener.on_flatten_complete.assert_called_once_with()
 
 
 if __name__ == "__main__":

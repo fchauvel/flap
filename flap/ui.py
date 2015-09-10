@@ -19,7 +19,7 @@ import sys
 
 import flap
 from flap.FileSystem import OSFileSystem
-from flap.engine import Flap, Listener, GraphicNotFound
+from flap.engine import Flap, Listener, GraphicNotFound, TexFileNotFound
 from flap.path import Path
 
 
@@ -50,12 +50,19 @@ class UI(Listener):
     def on_include(self, fragment):
         self._show_fragment(fragment)
         
-    def on_flatten_complete(self):
+    def show_closing_message(self):
         self._show("Flatten complete.")
 
     def report_missing_graphic(self, fragment):
         self._show("Error: Unable to find graphic file for %s" % fragment.text().strip())
         self._show("Check %s, line %d" % (fragment.file().fullname(), fragment.line_number()))
+
+    def report_missing_tex_file(self, fragment):
+        self._show("Error: Unable to find LaTeX file '%s'" % fragment.text().strip())
+        self._show("Check %s, line %d" % (fragment.file().fullname(), fragment.line_number()))
+
+    def report_unexpected_error(self, message):
+        self._show("Error: %s" % message)
 
     def _show_fragment(self, fragment):
         if self._verbose:
@@ -93,21 +100,28 @@ class Controller:
     """
     
     def __init__(self, factory=Factory()):
-        self.ui = factory.ui()
-        self.flap = factory.flap()
+        self._ui = factory.ui()
+        self._flap = factory.flap()
         
     def run(self, arguments):
         if len(arguments) < 2 or len(arguments) > 3:
-            self.ui.show_usage()
+            self._ui.show_usage()
         else:
             (root_file, output, verbose) = self.parse(arguments)
-            self.ui.set_verbose(verbose)
-            self.ui.show_opening_message()
+            self._ui.set_verbose(verbose)
+            self._ui.show_opening_message()
             try:
-                self.flap.flatten(root_file, output)
+                self._flap.flatten(root_file, output)
+                self._ui.show_closing_message()
 
             except GraphicNotFound as error:
-                self.ui.report_missing_graphic(error.fragment())
+                self._ui.report_missing_graphic(error.fragment())
+            except TexFileNotFound as error:
+                self._ui.report_missing_tex_file(error.fragment())
+            except Exception as error:
+                self._ui.report_unexpected_error(str(error))
+
+
 
     def parse(self, arguments):
         root_file = "main.tex"
@@ -124,11 +138,6 @@ class Controller:
 
 
 def main(arguments):
-    """
-    Entry point of the FLaP utility.
-
-    :param arguments: the command line arguments
-    """
     Controller().run(arguments)
 
 

@@ -62,12 +62,6 @@ class Listener:
         pass
 
     
-    def on_flatten_complete(self):
-        """
-        Triggered when the flattening process is complete.
-        """
-        pass
-    
 
 class Fragment:
     """
@@ -232,10 +226,10 @@ class InputFlattener(RegexReplacer):
    
     def replacements_for(self, fragment, match):
         self.flap.on_input(self.extract(fragment, match))
-        includedFile = self.file().sibling(match.group(1) + ".tex")
-        if includedFile.isMissing():
-            raise ValueError("The file '%s' could not be found." % includedFile.path())
-        return Processor.input_merger(includedFile, self.flap).fragments()
+        included_file = self.file().sibling(match.group(1) + ".tex")
+        if included_file.isMissing():
+            raise TexFileNotFound(self.extract(fragment, match), match.group(1))
+        return Processor.input_merger(included_file, self.flap).fragments()
 
 
 class IncludeOnlyProcessor(RegexReplacer):
@@ -393,7 +387,6 @@ class Flap:
         self.open_file(root)
         self.merge_latex_source()
         self.copy_resource_files()
-        self._listener.on_flatten_complete()
 
     def open_file(self, source):
         self._root = self._fileSystem.open(source)
@@ -455,6 +448,20 @@ class GraphicNotFound(Exception):
     """
     Exception thrown when a graphic file cannot be found
     """
+    def __init__(self, fragment, file_name):
+        super().__init__()
+        self._fragment = fragment
+        self._file_name = file_name
+
+    def fragment(self):
+        return self._fragment
+
+
+class TexFileNotFound(Exception):
+    """
+    Exception thrown when a LaTeX source file cannot be found
+    """
+
     def __init__(self, fragment, file_name):
         super().__init__()
         self._fragment = fragment

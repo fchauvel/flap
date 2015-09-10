@@ -21,7 +21,7 @@ from mock import patch, MagicMock
 import flap
 from io import StringIO
 from flap.path import ROOT, TEMP
-from flap.engine import Fragment, Flap, GraphicNotFound
+from flap.engine import Fragment, Flap, GraphicNotFound, TexFileNotFound
 from flap.FileSystem import File
 from flap.ui import UI, Controller, Factory
 
@@ -63,11 +63,22 @@ class UiTest(TestCase):
         ui = self.makeUI(mock)
         self.run_test(ui.report_missing_graphic, mock,["main.tex", "3", "foo"])
 
+    @patch("sys.stdout", new_callable=StringIO)
+    def test_ui_reports_missing_tex_file(self, mock):
+        ui = self.makeUI(mock)
+        self.run_test(ui.report_missing_tex_file, mock,["main.tex", "3", "foo"])
+
+    @patch("sys.stdout", new_callable=StringIO)
+    def test_ui_reports_missing_tex_file(self, mock):
+        ui = self.makeUI(mock)
+        ui.report_unexpected_error("foo")
+        self.verify_output_contains(mock, "foo")
+
     @patch('sys.stdout', new_callable=StringIO)
     def test_ui_reports_completion(self, mock):
         ui = self.makeUI(mock)
 
-        ui.on_flatten_complete()
+        ui.show_closing_message()
 
         self.verify_output_contains(mock, "complete")
 
@@ -96,20 +107,44 @@ class ControllerTest(TestCase):
     """
 
     def test_missing_images_are_reported_to_the_ui(self):
-        flap_mock = MagicMock(Flap)
         fragment = MagicMock(Fragment)
-        flap_mock.flatten.side_effect = GraphicNotFound(fragment, "img/foo")
+        exception = GraphicNotFound(fragment, "img/foo")
 
+        ui_mock = self._run_flap(exception)
+
+        ui_mock.report_missing_graphic.assert_called_once_with(fragment)
+
+    def test_missing_tex_file_are_reported_to_the_ui(self):
+        fragment = MagicMock(Fragment)
+        exception = TexFileNotFound(fragment, "img/foo")
+
+        ui_mock = self._run_flap(exception)
+
+        ui_mock.report_missing_tex_file.assert_called_once_with(fragment)
+
+    def test_unexpected_error_are_reported_to_the_ui(self):
+        exception = ValueError("foo")
+
+        ui_mock = self._run_flap(exception)
+
+        ui_mock.report_unexpected_error.assert_called_once_with("foo")
+
+    def test_completion_is_reported(self):
+        ui_mock = self._run_flap(None)
+
+        ui_mock.show_closing_message.assert_called_with()
+
+    def _run_flap(self, exception):
+        flap_mock = MagicMock(Flap)
+        flap_mock.flatten.side_effect = exception
         ui_mock = MagicMock(UI)
         factory = MagicMock(Factory)
         factory.ui.return_value = ui_mock
         factory.flap.return_value = flap_mock
-
         controller = Controller(factory)
-
         controller.run(["foo", "bar"])
+        return ui_mock
 
-        ui_mock.report_missing_graphic.assert_called_once_with(fragment)
 
 if __name__ == "__main__":
     main()
