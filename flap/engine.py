@@ -113,9 +113,9 @@ class Processor:
         processors = [IncludeFlattener,
                       IncludeOnlyProcessor,
                       GraphicsPathProcessor,
-                      IncludeGraphicsAdjuster,
-                      IncludeSVGFixer,
-                      OverpicAdjuster]
+                      IncludeGraphics,
+                      IncludeSVG,
+                      Overpic]
         pipeline = Processor.input_merger(proxy.file(), proxy)
         for eachProcessor in processors:
             pipeline = eachProcessor(pipeline, proxy)
@@ -163,7 +163,7 @@ class CommentsRemover(ProcessorDecorator):
             yield each_fragment
 
 
-class RegexReplacer(ProcessorDecorator):
+class Substitution(ProcessorDecorator):
     """
     General template method for searching and replacing a given regular expression
     in a set of fragments.
@@ -211,7 +211,7 @@ class RegexReplacer(ProcessorDecorator):
         return Fragment(container.file(), container[:match.start()].text().count("\n") + 1, match.group(0))
 
 
-class InputFlattener(RegexReplacer):
+class InputFlattener(Substitution):
     """
     Detects fragments that contains an input directive (such as '\input{foo}). 
     When one is detected, it extracts all the fragments from the file that 
@@ -228,11 +228,11 @@ class InputFlattener(RegexReplacer):
         self.flap.on_input(self.extract(fragment, match))
         included_file = self.file().sibling(match.group(1) + ".tex")
         if included_file.isMissing():
-            raise TexFileNotFound(self.extract(fragment, match), match.group(1))
+            raise TexFileNotFound(self.extract(fragment, match))
         return Processor.input_merger(included_file, self.flap).fragments()
 
 
-class IncludeOnlyProcessor(RegexReplacer):
+class IncludeOnlyProcessor(Substitution):
     """
     Detects 'includeonly' directives and notify the engine to later discard it.
     """
@@ -266,7 +266,7 @@ class IncludeFlattener(InputFlattener):
                                    [Fragment(fragment.file(), fragment.line_number(), "\\clearpage ")])
 
 
-class GraphicsPathProcessor(RegexReplacer):
+class GraphicsPathProcessor(Substitution):
     """
     Detect the \graphicspath directive and adjust the following \includegraphics
     inclusions accordingly.
@@ -285,7 +285,7 @@ class GraphicsPathProcessor(RegexReplacer):
         return []
 
 
-class IncludeGraphicsAdjuster(RegexReplacer):
+class IncludeGraphics(Substitution):
     """
     Detects "\includegraphics". When one is detected, it produces a new fragment
     where the link to the file is corrected.
@@ -300,24 +300,10 @@ class IncludeGraphicsAdjuster(RegexReplacer):
     
     def replacements_for(self, fragment, match):
         path = Path.fromText(match.group(1))
-        graphic = self.find_image_file(fragment, match, path)
+        graphic = self.flap.find_graphics(self.extract(fragment, match), path, self.extensions_by_priority())
         self.notify(self.extract(fragment, match), graphic)
         graphicInclusion = match.group(0).replace(match.group(1), graphic.basename())
         return [ Fragment(fragment.file(), fragment.line_number(), graphicInclusion) ]
-
-    def find_image_file(self, fragment, match, path):
-        directory = self.flap.get_graphics_directory()
-        graphics = directory.files_that_matches(path)
-        if not graphics:
-            raise GraphicNotFound(self.extract(fragment, match), match.group(1))
-        graphic = None
-        for each_extension in self.extensions_by_priority():
-            for each_graphic in graphics:
-                if each_graphic.extension() == each_extension:
-                    graphic = each_graphic
-        if not graphic:
-            raise GraphicNotFound(self.extract(fragment, match), match.group(1))
-        return graphic
     
     def extensions_by_priority(self):
         return ["pdf", "eps", "png", "jpg"]
@@ -326,7 +312,7 @@ class IncludeGraphicsAdjuster(RegexReplacer):
         return self.flap.on_include_graphics(fragment, graphic)
 
 
-class EndInputProcessor(RegexReplacer):
+class EndInputProcessor(Substitution):
     """
     Discard whatever comes after an `\endinput` command.
     """
@@ -339,7 +325,7 @@ class EndInputProcessor(RegexReplacer):
         return []
 
 
-class OverpicAdjuster(IncludeGraphicsAdjuster):
+class Overpic(IncludeGraphics):
     """
     Adjust 'overpic' environment. Only the opening clause is adjusted.
     """
@@ -352,7 +338,7 @@ class OverpicAdjuster(IncludeGraphicsAdjuster):
         return re.compile(pattern)
 
 
-class IncludeSVGFixer(IncludeGraphicsAdjuster):
+class IncludeSVG(IncludeGraphics):
     """
     Detects "\includesvg". When one is detected, it produces a new fragment
     where the link to the file is corrected.
@@ -392,14 +378,14 @@ class Flap:
         self._root = self._fileSystem.open(source)
         if self._root.isMissing():
             raise ValueError("The file '%s' could not be found." % source)
-        
+
     def file(self):
         return self._root
         
     def merge_latex_source(self):
         pipeline = Processor.flap_pipeline(self)
         fragments = pipeline.fragments()
-        merge = ''.join([ f.text() for f in fragments ])
+        merge = ''.join([ each.text() for each in fragments ])
         self._fileSystem.createFile(self._output / "merged.tex", merge)
             
     def copy_resource_files(self):
@@ -413,6 +399,15 @@ class Flap:
 
     def is_ignored(self, file):
         return self._included_files and file not in self._included_files
+
+    def find_graphics(self, fragment, path, extensions_by_priority):
+        directory = self.get_graphics_directory()
+        candidates = directory.files_that_matches(path)
+        for each_extension in extensions_by_priority:
+            for each_graphic in candidates:
+                if each_graphic.extension() == each_extension:
+                    return each_graphic
+        raise GraphicNotFound(fragment)
 
     RESOURCE_FILES = ["cls", "sty", "bib", "bst"]       
         
@@ -431,7 +426,7 @@ class Flap:
         self._listener.on_include_SVG(fragment)
 
     def on_include_only(self, included_files):
-        self._included_files = [eachFile.strip() for eachFile in included_files]
+        self._included_files = [each_file.strip() for each_file in included_files]
 
     def set_graphics_directory(self, texPath):
         path = self.file().container().path() / texPath
@@ -444,28 +439,27 @@ class Flap:
             return self.file().container()
 
 
-class GraphicNotFound(Exception):
-    """
-    Exception thrown when a graphic file cannot be found
-    """
-    def __init__(self, fragment, file_name):
-        super().__init__()
+class ResourceNotFound(Exception):
+
+    def __init__(self, fragment):
         self._fragment = fragment
-        self._file_name = file_name
 
     def fragment(self):
         return self._fragment
 
 
-class TexFileNotFound(Exception):
+class GraphicNotFound(ResourceNotFound):
+    """
+    Exception thrown when a graphic file cannot be found
+    """
+    def __init__(self, fragment):
+        super().__init__(fragment)
+
+
+class TexFileNotFound(ResourceNotFound):
     """
     Exception thrown when a LaTeX source file cannot be found
     """
 
-    def __init__(self, fragment, file_name):
-        super().__init__()
-        self._fragment = fragment
-        self._file_name = file_name
-
-    def fragment(self):
-        return self._fragment
+    def __init__(self, fragment):
+        super().__init__(fragment)

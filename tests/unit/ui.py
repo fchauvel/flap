@@ -108,7 +108,7 @@ class ControllerTest(TestCase):
 
     def test_missing_images_are_reported_to_the_ui(self):
         fragment = MagicMock(Fragment)
-        exception = GraphicNotFound(fragment, "img/foo")
+        exception = GraphicNotFound(fragment)
 
         ui_mock = self._run_flap(exception)
 
@@ -116,7 +116,7 @@ class ControllerTest(TestCase):
 
     def test_missing_tex_file_are_reported_to_the_ui(self):
         fragment = MagicMock(Fragment)
-        exception = TexFileNotFound(fragment, "img/foo")
+        exception = TexFileNotFound(fragment)
 
         ui_mock = self._run_flap(exception)
 
