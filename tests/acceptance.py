@@ -112,7 +112,7 @@ class AcceptanceTest(TestCase):
         mock = StringIO()
         def patched_show(message):
             mock.write(message)
-        with patch("flap.ui.UI.show", side_effect=patched_show):
+        with patch("flap.ui.UI._show", side_effect=patched_show):
             main([])
         output = mock.getvalue()
         self.assertNotEqual("", output, "No output detected")

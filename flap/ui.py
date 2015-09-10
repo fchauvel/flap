@@ -19,7 +19,7 @@ import sys
 
 import flap
 from flap.FileSystem import OSFileSystem
-from flap.engine import Flap, Listener, MissingGraphicFile
+from flap.engine import Flap, Listener, GraphicNotFound
 from flap.path import Path
 
 
@@ -28,18 +28,15 @@ class UI(Listener):
     Gather all the interaction the console
     """
     
-    def __init__(self, output=sys.stdout):
+    def __init__(self, output=sys.stdout, is_verbose=False):
         self._output = output
-        self.showDetails = False
+        self._verbose = is_verbose
+
+    def set_verbose(self, is_activated):
+        self._verbose = is_activated
     
-    def enableDetails(self):
-        self.showDetails = True
-    
-    def disableDetails(self):
-        self.showDetails = False
-    
-    def onStartup(self):
-        self.show("FLaP v" + flap.__version__ + " -- Flat LaTeX Projects")
+    def show_opening_message(self):
+        self._show("FLaP v" + flap.__version__ + " -- Flat LaTeX Projects")
         
     def on_input(self, fragment):
         self._show_fragment(fragment)
@@ -54,22 +51,22 @@ class UI(Listener):
         self._show_fragment(fragment)
         
     def on_flatten_complete(self):
-        self.show("Flatten complete.")
+        self._show("Flatten complete.")
 
-    def on_missing_graphic(self, fragment):
-        self.show("Error: Unable to find graphic file for %s" % fragment.text().strip())
-        self.show("Check %s, line %d" % (fragment.file().fullname(), fragment.line_number()))
+    def report_missing_graphic(self, fragment):
+        self._show("Error: Unable to find graphic file for %s" % fragment.text().strip())
+        self._show("Check %s, line %d" % (fragment.file().fullname(), fragment.line_number()))
 
     def _show_fragment(self, fragment):
-        if self.showDetails:
+        if self._verbose:
             text = "+ in '%s' line %d: '%s'" % (fragment.file().fullname(), fragment.line_number(), fragment.text().strip())
-            self.show(text)
+            self._show(text)
 
-    def show(self, message):
+    def _show(self, message):
         print(message, file=self._output)
         
     def show_usage(self):
-        self.show("Usage: python -m flap <path/to/tex_file> <output/directory>")
+        self._show("Usage: python -m flap <path/to/tex_file> <output/directory>")
 
 
 class Factory:
@@ -104,26 +101,25 @@ class Controller:
             self.ui.show_usage()
         else:
             (root_file, output, verbose) = self.parse(arguments)
-            if verbose:
-                self.ui.enableDetails()
-            self.ui.onStartup()
+            self.ui.set_verbose(verbose)
+            self.ui.show_opening_message()
             try:
                 self.flap.flatten(root_file, output)
 
-            except MissingGraphicFile as error:
-                self.ui.on_missing_graphic(error.fragment())
+            except GraphicNotFound as error:
+                self.ui.report_missing_graphic(error.fragment())
 
     def parse(self, arguments):
         root_file = "main.tex"
         output = "/temp/"
         verbose = False
-        for each in arguments:
-            if each.endswith(".tex"):
-                root_file = each
-            elif each == "-v" or each == "--verbose":
+        for any_argument in arguments:
+            if any_argument.endswith(".tex"):
+                root_file = any_argument
+            elif any_argument == "-v" or any_argument == "--verbose":
                 verbose = True
             else:
-                output = each
+                output = any_argument
         return Path.fromText(root_file), Path.fromText(output), verbose
 
 

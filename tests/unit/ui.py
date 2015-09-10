@@ -21,7 +21,7 @@ from mock import patch, MagicMock
 import flap
 from io import StringIO
 from flap.path import ROOT, TEMP
-from flap.engine import Fragment, Flap, MissingGraphicFile
+from flap.engine import Fragment, Flap, GraphicNotFound
 from flap.FileSystem import File
 from flap.ui import UI, Controller, Factory
 
@@ -29,14 +29,13 @@ from flap.ui import UI, Controller, Factory
 class UiTest(TestCase):
     
     def makeUI(self, mock):
-        ui = UI(mock)
-        ui.enableDetails()
+        ui = UI(mock, True)
         return ui
     
     @patch('sys.stdout', new_callable=StringIO)
     def test_ui_displays_version_number(self, mock):
         ui = self.makeUI(mock)        
-        ui.onStartup()
+        ui.show_opening_message()
         self.verify_output_contains(mock, flap.__version__)
 
     @patch('sys.stdout', new_callable=StringIO)
@@ -62,7 +61,7 @@ class UiTest(TestCase):
     @patch("sys.stdout", new_callable=StringIO)
     def test_ui_reports_missing_image(self, mock):
         ui = self.makeUI(mock)
-        self.run_test(ui.on_missing_graphic, mock,["main.tex", "3", "foo"])
+        self.run_test(ui.report_missing_graphic, mock,["main.tex", "3", "foo"])
 
     @patch('sys.stdout', new_callable=StringIO)
     def test_ui_reports_completion(self, mock):
@@ -72,15 +71,15 @@ class UiTest(TestCase):
 
         self.verify_output_contains(mock, "complete")
 
-    def run_test(self, operation, mock, expectedOutputs):
+    def run_test(self, operation, mock, expected_outputs):
         operation(Fragment(File(None, ROOT/"main.tex", None), 3, "foo"))
-        for eachOutput in expectedOutputs:
-            self.verify_output_contains(mock, eachOutput)
+        for each_output in expected_outputs:
+            self.verify_output_contains(mock, each_output)
 
     @patch('sys.stdout', new_callable=StringIO)
     def test_disabling_reporting(self, mock):
         ui = self.makeUI(mock)
-        ui.disableDetails()
+        ui.set_verbose(False)
 
         ui.on_include_graphics(Fragment(File(None, ROOT/"main.tex", None), 3, "foo"))
 
@@ -99,7 +98,7 @@ class ControllerTest(TestCase):
     def test_missing_images_are_reported_to_the_ui(self):
         flap_mock = MagicMock(Flap)
         fragment = MagicMock(Fragment)
-        flap_mock.flatten.side_effect = MissingGraphicFile(fragment, "img/foo")
+        flap_mock.flatten.side_effect = GraphicNotFound(fragment, "img/foo")
 
         ui_mock = MagicMock(UI)
         factory = MagicMock(Factory)
@@ -110,7 +109,7 @@ class ControllerTest(TestCase):
 
         controller.run(["foo", "bar"])
 
-        ui_mock.on_missing_graphic.assert_called_once_with(fragment)
+        ui_mock.report_missing_graphic.assert_called_once_with(fragment)
 
 if __name__ == "__main__":
     main()

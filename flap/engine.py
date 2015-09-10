@@ -315,14 +315,14 @@ class IncludeGraphicsAdjuster(RegexReplacer):
         directory = self.flap.get_graphics_directory()
         graphics = directory.files_that_matches(path)
         if not graphics:
-            raise MissingGraphicFile(self.extract(fragment, match), match.group(1))
+            raise GraphicNotFound(self.extract(fragment, match), match.group(1))
         graphic = None
         for each_extension in self.extensions_by_priority():
             for each_graphic in graphics:
                 if each_graphic.extension() == each_extension:
                     graphic = each_graphic
         if not graphic:
-            raise MissingGraphicFile(self.extract(fragment, match), match.group(1))
+            raise GraphicNotFound(self.extract(fragment, match), match.group(1))
         return graphic
     
     def extensions_by_priority(self):
@@ -451,7 +451,7 @@ class Flap:
             return self.file().container()
 
 
-class MissingGraphicFile(Exception):
+class GraphicNotFound(Exception):
     """
     Exception thrown when a graphic file cannot be found
     """

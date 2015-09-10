@@ -19,7 +19,7 @@ from unittest import TestCase, main, skip
 from mock import MagicMock
 
 from flap.FileSystem import InMemoryFileSystem, File, MissingFile
-from flap.engine import Flap, Fragment, Listener, CommentsRemover, Processor, MissingGraphicFile
+from flap.engine import Flap, Fragment, Listener, CommentsRemover, Processor, GraphicNotFound
 from flap.path import Path, ROOT, TEMP
 
 
@@ -378,7 +378,7 @@ class IncludeGraphicsProcessorTest(FLaPTest):
         self.create_main_file("""
         \includegraphics{foo}""")
 
-        with self.assertRaises(MissingGraphicFile):
+        with self.assertRaises(GraphicNotFound):
             self.run_flap()
 
 
