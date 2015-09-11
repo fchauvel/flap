@@ -61,7 +61,6 @@ class Listener:
         """
         pass
 
-    
 
 class Fragment:
     """
@@ -89,6 +88,18 @@ class Fragment:
     def is_commented_out(self):
         return self._text.strip().startswith("%")
 
+    def extract(self, match):
+        """
+        :return: a sub fragment corresponding to the given match in the container fragment
+        """
+        line_number = self.line_number() + self[:match.start()].text().count("\n")
+        text = match.group(0)
+        return Fragment(self.file(), line_number, text)
+
+    def replace(self, searched, replacement):
+        changed_text = self.text().replace(searched, replacement)
+        return Fragment(self._file, self.line_number(), changed_text)
+
     def __getitem__(self, key):
         return Fragment(self._file, self._lineNumber, self._text[key])
     
@@ -106,13 +117,13 @@ class Processor:
 
     @staticmethod
     def input_merger(file, proxy):
-        return InputFlattener(EndInputProcessor(CommentsRemover(FileWrapper(file)), proxy), proxy)
+        return Input(EndInput(CommentsRemover(FileWrapper(file)), proxy), proxy)
 
     @staticmethod
     def flap_pipeline(proxy):
-        processors = [IncludeFlattener,
-                      IncludeOnlyProcessor,
-                      GraphicsPathProcessor,
+        processors = [Include,
+                      IncludeOnly,
+                      GraphicsPath,
                       IncludeGraphics,
                       IncludeSVG,
                       Overpic]
@@ -182,7 +193,7 @@ class Substitution(ProcessorDecorator):
         current = 0
         for eachMatch in self.all_matches(fragment):
             yield fragment[current:eachMatch.start()] 
-            for f in self.replacements_for(fragment, eachMatch): yield f
+            for f in self.replacements_for(fragment.extract(eachMatch), eachMatch): yield f
             current = eachMatch.end()
         yield fragment[current:]
 
@@ -204,14 +215,8 @@ class Substitution(ProcessorDecorator):
         """
         pass
 
-    def extract(self, container, match):
-        """
-        :return: a sub fragment corresponding to the given match in the container fragment
-        """
-        return Fragment(container.file(), container[:match.start()].text().count("\n") + 1, match.group(0))
 
-
-class InputFlattener(Substitution):
+class Input(Substitution):
     """
     Detects fragments that contains an input directive (such as '\input{foo}). 
     When one is detected, it extracts all the fragments from the file that 
@@ -225,14 +230,14 @@ class InputFlattener(Substitution):
         return re.compile(r"\\input\{([^}]+)\}")
    
     def replacements_for(self, fragment, match):
-        self.flap.on_input(self.extract(fragment, match))
+        self.flap.on_input(fragment)
         included_file = self.file().sibling(match.group(1) + ".tex")
         if included_file.isMissing():
-            raise TexFileNotFound(self.extract(fragment, match))
+            raise TexFileNotFound(fragment)
         return Processor.input_merger(included_file, self.flap).fragments()
 
 
-class IncludeOnlyProcessor(Substitution):
+class IncludeOnly(Substitution):
     """
     Detects 'includeonly' directives and notify the engine to later discard it.
     """
@@ -247,7 +252,7 @@ class IncludeOnlyProcessor(Substitution):
         return []
 
 
-class IncludeFlattener(InputFlattener):
+class Include(Input):
     """
     Traverse the fragments available and search for next `\include{file.tex}`. It
     replaces them by the content of the file and append a \clearpage after.
@@ -266,7 +271,7 @@ class IncludeFlattener(InputFlattener):
                                    [Fragment(fragment.file(), fragment.line_number(), "\\clearpage ")])
 
 
-class GraphicsPathProcessor(Substitution):
+class GraphicsPath(Substitution):
     """
     Detect the \graphicspath directive and adjust the following \includegraphics
     inclusions accordingly.
@@ -299,12 +304,12 @@ class IncludeGraphics(Substitution):
         return re.compile(pattern)
     
     def replacements_for(self, fragment, match):
-        path = Path.fromText(match.group(1))
-        graphic = self.flap.find_graphics(self.extract(fragment, match), path, self.extensions_by_priority())
-        self.notify(self.extract(fragment, match), graphic)
-        graphicInclusion = match.group(0).replace(match.group(1), graphic.basename())
-        return [ Fragment(fragment.file(), fragment.line_number(), graphicInclusion) ]
-    
+        included_graphic = match.group(1)
+        graphic = self.flap.find_graphics(fragment, included_graphic, self.extensions_by_priority())
+        replacement = fragment.replace(included_graphic, graphic.basename())
+        self.notify(fragment, graphic)
+        return [replacement]
+
     def extensions_by_priority(self):
         return ["pdf", "eps", "png", "jpg"]
 
@@ -312,14 +317,13 @@ class IncludeGraphics(Substitution):
         return self.flap.on_include_graphics(fragment, graphic)
 
 
-class EndInputProcessor(Substitution):
+class EndInput(Substitution):
     """
     Discard whatever comes after an `\endinput` command.
     """
 
     def prepare_pattern(self):
-        pattern = r"\\endinput.+\Z"
-        return re.compile(pattern, re.DOTALL)
+        return re.compile(r"\\endinput.+\Z", re.DOTALL)
 
     def replacements_for(self, fragment, match):
         return []
@@ -400,9 +404,8 @@ class Flap:
     def is_ignored(self, file):
         return self._included_files and file not in self._included_files
 
-    def find_graphics(self, fragment, path, extensions_by_priority):
-        directory = self.get_graphics_directory()
-        candidates = directory.files_that_matches(path)
+    def find_graphics(self, fragment, text_path, extensions_by_priority):
+        candidates = self.graphics_directory().files_that_matches(Path.fromText(text_path))
         for each_extension in extensions_by_priority:
             for each_graphic in candidates:
                 if each_graphic.extension() == each_extension:
@@ -432,7 +435,7 @@ class Flap:
         path = self.file().container().path() / texPath
         self._graphics_directory = self._fileSystem.open(path)
 
-    def get_graphics_directory(self):
+    def graphics_directory(self):
         if self._graphics_directory:
             return self._graphics_directory
         else:
