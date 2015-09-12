@@ -101,7 +101,6 @@ class AcceptanceTest(TestCase):
     def create_image(self):
         self.fileSystem.createFile(self.source / "images" / "plot.pdf", "image")
 
-
     def tearDown(self):
         self.fileSystem.move_to_directory(TEMP)
 
@@ -128,7 +127,6 @@ class AcceptanceTest(TestCase):
         self.assertEqual(styFile.content(), "some style crap")
 
     def test_flatten_latex_project_locally(self):
-        root = self.fileSystem.forOS(TEMP / "flap" / "project" / "main.tex")
         output = self.fileSystem.forOS(TEMP / "flap" / "output")
 
         self.fileSystem.move_to_directory(TEMP / "flap" / "project")
@@ -137,8 +135,8 @@ class AcceptanceTest(TestCase):
         file = self.fileSystem.open(self.output / "merged.tex")
         self.verify_merge_sources(file)
 
-        styFile = self.fileSystem.open(self.output / "style.sty")
-        self.assertEqual(styFile.content(), "some style crap")
+        style = self.fileSystem.open(self.output / "style.sty")
+        self.assertEqual(style.content(), "some style crap")
 
     def test_usage_is_shown(self):
         mock = StringIO()

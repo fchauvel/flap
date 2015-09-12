@@ -102,39 +102,48 @@ class Controller:
     def __init__(self, factory=Factory()):
         self._ui = factory.ui()
         self._flap = factory.flap()
-        
+        self._root_file = "main.tex"
+        self._output = "/temp/"
+        self._verbose = False
+
     def run(self, arguments):
-        if len(arguments) < 3 or len(arguments) > 4:
-            self._ui.show_usage()
-        else:
-            (root_file, output, verbose) = self.parse(arguments)
-            self._ui.set_verbose(verbose)
+        try:
+            self.parse(arguments)
+            self._ui.set_verbose(self._verbose)
             self._ui.show_opening_message()
-            try:
-                self._flap.flatten(root_file, output)
-                self._ui.show_closing_message()
+            self._flap.flatten(self._root_file, self._output)
+            self._ui.show_closing_message()
 
-            except GraphicNotFound as error:
-                self._ui.report_missing_graphic(error.fragment())
-            except TexFileNotFound as error:
-                self._ui.report_missing_tex_file(error.fragment())
-            except Exception as error:
-                self._ui.report_unexpected_error(str(error))
+        except IllegalArguments:
+            self._ui.show_usage()
 
+        except GraphicNotFound as error:
+            self._ui.report_missing_graphic(error.fragment())
 
+        except TexFileNotFound as error:
+            self._ui.report_missing_tex_file(error.fragment())
+
+        except Exception as error:
+            self._ui.report_unexpected_error(str(error))
 
     def parse(self, arguments):
-        root_file = "main.tex"
-        output = "/temp/"
-        verbose = False
+        if len(arguments) < 3 or len(arguments) > 4:
+            raise IllegalArguments("Wrong number of arguments (found %s)" % str(arguments))
+
         for any_argument in arguments:
             if any_argument.endswith(".tex"):
-                root_file = any_argument
+                self._root_file = Path.fromText(any_argument)
             elif any_argument == "-v" or any_argument == "--verbose":
-                verbose = True
+                self._verbose = True
             else:
-                output = any_argument
-        return Path.fromText(root_file), Path.fromText(output), verbose
+                self._output = Path.fromText(any_argument)
+
+
+class IllegalArguments(ValueError):
+    """
+    Raised when FLaP cannot parse the the arguments received from the command line
+    """
+    pass
 
 
 def main(arguments):
