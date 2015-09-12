@@ -64,5 +64,5 @@ site/
 target/
 /venv/
 
-#PyCharm
+# PyCharm
 .idea/
