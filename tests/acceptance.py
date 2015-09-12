@@ -59,25 +59,61 @@ class OSFileSystemTest(TestCase):
 class AcceptanceTest(TestCase):
 
     def setUp(self):
+        self.configure()
+        self.clear_working_directory()
+        self.create_root_latex_file()
+        self.create_latex_part_A()
+        self.create_latex_part_B()
+        self.create_image()
+        self.create_latex_resources()
+
+    def configure(self):
         self.fileSystem = OSFileSystem()
         self.workingDir = TEMP / "flap"
-        self.fileSystem.deleteDirectory(self.workingDir)
         self.source = self.workingDir / "project"
         self.output = self.workingDir / "output"
-        self.fileSystem.createFile(self.source / "main.tex", "\n"
-                                                             "\\input{result}\n"
-                                                             "\\include{explanations}\n")
 
-        self.fileSystem.createFile(self.source / "result.tex", "\\includegraphics{img/plot}")
-        self.fileSystem.createFile(self.source / "explanations.tex", "blablah")
-        self.fileSystem.createFile(self.source / "img" / "plot.pdf", "image")
+    def clear_working_directory(self):
+        self.fileSystem.deleteDirectory(self.workingDir)
+
+    def create_root_latex_file(self):
+        latex_code = "\documentclass{article}\n" \
+                     "\\graphicspath{images}\n" \
+                     "\\includeonly{partA,partB}" \
+                     "\\begin{document}\n" \
+                     "    \\include{partA}\n" \
+                     "    \\include{partB}\n" \
+                     "\\end{document}"
+        self.fileSystem.createFile(self.source / "main.tex", latex_code)
+
+    def create_latex_part_A(self):
+        self.fileSystem.createFile(self.source / "partA.tex", "\\input{result}")
+        self.fileSystem.createFile(self.source / "result.tex", "\\includegraphics{plot}")
+
+    def create_latex_part_B(self):
+        self.fileSystem.createFile(self.source / "partB.tex", "blablah")
+
+    def create_latex_resources(self):
         self.fileSystem.createFile(self.source / "style.sty", "some style crap")
         self.fileSystem.createFile(self.workingDir / "test.cls", "a LaTeX class")
         symlink(self.fileSystem.forOS(self.workingDir / "test.cls"), self.fileSystem.forOS(self.source / "test.cls"))
 
+    def create_image(self):
+        self.fileSystem.createFile(self.source / "images" / "plot.pdf", "image")
+
+
     def tearDown(self):
         self.fileSystem.move_to_directory(TEMP)
-        
+
+    def verify_merge_sources(self, file):
+        expected_content = "\documentclass{article}\n" \
+                           "\n" \
+                           "\\begin{document}\n" \
+                           "    \\includegraphics{plot}\\clearpage \n" \
+                           "    blablah\\clearpage \n" \
+                           "\\end{document}"
+        self.assertEqual(file.content(), expected_content)
+
     def test_flatten_latex_project(self):
         root = self.fileSystem.forOS(TEMP / "flap" / "project" / "main.tex")
         output = self.fileSystem.forOS(TEMP / "flap" / "output")
@@ -86,9 +122,7 @@ class AcceptanceTest(TestCase):
         main(["-v", root, output])
         
         file = self.fileSystem.open(self.output / "merged.tex")
-        self.assertEqual(file.content(),"\n"
-                                        "\\includegraphics{plot}\n"
-                                        "blablah\\clearpage \n")
+        self.verify_merge_sources(file)
 
         styFile = self.fileSystem.open(self.output / "style.sty")
         self.assertEqual(styFile.content(), "some style crap")
@@ -101,9 +135,7 @@ class AcceptanceTest(TestCase):
         main(["-v", "main.tex", output])
 
         file = self.fileSystem.open(self.output / "merged.tex")
-        self.assertEqual(file.content(),"\n"
-                                        "\\includegraphics{plot}\n"
-                                        "blablah\\clearpage \n")
+        self.verify_merge_sources(file)
 
         styFile = self.fileSystem.open(self.output / "style.sty")
         self.assertEqual(styFile.content(), "some style crap")
