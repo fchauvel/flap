@@ -104,7 +104,7 @@ class Controller:
         self._flap = factory.flap()
         
     def run(self, arguments):
-        if len(arguments) < 2 or len(arguments) > 3:
+        if len(arguments) < 3 or len(arguments) > 4:
             self._ui.show_usage()
         else:
             (root_file, output, verbose) = self.parse(arguments)

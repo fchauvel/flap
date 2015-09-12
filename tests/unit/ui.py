@@ -142,7 +142,7 @@ class ControllerTest(TestCase):
         factory.ui.return_value = ui_mock
         factory.flap.return_value = flap_mock
         controller = Controller(factory)
-        controller.run(["foo", "bar"])
+        controller.run(["__main__.py", "foo", "bar"])
         return ui_mock
 
 
