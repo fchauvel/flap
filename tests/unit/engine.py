@@ -99,16 +99,12 @@ class FLaPTest(TestCase):
         self.main_tex_file = "main.tex"
 
     def _prepare_listener(self):
-        self.listener = Listener()
-        self.listener.on_flatten_complete = MagicMock()
-        self.listener.on_input = MagicMock()
-        self.listener.on_include_graphics = MagicMock()
-        self.listener.on_missing_graphic = MagicMock()
+        self.listener = MagicMock(Listener())
 
-    def verifyFile(self, path, content):
-        result = self.fileSystem.open(path)
-        self.assertTrue(result.exists(), "Missing file '%s'" % path)
-        self.assertEqual(content, result.content(),  "Wrong merged")
+    def verifyFile(self, path, expected_content):
+        actual_content = self.fileSystem.open(path)
+        self.assertTrue(actual_content.exists(), "Missing file '%s'" % path)
+        self.assertEqual(expected_content, actual_content.content(),  "Wrong merged")
 
     def create_file(self, location, content):
         path = Path.fromText(location)

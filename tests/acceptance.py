@@ -56,87 +56,201 @@ class OSFileSystemTest(TestCase):
         self.assertEqual(copy.content(), self.content)
 
 
+class LatexProjectBuilder:
+    """
+    Helps build the file structure of a LaTeX project.
+    It does not contain any test, but it uses assertions
+    """
+
+    IMAGE_CONTENT = "image data"
+    STYLE_CONTENT = "some style definitions"
+    CLASS_CONTENT = "a class definition"
+
+    def __init__(self, file_system):
+        self._file_system = file_system
+        self.directory = TEMP / "project"
+        self.main_latex_file = "main.tex"
+        self.images_directory = "images"
+
+    @property
+    def directory(self):
+        return self._directory
+
+    @directory.setter
+    def directory(self, path):
+        self._directory = path
+
+    @property
+    def main_latex_file(self):
+        return self._main_latex_file
+
+    @main_latex_file.setter
+    def main_latex_file(self, path):
+        self._main_latex_file = self._directory / path
+
+    @property
+    def images_directory(self):
+        return self._images_directory
+
+    @images_directory.setter
+    def images_directory(self, path):
+        self._images_directory = self._directory / path
+
+    def clear(self):
+        self._file_system.deleteDirectory(self._directory)
+
+    def create_root_latex_file(self, content):
+        self._file_system.createFile(self._main_latex_file, content)
+
+    def create_latex_file(self, path, content):
+        self._file_system.createFile(self._directory / path, content)
+
+    def create_image(self, path):
+        self._file_system.createFile(self._images_directory / path, LatexProjectBuilder.IMAGE_CONTENT)
+
+    def create_style_file(self, path):
+        self._file_system.createFile(self._directory / path, LatexProjectBuilder.STYLE_CONTENT)
+
+    def create_class_file(self, path):
+        self._file_system.createFile(path, "a class definition")
+
+    def create_symbolic_link(self, link_path, link_target):
+        symlink(self._file_system.forOS(link_target), self._file_system.forOS(self._directory / link_path))
+
+    @property
+    def path_to_root_latex_file(self):
+        return self._file_system.forOS(self._main_latex_file)
+
+
+class FlapRunner:
+    """
+    Invoke FLaP, and provides access to the outputted files
+    """
+
+    def __init__(self, latex_project, working_directory, output_directory):
+        self._project = latex_project
+        self.working_directory = working_directory
+        self.output_directory = output_directory
+        self.merged_file = "merged.tex"
+
+    @property
+    def working_directory(self):
+        return self._working_directory
+
+    @working_directory.setter
+    def working_directory(self, path):
+        self._working_directory = path
+
+    @property
+    def output_directory(self):
+        return self._output_directory
+
+    @output_directory.setter
+    def output_directory(self, directory):
+        self._output_directory = directory
+
+    @property
+    def merged_file(self):
+        return self._merged_file
+
+    @merged_file.setter
+    def merged_file(self, path):
+        self._merged_file = self.output_directory / path
+
+    def run_flap(self):
+        root = self._project.path_to_root_latex_file
+        output = self._project._file_system.forOS(self.output_directory)
+        main(["-v", root, output])
+
+    def output_file(self, path):
+        return self.output_directory / path
+
+
+class FlapVerifier(TestCase):
+    """
+    Verify the outputs produced by FLaP
+    """
+
+    def __init__(self, file_system, runner):
+        super().__init__()
+        self._file_system = file_system
+        self._runner = runner
+
+    def merged_content_is(self, expected):
+        self.assertEqual(self.merged_content(), expected)
+
+    def style_file(self, path):
+        self.assertEqual(self.content_of(self._runner.output_file(path)), LatexProjectBuilder.STYLE_CONTENT)
+
+    def class_file(self, path):
+        self.assertEqual(self.content_of(self._runner.output_file(path)), LatexProjectBuilder.CLASS_CONTENT)
+
+    def merged_content(self):
+        return self.content_of(self._runner.merged_file)
+
+    def content_of(self, path):
+        return self._file_system.open(path).content()
+
+
 class AcceptanceTest(TestCase):
 
     def setUp(self):
-        self.configure()
-        self.clear_working_directory()
-        self.create_root_latex_file()
-        self.create_latex_part_A()
-        self.create_latex_part_B()
-        self.create_image()
-        self.create_latex_resources()
+        self._file_system = OSFileSystem()
+        self._builder = LatexProjectBuilder(self._file_system)
+        self._runner = FlapRunner(self._builder, TEMP, TEMP / "output")
+        self._verify = FlapVerifier(self._file_system, self._runner)
+        self._builder.clear()
 
-    def configure(self):
-        self.fileSystem = OSFileSystem()
-        self.workingDir = TEMP / "flap"
-        self.source = self.workingDir / "project"
-        self.output = self.workingDir / "output"
+        self._builder.create_root_latex_file(   "\\documentclass{article}\n"
+                                                "\\graphicspath{images}\n"
+                                                "\\includeonly{partA,partB}"
+                                                "\\begin{document}\n"
+                                                "    \\include{partA}\n"
+                                                "    \\include{partB}\n"
+                                                "\\end{document}")
 
-    def clear_working_directory(self):
-        self.fileSystem.deleteDirectory(self.workingDir)
+        self._builder.create_latex_file("partA.tex", "\\input{result}")
 
-    def create_root_latex_file(self):
-        latex_code = "\documentclass{article}\n" \
-                     "\\graphicspath{images}\n" \
-                     "\\includeonly{partA,partB}" \
-                     "\\begin{document}\n" \
-                     "    \\include{partA}\n" \
-                     "    \\include{partB}\n" \
-                     "\\end{document}"
-        self.fileSystem.createFile(self.source / "main.tex", latex_code)
+        self._builder.create_latex_file("result.tex", "\\includegraphics{plot}")
 
-    def create_latex_part_A(self):
-        self.fileSystem.createFile(self.source / "partA.tex", "\\input{result}")
-        self.fileSystem.createFile(self.source / "result.tex", "\\includegraphics{plot}")
+        self._builder.create_latex_file("partB.tex", "blablah")
 
-    def create_latex_part_B(self):
-        self.fileSystem.createFile(self.source / "partB.tex", "blablah")
+        self._builder.create_image("plot.pdf")
 
-    def create_latex_resources(self):
-        self.fileSystem.createFile(self.source / "style.sty", "some style crap")
-        self.fileSystem.createFile(self.workingDir / "test.cls", "a LaTeX class")
-        symlink(self.fileSystem.forOS(self.workingDir / "test.cls"), self.fileSystem.forOS(self.source / "test.cls"))
+        self._builder.create_style_file("style.sty")
 
-    def create_image(self):
-        self.fileSystem.createFile(self.source / "images" / "plot.pdf", "image")
+        self._builder.create_class_file(TEMP / "test.cls")
+
+        self._builder.create_symbolic_link("test.cls",  TEMP / "test.cls")
 
     def tearDown(self):
-        self.fileSystem.move_to_directory(TEMP)
+        self._file_system.move_to_directory(TEMP)
 
-    def verify_merge_sources(self, file):
-        expected_content = "\documentclass{article}\n" \
+    def verify_merge_sources(self):
+        expected = "\documentclass{article}\n" \
                            "\n" \
                            "\\begin{document}\n" \
                            "    \\includegraphics{plot}\\clearpage \n" \
                            "    blablah\\clearpage \n" \
                            "\\end{document}"
-        self.assertEqual(file.content(), expected_content)
+        self._verify.merged_content_is(expected)
 
     def test_flatten_latex_project(self):
-        root = self.fileSystem.forOS(TEMP / "flap" / "project" / "main.tex")
-        output = self.fileSystem.forOS(TEMP / "flap" / "output")
+        self._runner.run_flap()
 
-        print(root)
-        main(["-v", root, output])
-        
-        file = self.fileSystem.open(self.output / "merged.tex")
-        self.verify_merge_sources(file)
-
-        styFile = self.fileSystem.open(self.output / "style.sty")
-        self.assertEqual(styFile.content(), "some style crap")
+        self.verify_merge_sources()
+        self._verify.style_file("style.sty")
+        self._verify.class_file("test.cls")
 
     def test_flatten_latex_project_locally(self):
-        output = self.fileSystem.forOS(TEMP / "flap" / "output")
+        self._runner.working_directory = self._builder.directory
 
-        self.fileSystem.move_to_directory(TEMP / "flap" / "project")
-        main(["-v", "main.tex", output])
+        self._runner.run_flap()
 
-        file = self.fileSystem.open(self.output / "merged.tex")
-        self.verify_merge_sources(file)
+        self.verify_merge_sources()
+        self._verify.style_file("style.sty")
+        self._verify.class_file("test.cls")
 
-        style = self.fileSystem.open(self.output / "style.sty")
-        self.assertEqual(style.content(), "some style crap")
 
     def test_usage_is_shown(self):
         mock = StringIO()
@@ -148,7 +262,6 @@ class AcceptanceTest(TestCase):
         self.assertNotEqual("", output, "No output detected")
         self.assertTrue(search(r"Usage\:", output), output)
         self.assertTrue(search(r"python -m flap <path/to/tex_file> <output/directory>", output), output)
-
 
 
 if __name__ == "__main__":
