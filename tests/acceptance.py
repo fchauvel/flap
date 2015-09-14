@@ -24,7 +24,7 @@ from flap.ui import main
 from flap.FileSystem import OSFileSystem
 from flap.path import TEMP
 
-from tests.commons import LatexProjectBuilder, FlapRunner, FlapVerifier
+from tests.commons import LatexProject, FlapRunner, FlapVerifier
 
 
 class OSFileSystemTest(TestCase):
@@ -61,60 +61,51 @@ class AcceptanceTest(TestCase):
 
     def setUp(self):
         self._file_system = OSFileSystem()
-        self._builder = LatexProjectBuilder(self._file_system)
-        self._runner = FlapRunner(self._builder, TEMP, TEMP / "output")
-        self._verify = FlapVerifier(self._file_system, self._runner)
-        self._builder.clear()
+        self.project = self.prepareLatexProject()
+        self._runner = FlapRunner(self._file_system, TEMP, TEMP / "output")
+        self._verify = FlapVerifier(self.project, self._runner)
 
-        self._builder.create_root_latex_file(   "\\documentclass{article}\n"
-                                                "\\graphicspath{images}\n"
-                                                "\\includeonly{partA,partB}"
-                                                "\\begin{document}\n"
-                                                "    \\include{partA}\n"
-                                                "    \\include{partB}\n"
-                                                "\\end{document}")
+    def prepareLatexProject(self):
+        project = LatexProject()
+        project.root_latex_code = "\\documentclass{article}\n" \
+                                       "\\graphicspath{images}\n" \
+                                       "\\includeonly{partA,partB}" \
+                                       "\\begin{document}\n" \
+                                       "    \\include{partA}\n" \
+                                       "    \\include{partB}\n" \
+                                       "\\end{document}"
 
-        self._builder.create_latex_file("partA.tex", "\\input{result}")
+        project.parts["partA.tex"] = "\\input{result}"
+        project.parts["result.tex"] = "\\includegraphics{plot}"
+        project.parts["partB.tex"] = "blablah"
 
-        self._builder.create_latex_file("result.tex", "\\includegraphics{plot}")
+        project.images = ["plot.pdf"]
 
-        self._builder.create_latex_file("partB.tex", "blablah")
-
-        self._builder.create_image("plot.pdf")
-
-        self._builder.create_style_file("style.sty")
-
-        self._builder.create_class_file(TEMP / "test.cls")
-
-        self._builder.create_symbolic_link("test.cls",  TEMP / "test.cls")
+        project.resources = ["style.sty", "test.cls" ]
+        return project
 
     def tearDown(self):
         self._file_system.move_to_directory(TEMP)
 
-    def verify_merge_sources(self):
-        expected = "\documentclass{article}\n" \
-                           "\n" \
-                           "\\begin{document}\n" \
-                           "    \\includegraphics{plot}\\clearpage \n" \
-                           "    blablah\\clearpage \n" \
-                           "\\end{document}"
-        self._verify.merged_content_is(expected)
+    def run_test(self):
+        self.project.create_on(self._file_system)
+
+        self._runner.run_flap(self.project)
+
+        self._verify.merged_content_is("\documentclass{article}\n"
+                                       "\n"
+                                       "\\begin{document}\n"
+                                       "    \\includegraphics{plot}\\clearpage \n"
+                                       "    blablah\\clearpage \n"
+                                       "\\end{document}")
+        self._verify.resources()
 
     def test_flatten_latex_project(self):
-        self._runner.run_flap()
-
-        self.verify_merge_sources()
-        self._verify.style_file("style.sty")
-        self._verify.class_file("test.cls")
+        self.run_test()
 
     def test_flatten_latex_project_locally(self):
-        self._runner.working_directory = self._builder.directory
-
-        self._runner.run_flap()
-
-        self.verify_merge_sources()
-        self._verify.style_file("style.sty")
-        self._verify.class_file("test.cls")
+        self._runner.working_directory = self.project.directory
+        self.run_test()
 
 
     def test_usage_is_shown(self):

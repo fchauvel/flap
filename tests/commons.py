@@ -21,21 +21,22 @@ from flap.ui import main
 from flap.path import TEMP
 
 
-class LatexProjectBuilder:
+class LatexProject:
     """
-    Helps build the file structure of a LaTeX project.
-    It does not contain any test, but it uses assertions
+    Data needed to defined the structure and content of a LaTeX project
     """
 
-    IMAGE_CONTENT = "image data"
-    STYLE_CONTENT = "some style definitions"
-    CLASS_CONTENT = "a class definition"
+    IMAGE_CONTENT = "fake image content"
+    RESOURCE_CONTENT = "fake resource content"
 
-    def __init__(self, file_system):
-        self._file_system = file_system
-        self.directory = TEMP / "project"
-        self.main_latex_file = "main.tex"
+    def __init__(self):
+        self.directory = TEMP / "flap-tests"
+        self.root_latex_file = "main.tex"
+        self.root_latex_code = "some latex code"
+        self.parts = {}
         self.images_directory = "images"
+        self.images = []
+        self.resources = []
 
     @property
     def directory(self):
@@ -46,12 +47,12 @@ class LatexProjectBuilder:
         self._directory = path
 
     @property
-    def main_latex_file(self):
-        return self._main_latex_file
+    def root_latex_file(self):
+        return self._root_latex_file
 
-    @main_latex_file.setter
-    def main_latex_file(self, path):
-        self._main_latex_file = self._directory / path
+    @root_latex_file.setter
+    def root_latex_file(self, path):
+        self._root_latex_file = self._directory / path
 
     @property
     def images_directory(self):
@@ -61,30 +62,15 @@ class LatexProjectBuilder:
     def images_directory(self, path):
         self._images_directory = self._directory / path
 
-    def clear(self):
-        self._file_system.deleteDirectory(self._directory)
-
-    def create_root_latex_file(self, content):
-        self._file_system.createFile(self._main_latex_file, content)
-
-    def create_latex_file(self, path, content):
-        self._file_system.createFile(self._directory / path, content)
-
-    def create_image(self, path):
-        self._file_system.createFile(self._images_directory / path, LatexProjectBuilder.IMAGE_CONTENT)
-
-    def create_style_file(self, path):
-        self._file_system.createFile(self._directory / path, LatexProjectBuilder.STYLE_CONTENT)
-
-    def create_class_file(self, path):
-        self._file_system.createFile(path, "a class definition")
-
-    def create_symbolic_link(self, link_path, link_target):
-        symlink(self._file_system.forOS(link_target), self._file_system.forOS(self._directory / link_path))
-
-    @property
-    def path_to_root_latex_file(self):
-        return self._file_system.forOS(self._main_latex_file)
+    def create_on(self, file_system):
+        file_system.deleteDirectory(self.directory)
+        file_system.createFile(self.root_latex_file, self.root_latex_code)
+        for (path, content) in self.parts.items():
+            file_system.createFile(self.directory / path, content)
+        for eachImage in self.images:
+            file_system.createFile(self.images_directory / eachImage, LatexProject.IMAGE_CONTENT)
+        for eachResource in self.resources:
+            file_system.createFile(self.directory / eachResource, LatexProject.RESOURCE_CONTENT)
 
 
 class FlapRunner:
@@ -92,8 +78,8 @@ class FlapRunner:
     Invoke FLaP, and provides access to the outputted files
     """
 
-    def __init__(self, latex_project, working_directory, output_directory):
-        self._project = latex_project
+    def __init__(self, file_system, working_directory, output_directory):
+        self._file_system = file_system
         self.working_directory = working_directory
         self.output_directory = output_directory
         self.merged_file = "merged.tex"
@@ -122,16 +108,16 @@ class FlapRunner:
     def merged_file(self, path):
         self._merged_file = path
 
-    def run_flap(self):
-        root = self._project.path_to_root_latex_file
-        output = self._project._file_system.forOS(self.output_directory)
+    def run_flap(self, project):
+        root = self._file_system.forOS(project.root_latex_file)
+        output = self._file_system.forOS(self.output_directory)
         main(["-v", root, output])
 
     def merged_content(self):
         return self.content_of(self._merged_file)
 
     def content_of(self, path):
-        return self._project._file_system.open(self.output_directory / path).content()
+        return self._file_system.open(self.output_directory / path).content()
 
 
 class FlapVerifier(TestCase):
@@ -139,17 +125,20 @@ class FlapVerifier(TestCase):
     Verify the outputs produced by FLaP
     """
 
-    def __init__(self, file_system, runner):
+    def __init__(self, project, runner):
         super().__init__()
-        self._file_system = file_system
+        self.project = project
         self._runner = runner
 
     def merged_content_is(self, expected):
         self.assertEqual(self._runner.merged_content(), expected)
 
-    def style_file(self, path):
-        self.assertEqual(self._runner.content_of(path), LatexProjectBuilder.STYLE_CONTENT)
+    def images(self):
+        for eachImage in self.project.images:
+            self.assertEqual(self._runner.content_of(eachImage), LatexProject.IMAGE_CONTENT)
 
-    def class_file(self, path):
-        self.assertEqual(self._runner.content_of(path), LatexProjectBuilder.CLASS_CONTENT)
+    def resources(self):
+        for eachResource in self.project.resources:
+            self.assertEqual(self._runner.content_of(eachResource), LatexProject.RESOURCE_CONTENT)
+
 
