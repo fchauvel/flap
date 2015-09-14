@@ -365,6 +365,8 @@ class Flap:
     included files, moving graphics and resources files such as classes, styles 
     and bibliography 
     """
+
+    OUTPUT_FILE = "merged.tex"
     
     def __init__(self, fileSystem, listener=Listener()):
         self._fileSystem = fileSystem
@@ -390,7 +392,7 @@ class Flap:
         pipeline = Processor.flap_pipeline(self)
         fragments = pipeline.fragments()
         merge = ''.join([ each.text() for each in fragments ])
-        self._fileSystem.createFile(self._output / "merged.tex", merge)
+        self._fileSystem.createFile(self._output / Flap.OUTPUT_FILE, merge)
             
     def copy_resource_files(self):
         project = self._root.container()

@@ -68,12 +68,12 @@ class AcceptanceTest(TestCase):
     def prepareLatexProject(self):
         project = LatexProject()
         project.root_latex_code = "\\documentclass{article}\n" \
-                                       "\\graphicspath{images}\n" \
-                                       "\\includeonly{partA,partB}" \
-                                       "\\begin{document}\n" \
-                                       "    \\include{partA}\n" \
-                                       "    \\include{partB}\n" \
-                                       "\\end{document}"
+                                  "\\graphicspath{images}\n" \
+                                  "\\includeonly{partA,partB}" \
+                                  "\\begin{document}\n" \
+                                  "    \\include{partA}\n" \
+                                  "    \\include{partB}\n" \
+                                  "\\end{document}"
 
         project.parts["partA.tex"] = "\\input{result}"
         project.parts["result.tex"] = "\\includegraphics{plot}"
@@ -98,6 +98,7 @@ class AcceptanceTest(TestCase):
                                        "    \\includegraphics{plot}\\clearpage \n"
                                        "    blablah\\clearpage \n"
                                        "\\end{document}")
+        self._verify.images()
         self._verify.resources()
 
     def test_flatten_latex_project(self):
@@ -106,7 +107,6 @@ class AcceptanceTest(TestCase):
     def test_flatten_latex_project_locally(self):
         self._runner.working_directory = self.project.directory
         self.run_test()
-
 
     def test_usage_is_shown(self):
         mock = StringIO()

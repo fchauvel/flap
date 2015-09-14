@@ -19,6 +19,7 @@ from os import symlink
 from unittest import TestCase
 from flap.ui import main
 from flap.path import TEMP
+from flap.engine import Flap
 
 
 class LatexProject:
@@ -82,31 +83,10 @@ class FlapRunner:
         self._file_system = file_system
         self.working_directory = working_directory
         self.output_directory = output_directory
-        self.merged_file = "merged.tex"
-
-    @property
-    def working_directory(self):
-        return self._working_directory
-
-    @working_directory.setter
-    def working_directory(self, path):
-        self._working_directory = path
-
-    @property
-    def output_directory(self):
-        return self._output_directory
-
-    @output_directory.setter
-    def output_directory(self, directory):
-        self._output_directory = directory
 
     @property
     def merged_file(self):
-        return self.output_directory / self._merged_file
-
-    @merged_file.setter
-    def merged_file(self, path):
-        self._merged_file = path
+        return self.output_directory / Flap.OUTPUT_FILE
 
     def run_flap(self, project):
         root = self._file_system.forOS(project.root_latex_file)
@@ -114,7 +94,7 @@ class FlapRunner:
         main(["-v", root, output])
 
     def merged_content(self):
-        return self.content_of(self._merged_file)
+        return self.content_of(Flap.OUTPUT_FILE)
 
     def content_of(self, path):
         return self._file_system.open(self.output_directory / path).content()
