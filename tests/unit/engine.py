@@ -114,9 +114,6 @@ class FLaPTest(TestCase):
     def create_image(self, location):
         self.project.images.append(location)
 
-    def create_tex_file(self, location, content):
-        self.project.parts[location] = content
-
     def open(self, location):
         return self.fileSystem.open(Path.fromText(self.project_directory + "/" + location))
 
@@ -156,10 +153,11 @@ class TestEndinputRemover(FLaPTest):
         self.project.root_latex_code = "aaa\n" \
                                        "\\input{foo}\n" \
                                        "ccc"
-        self.create_tex_file("foo.tex", "bbb\n"
-                                        "bbb\n"
-                                        "\\endinput\n"
-                                        "zzz")
+
+        self.project.parts["foo.tex"] = ("bbb\n"
+                                         "bbb\n"
+                                         "\\endinput\n"
+                                         "zzz")
         self.run_flap()
         self.verify_merged("aaa\n"
                            "bbb\n"
@@ -171,7 +169,7 @@ class InputMergerTests(FLaPTest):
 
     def test_simple_merge(self):
         self.project.root_latex_code = "blahblah \\input{foo} blah"
-        self.create_tex_file("foo.tex", "bar")
+        self.project.parts["foo.tex"] = "bar"
 
         self.run_flap()
 
@@ -179,8 +177,8 @@ class InputMergerTests(FLaPTest):
 
     def test_recursive_merge(self):
         self.project.root_latex_code = "A \input{foo} Z"
-        self.create_tex_file("foo.tex", "B \input{bar} Y")
-        self.create_tex_file("bar.tex", "blah")
+        self.project.parts["foo.tex" ] = "B \input{bar} Y"
+        self.project.parts["bar.tex"] = "blah"
 
         self.run_flap()
 
@@ -192,7 +190,7 @@ class InputMergerTests(FLaPTest):
                                        "% \input{foo} \n" \
                                        "blah blah blah\n" \
                                        ""
-        self.create_tex_file("foo.tex", "included content")
+        self.project.parts["foo.tex"] = "included content"
 
         self.run_flap()
 
@@ -206,7 +204,7 @@ class InputMergerTests(FLaPTest):
         self.project.root_latex_code = "A \\input{img/foo/%\n" \
                                        "bar/%\n" \
                                        "baz} B"
-        self.create_tex_file("img/foo/bar/baz.tex", "xyz")
+        self.project.parts["img/foo/bar/baz.tex"] = "xyz"
 
         self.run_flap()
 
@@ -215,7 +213,8 @@ class InputMergerTests(FLaPTest):
     def test_input_directives_are_reported(self):
         self.project.root_latex_code = "blah blabh\n" \
                                        "\input{foo}"
-        self.create_tex_file("foo.tex", "blah blah")
+
+        self.project.parts["foo.tex"] = "blah blah"
 
         self.run_flap()
 
@@ -233,7 +232,8 @@ class IncludeMergeTest(FLaPTest):
 
     def test_simple_merge(self):
         self.project.root_latex_code = "blahblah \include{foo} blah"
-        self.create_tex_file("foo.tex", "bar")
+
+        self.project.parts["foo.tex"] = "bar"
 
         self.run_flap()
 
@@ -248,9 +248,10 @@ class IncludeMergeTest(FLaPTest):
                                         "bla bla"
                                         "\include{baz}"
                                         "bla")
-        self.create_tex_file("foo.tex", "foo")
-        self.create_tex_file("bar.tex", "bar")
-        self.create_tex_file("baz.tex", "baz")
+
+        self.project.parts["foo.tex"] = "foo"
+        self.project.parts["bar.tex"] = "bar"
+        self.project.parts["baz.tex"] = "baz"
 
         self.run_flap()
 
@@ -340,9 +341,9 @@ class IncludeGraphicsProcessorTest(FLaPTest):
         self.project.root_latex_code = ("aaa\n"
                                         "\\input{slides/foo}\n"
                                         "bbb")
-        self.create_tex_file("slides/foo.tex", "ccc\n"
-                                               "\\includegraphics{foo}\n"
-                                               "ddd")
+        self.project.parts["slides/foo.tex"] = ("ccc\n"
+                                                "\\includegraphics{foo}\n"
+                                                "ddd")
         self.project.images_directory = None
         self.create_image("foo.pdf")
 
@@ -357,7 +358,7 @@ class IncludeGraphicsProcessorTest(FLaPTest):
 
     def test_paths_are_recursively_adjusted(self):
         self.project.root_latex_code = "AA \\input{foo} AA"
-        self.create_tex_file("foo.tex", r"BB \includegraphics[width=3cm]{img/foo} BB")
+        self.project.parts["foo.tex"] = "BB \\includegraphics[width=3cm]{img/foo} BB"
 
         self.project.images_directory = "img"
         self.create_image("foo.pdf")
@@ -416,7 +417,7 @@ class SVGIncludeTest(FLaPTest):
 
     def test_includesvg_in_separated_file(self):
         self.project.root_latex_code =  "A \\input{parts/foo} A"
-        self.create_tex_file("parts/foo.tex", "B \\includesvg{img/sources/test} B")
+        self.project.parts["parts/foo.tex"] = "B \\includesvg{img/sources/test} B"
 
         self.project.images_directory = "img/sources"
         self.create_image("test.svg")
@@ -472,11 +473,11 @@ class MiscellaneousTests(FLaPTest):
 
     def test_indentation_is_preserved(self):
         self.project.root_latex_code = "\t\\input{part}"
-        self.create_tex_file("part.tex", "\n"
-                                         "\\begin{center}\n"
-                                         "\t\\includegraphics[width=4cm]{img/foo}\n"
-                                         "  \\includegraphics[width=5cm]{img/foo}\n"
-                                         "\\end{center}")
+        self.project.parts["part.tex"] = ("\n"
+                                          "\\begin{center}\n"
+                                          "\t\\includegraphics[width=4cm]{img/foo}\n"
+                                          "  \\includegraphics[width=5cm]{img/foo}\n"
+                                          "\\end{center}")
         self.project.images_directory = "img"
         self.create_image("foo.pdf")
 
@@ -491,7 +492,7 @@ class MiscellaneousTests(FLaPTest):
 
     def test_resources_are_copied(self):
         self.project.root_latex_code = "xxx"
-        self.create_tex_file("style.cls", "whatever")
+        self.project.parts["style.cls"] = "whatever"
 
         self.run_flap()
 
