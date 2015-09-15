@@ -15,7 +15,6 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from os import symlink
 from unittest import TestCase
 from flap.ui import main
 from flap.path import TEMP
@@ -84,24 +83,25 @@ class LatexProject:
             file_system.createFile(self.directory / eachResource, LatexProject.RESOURCE_CONTENT)
 
 
-class FlapRunner:
+class FlapVerifier(TestCase):
     """
-    Invoke FLaP, and provides access to the outputted files
+    Verify the outputs produced by FLaP
     """
 
-    def __init__(self, file_system):
+    def __init__(self, file_system, project):
+        super().__init__()
         self._file_system = file_system
+        self.project = project
         self.output_directory = TEST_DIRECTORY / "output"
         self.working_directory = TEST_DIRECTORY
-
-    @property
-    def merged_file(self):
-        return self.output_directory / Flap.OUTPUT_FILE
 
     def run_flap(self, project):
         root = self._file_system.forOS(project.root_latex_file)
         output = self._file_system.forOS(self.output_directory)
         main(["-v", root, output])
+
+    def merged_content_is(self, expected):
+        self.assertEqual(self.merged_content(), expected)
 
     def merged_content(self):
         return self.content_of(Flap.OUTPUT_FILE)
@@ -109,29 +109,15 @@ class FlapRunner:
     def content_of(self, path):
         return self._file_system.open(self.output_directory / path).content()
 
-
-class FlapVerifier(TestCase):
-    """
-    Verify the outputs produced by FLaP
-    """
-
-    def __init__(self, project, runner):
-        super().__init__()
-        self.project = project
-        self._runner = runner
-
-    def merged_content_is(self, expected):
-        self.assertEqual(self._runner.merged_content(), expected)
-
     def images(self):
         for eachImage in self.project.images:
             self.image(eachImage)
 
     def image(self, image):
-        self.assertEqual(self._runner.content_of(image), LatexProject.IMAGE_CONTENT)
+        self.assertEqual(self.content_of(image), LatexProject.IMAGE_CONTENT)
 
     def resources(self):
         for eachResource in self.project.resources:
-            self.assertEqual(self._runner.content_of(eachResource), LatexProject.RESOURCE_CONTENT)
+            self.assertEqual(self.content_of(eachResource), LatexProject.RESOURCE_CONTENT)
 
 

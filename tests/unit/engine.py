@@ -22,7 +22,7 @@ from flap.FileSystem import InMemoryFileSystem, File, MissingFile
 from flap.engine import Flap, Fragment, Listener, CommentsRemover, Processor, GraphicNotFound, TexFileNotFound
 from flap.path import Path, ROOT, TEMP
 
-from tests.commons import LatexProject, FlapRunner, FlapVerifier
+from tests.commons import LatexProject, FlapVerifier
 
 
 class FragmentTest(TestCase):
@@ -94,16 +94,15 @@ class FLaPTest(TestCase):
     """
 
     def setUp(self):
-        self.fileSystem = InMemoryFileSystem()
+        self.file_system = InMemoryFileSystem()
         self.listener = MagicMock(Listener())
-        self.flap = Flap(self.fileSystem, self.listener)
+        self.flap = Flap(self.file_system, self.listener)
         self.project = LatexProject()
-        self.runner = FlapRunner(self.fileSystem)
-        self.verify = FlapVerifier(self.project, self.runner)
+        self.verify = FlapVerifier(self.file_system, self.project)
 
     def run_flap(self):
-        self.project.create_on(self.fileSystem)
-        self.flap.flatten(self.project.root_latex_file, self.runner.output_directory)
+        self.project.create_on(self.file_system)
+        self.flap.flatten(self.project.root_latex_file, self.verify.output_directory)
 
     def verify_listener(self, handler, fileName, lineNumber, text):
         fragment = handler.call_args[0][0]
@@ -292,10 +291,10 @@ class IncludeGraphicsProcessorTest(FLaPTest):
         self.project.images_directory = None
         self.project.images = ["foo.pdf"]
 
-        self.project.create_on(self.fileSystem)
+        self.project.create_on(self.file_system)
 
-        self.fileSystem.move_to_directory(self.project.directory)
-        self.flap.flatten(self.project.root_latex_file, self.runner.output_directory)
+        self.file_system.move_to_directory(self.project.directory)
+        self.flap.flatten(self.project.root_latex_file, self.verify.output_directory)
 
         self.verify.merged_content_is(r"A \includegraphics[width=3cm]{foo} Z")
         self.verify.image("foo.pdf")
@@ -406,10 +405,10 @@ class SVGIncludeTest(FLaPTest):
         self.project.images_directory = "img"
         self.project.images = ["foo.eps", "foo.svg"]
 
-        self.project.create_on(self.fileSystem)
+        self.project.create_on(self.file_system)
 
-        self.fileSystem.filesIn = MagicMock()
-        self.fileSystem.filesIn.return_value = [ self.fileSystem.open(self.project.path_to_image(eachImage)) for eachImage in self.project.images ]
+        self.file_system.filesIn = MagicMock()
+        self.file_system.filesIn.return_value = [ self.file_system.open(self.project.path_to_image(eachImage)) for eachImage in self.project.images ]
 
         self.run_flap()
 

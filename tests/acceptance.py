@@ -24,7 +24,7 @@ from flap.ui import main
 from flap.FileSystem import OSFileSystem
 from flap.path import TEMP
 
-from tests.commons import LatexProject, FlapRunner, FlapVerifier
+from tests.commons import LatexProject, FlapVerifier
 
 
 class OSFileSystemTest(TestCase):
@@ -62,8 +62,7 @@ class AcceptanceTest(TestCase):
     def setUp(self):
         self._file_system = OSFileSystem()
         self.project = self.prepareLatexProject()
-        self._runner = FlapRunner(self._file_system)
-        self._verify = FlapVerifier(self.project, self._runner)
+        self._verify = FlapVerifier(self._file_system, self.project)
 
     def prepareLatexProject(self):
         project = LatexProject()
@@ -90,7 +89,7 @@ class AcceptanceTest(TestCase):
     def run_test(self):
         self.project.create_on(self._file_system)
 
-        self._runner.run_flap(self.project)
+        self._verify.run_flap(self.project)
 
         self._verify.merged_content_is("\documentclass{article}\n"
                                        "\n"
@@ -105,7 +104,7 @@ class AcceptanceTest(TestCase):
         self.run_test()
 
     def test_flatten_latex_project_locally(self):
-        self._runner.working_directory = self.project.directory
+        self._verify.working_directory = self.project.directory
         self.run_test()
 
     def test_usage_is_shown(self):
