@@ -62,7 +62,7 @@ class AcceptanceTest(TestCase):
     def setUp(self):
         self._file_system = OSFileSystem()
         self.project = self.prepareLatexProject()
-        self._runner = FlapRunner(self._file_system, TEMP, TEMP / "output")
+        self._runner = FlapRunner(self._file_system)
         self._verify = FlapVerifier(self.project, self._runner)
 
     def prepareLatexProject(self):

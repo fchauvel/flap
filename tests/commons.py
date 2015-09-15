@@ -22,6 +22,9 @@ from flap.path import TEMP
 from flap.engine import Flap
 
 
+TEST_DIRECTORY = TEMP / "flap-tests"
+
+
 class LatexProject:
     """
     Data needed to defined the structure and content of a LaTeX project
@@ -31,7 +34,7 @@ class LatexProject:
     RESOURCE_CONTENT = "fake resource content"
 
     def __init__(self):
-        self.directory = TEMP / "flap-tests"
+        self.directory = TEST_DIRECTORY / "project"
         self.root_latex_file = "main.tex"
         self.root_latex_code = "some latex code"
         self.parts = {}
@@ -86,10 +89,10 @@ class FlapRunner:
     Invoke FLaP, and provides access to the outputted files
     """
 
-    def __init__(self, file_system, working_directory, output_directory):
+    def __init__(self, file_system):
         self._file_system = file_system
-        self.working_directory = working_directory
-        self.output_directory = output_directory
+        self.output_directory = TEST_DIRECTORY / "output"
+        self.working_directory = TEST_DIRECTORY
 
     @property
     def merged_file(self):
@@ -122,7 +125,10 @@ class FlapVerifier(TestCase):
 
     def images(self):
         for eachImage in self.project.images:
-            self.assertEqual(self._runner.content_of(eachImage), LatexProject.IMAGE_CONTENT)
+            self.image(eachImage)
+
+    def image(self, image):
+        self.assertEqual(self._runner.content_of(image), LatexProject.IMAGE_CONTENT)
 
     def resources(self):
         for eachResource in self.project.resources:
