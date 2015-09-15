@@ -24,7 +24,7 @@ from flap.ui import main
 from flap.FileSystem import OSFileSystem
 from flap.path import TEMP
 
-from tests.commons import LatexProject, FlapVerifier
+from tests.commons import LatexProject, FlapTest
 
 
 class OSFileSystemTest(TestCase):
@@ -57,54 +57,58 @@ class OSFileSystemTest(TestCase):
         self.assertEqual(copy.content(), self.content)
 
 
-class AcceptanceTest(TestCase):
+class AcceptanceTest(FlapTest):
 
     def setUp(self):
-        self._file_system = OSFileSystem()
-        self.project = self.prepareLatexProject()
-        self._verify = FlapVerifier(self._file_system, self.project)
+        super().setUp()
+        self.file_system = OSFileSystem()
+        self.prepareLatexProject()
 
     def prepareLatexProject(self):
-        project = LatexProject()
-        project.root_latex_code = "\\documentclass{article}\n" \
-                                  "\\graphicspath{images}\n" \
-                                  "\\includeonly{partA,partB}" \
-                                  "\\begin{document}\n" \
-                                  "    \\include{partA}\n" \
-                                  "    \\include{partB}\n" \
-                                  "\\end{document}"
+        self.project.root_latex_code = "\\documentclass{article}\n" \
+                                       "\\graphicspath{images}\n" \
+                                       "\\includeonly{partA,partB}" \
+                                       "\\begin{document}\n" \
+                                       "    \\include{partA}\n" \
+                                       "    \\include{partB}\n" \
+                                       "\\end{document}"
 
-        project.parts["partA.tex"] = "\\input{result}"
-        project.parts["result.tex"] = "\\includegraphics{plot}"
-        project.parts["partB.tex"] = "blablah"
+        self.project.parts["partA.tex"] = "\\input{result}"
+        self.project.parts["result.tex"] = "\\includegraphics{plot}"
+        self.project.parts["partB.tex"] = "blablah"
 
-        project.images = ["plot.pdf"]
+        self.project.images = ["plot.pdf"]
 
-        project.resources = ["style.sty", "test.cls" ]
-        return project
+        self.project.resources = ["style.sty", "test.cls" ]
+
+    def run_flap(self, project):
+        root = self.file_system.forOS(project.root_latex_file)
+        output = self.file_system.forOS(self.output_directory)
+        main(["-v", root, output])
 
     def tearDown(self):
-        self._file_system.move_to_directory(TEMP)
+        self.file_system.move_to_directory(TEMP)
 
     def run_test(self):
-        self.project.create_on(self._file_system)
+        self.project.create_on(self.file_system)
 
-        self._verify.run_flap(self.project)
+        self.run_flap(self.project)
 
-        self._verify.merged_content_is("\documentclass{article}\n"
-                                       "\n"
-                                       "\\begin{document}\n"
-                                       "    \\includegraphics{plot}\\clearpage \n"
-                                       "    blablah\\clearpage \n"
-                                       "\\end{document}")
-        self._verify.images()
-        self._verify.resources()
+        self.verify_merge("\documentclass{article}\n"
+                          "\n"
+                          "\\begin{document}\n"
+                          "    \\includegraphics{plot}\\clearpage \n"
+                          "    blablah\\clearpage \n"
+                          "\\end{document}")
+
+        self.verify_images()
+        self.verify_resources()
 
     def test_flatten_latex_project(self):
         self.run_test()
 
     def test_flatten_latex_project_locally(self):
-        self._verify.working_directory = self.project.directory
+        self.working_directory = self.project.directory
         self.run_test()
 
     def test_usage_is_shown(self):

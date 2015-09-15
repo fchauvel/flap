@@ -83,41 +83,35 @@ class LatexProject:
             file_system.createFile(self.directory / eachResource, LatexProject.RESOURCE_CONTENT)
 
 
-class FlapVerifier(TestCase):
+class FlapTest(TestCase):
     """
-    Verify the outputs produced by FLaP
+    Run and provides helpers to verify the outputs produced by FLaP
     """
 
-    def __init__(self, file_system, project):
-        super().__init__()
-        self._file_system = file_system
-        self.project = project
+    def setUp(self):
+        self.file_system = None
+        self.project = LatexProject()
         self.output_directory = TEST_DIRECTORY / "output"
         self.working_directory = TEST_DIRECTORY
 
     def run_flap(self, project):
-        root = self._file_system.forOS(project.root_latex_file)
-        output = self._file_system.forOS(self.output_directory)
-        main(["-v", root, output])
+        pass
 
-    def merged_content_is(self, expected):
-        self.assertEqual(self.merged_content(), expected)
+    def verify_merge(self, expected):
+        self.assertEqual(self._content_of(Flap.OUTPUT_FILE), expected)
 
-    def merged_content(self):
-        return self.content_of(Flap.OUTPUT_FILE)
+    def _content_of(self, path):
+        return self.file_system.open(self.output_directory / path).content()
 
-    def content_of(self, path):
-        return self._file_system.open(self.output_directory / path).content()
-
-    def images(self):
+    def verify_images(self):
         for eachImage in self.project.images:
-            self.image(eachImage)
+            self.verify_image(eachImage)
 
-    def image(self, image):
-        self.assertEqual(self.content_of(image), LatexProject.IMAGE_CONTENT)
+    def verify_image(self, image):
+        self.assertEqual(self._content_of(image), LatexProject.IMAGE_CONTENT)
 
-    def resources(self):
+    def verify_resources(self):
         for eachResource in self.project.resources:
-            self.assertEqual(self.content_of(eachResource), LatexProject.RESOURCE_CONTENT)
+            self.assertEqual(self._content_of(eachResource), LatexProject.RESOURCE_CONTENT)
 
 

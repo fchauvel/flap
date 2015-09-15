@@ -22,7 +22,7 @@ from flap.FileSystem import InMemoryFileSystem, File, MissingFile
 from flap.engine import Flap, Fragment, Listener, CommentsRemover, Processor, GraphicNotFound, TexFileNotFound
 from flap.path import Path, ROOT, TEMP
 
-from tests.commons import LatexProject, FlapVerifier
+from tests.commons import LatexProject, FlapTest
 
 
 class FragmentTest(TestCase):
@@ -88,21 +88,20 @@ class CommentRemoverTest(TestCase):
         self.assertEqual(result[0].text(), expectation)
 
 
-class FLaPTest(TestCase):
+class FlapUnitTest(FlapTest):
     """
     Provide some helper methods for create file in an in memory file system
     """
 
     def setUp(self):
+        super().setUp()
         self.file_system = InMemoryFileSystem()
         self.listener = MagicMock(Listener())
         self.flap = Flap(self.file_system, self.listener)
-        self.project = LatexProject()
-        self.verify = FlapVerifier(self.file_system, self.project)
 
     def run_flap(self):
         self.project.create_on(self.file_system)
-        self.flap.flatten(self.project.root_latex_file, self.verify.output_directory)
+        self.flap.flatten(self.project.root_latex_file, self.output_directory)
 
     def verify_listener(self, handler, fileName, lineNumber, text):
         fragment = handler.call_args[0][0]
@@ -111,7 +110,7 @@ class FLaPTest(TestCase):
         self.assertEqual(fragment.text().strip(), text)
 
 
-class TestEndinputRemover(FLaPTest):
+class TestEndinputRemover(FlapUnitTest):
     """
     Specify the behaviour of the Endinput remover
     """
@@ -121,7 +120,7 @@ class TestEndinputRemover(FLaPTest):
                                        "\\endinput\n" \
                                        "ccc"
         self.run_flap()
-        self.verify.merged_content_is("aaa\n")
+        self.verify_merge("aaa\n")
 
     def test_endinput_in_a_separate_tex_file(self):
         self.project.root_latex_code = "aaa\n" \
@@ -133,13 +132,14 @@ class TestEndinputRemover(FLaPTest):
                                          "\\endinput\n"
                                          "zzz")
         self.run_flap()
-        self.verify.merged_content_is("aaa\n"
+
+        self.verify_merge("aaa\n"
                            "bbb\n"
                            "bbb\n\n"
                            "ccc")
 
 
-class InputMergerTests(FLaPTest):
+class InputMergerTests(FlapUnitTest):
 
     def test_simple_merge(self):
         self.project.root_latex_code = "blahblah \\input{foo} blah"
@@ -147,7 +147,7 @@ class InputMergerTests(FLaPTest):
 
         self.run_flap()
 
-        self.verify.merged_content_is("blahblah bar blah")
+        self.verify_merge("blahblah bar blah")
 
     def test_recursive_merge(self):
         self.project.root_latex_code = "A \input{foo} Z"
@@ -156,7 +156,7 @@ class InputMergerTests(FLaPTest):
 
         self.run_flap()
 
-        self.verify.merged_content_is("A B blah Y Z")
+        self.verify_merge("A B blah Y Z")
 
     def test_commented_lines_are_ignored(self):
         self.project.root_latex_code = "\n" \
@@ -168,7 +168,7 @@ class InputMergerTests(FLaPTest):
 
         self.run_flap()
 
-        self.verify.merged_content_is("\n"
+        self.verify_merge("\n"
                            "blah blah blah\n"
                            "\n"
                            "blah blah blah\n"
@@ -182,7 +182,7 @@ class InputMergerTests(FLaPTest):
 
         self.run_flap()
 
-        self.verify.merged_content_is("A xyz B")
+        self.verify_merge("A xyz B")
 
     def test_input_directives_are_reported(self):
         self.project.root_latex_code = "blah blabh\n" \
@@ -202,7 +202,7 @@ class InputMergerTests(FLaPTest):
             self.run_flap()
 
 
-class IncludeMergeTest(FLaPTest):
+class IncludeMergeTest(FlapUnitTest):
 
     def test_simple_merge(self):
         self.project.root_latex_code = "blahblah \include{foo} blah"
@@ -211,7 +211,7 @@ class IncludeMergeTest(FLaPTest):
 
         self.run_flap()
 
-        self.verify.merged_content_is("blahblah bar\clearpage  blah")
+        self.verify_merge("blahblah bar\clearpage  blah")
 
     def test_include_only_effect(self):
         self.project.root_latex_code = ("bla blab"
@@ -229,7 +229,7 @@ class IncludeMergeTest(FLaPTest):
 
         self.run_flap()
 
-        self.verify.merged_content_is("bla blab"
+        self.verify_merge("bla blab"
                            "bla bla"
                            "foo\\clearpage "
                            "bla bla"
@@ -237,7 +237,7 @@ class IncludeMergeTest(FLaPTest):
                            "bla")
 
 
-class GraphicPathTest(FLaPTest):
+class GraphicPathTest(FlapUnitTest):
     """
     Specification of the graphic path processing
     """
@@ -253,12 +253,12 @@ class GraphicPathTest(FLaPTest):
 
         self.run_flap()
 
-        self.verify.merged_content_is("blabla"
+        self.verify_merge("blabla"
                            "\\includegraphics[witdh=5cm]{plot}"
                            "blabla")
 
 
-class IncludeGraphicsProcessorTest(FLaPTest):
+class IncludeGraphicsProcessorTest(FlapUnitTest):
     """
     Tests the processing of \includegraphics directive
     """
@@ -271,8 +271,8 @@ class IncludeGraphicsProcessorTest(FLaPTest):
 
         self.run_flap()
 
-        self.verify.merged_content_is(r"A \includegraphics[width=3cm]{foo} Z")
-        self.verify.image("foo.pdf")
+        self.verify_merge(r"A \includegraphics[width=3cm]{foo} Z")
+        self.verify_image("foo.pdf")
 
     def test_paths_with_extension(self):
         self.project.root_latex_code = "A \\includegraphics[width=3cm]{img/foo.pdf} Z"
@@ -282,8 +282,8 @@ class IncludeGraphicsProcessorTest(FLaPTest):
 
         self.run_flap()
 
-        self.verify.merged_content_is(r"A \includegraphics[width=3cm]{foo} Z")
-        self.verify.image("foo.pdf")
+        self.verify_merge(r"A \includegraphics[width=3cm]{foo} Z")
+        self.verify_image("foo.pdf")
 
     def test_local_paths(self):
         self.project.root_latex_code = "A \\includegraphics[width=3cm]{foo} Z"
@@ -294,10 +294,10 @@ class IncludeGraphicsProcessorTest(FLaPTest):
         self.project.create_on(self.file_system)
 
         self.file_system.move_to_directory(self.project.directory)
-        self.flap.flatten(self.project.root_latex_file, self.verify.output_directory)
+        self.flap.flatten(self.project.root_latex_file, self.output_directory)
 
-        self.verify.merged_content_is(r"A \includegraphics[width=3cm]{foo} Z")
-        self.verify.image("foo.pdf")
+        self.verify_merge(r"A \includegraphics[width=3cm]{foo} Z")
+        self.verify_image("foo.pdf")
 
     def test_path_to_local_images_are_not_adjusted(self):
         self.project.root_latex_code = ("\\includegraphics[interpolate,width=11.445cm]{%\n"
@@ -308,8 +308,8 @@ class IncludeGraphicsProcessorTest(FLaPTest):
 
         self.run_flap()
 
-        self.verify.merged_content_is("\\includegraphics[interpolate,width=11.445cm]{startingPlace}")
-        self.verify.image("startingPlace.pdf")
+        self.verify_merge("\\includegraphics[interpolate,width=11.445cm]{startingPlace}")
+        self.verify_image("startingPlace.pdf")
 
     def test_link_to_graphic_in_a_separate_file(self):
         self.project.root_latex_code = ("aaa\n"
@@ -323,12 +323,12 @@ class IncludeGraphicsProcessorTest(FLaPTest):
 
         self.run_flap()
 
-        self.verify.merged_content_is("aaa\n"
+        self.verify_merge("aaa\n"
                            "ccc\n"
                            "\\includegraphics{foo}\n"
                            "ddd\n"
                            "bbb")
-        self.verify.image("foo.pdf")
+        self.verify_image("foo.pdf")
 
     def test_paths_are_recursively_adjusted(self):
         self.project.root_latex_code = "AA \\input{foo} AA"
@@ -339,8 +339,8 @@ class IncludeGraphicsProcessorTest(FLaPTest):
 
         self.run_flap()
 
-        self.verify.merged_content_is(r"AA BB \includegraphics[width=3cm]{foo} BB AA")
-        self.verify.image("foo.pdf")
+        self.verify_merge(r"AA BB \includegraphics[width=3cm]{foo} BB AA")
+        self.verify_image("foo.pdf")
 
     def test_multi_lines_directives(self):
         self.project.root_latex_code = ("A"
@@ -353,8 +353,8 @@ class IncludeGraphicsProcessorTest(FLaPTest):
 
         self.run_flap()
 
-        self.verify.merged_content_is("A\\includegraphics[width=8cm]{foo}\nB")
-        self.verify.image("foo.pdf")
+        self.verify_merge("A\\includegraphics[width=8cm]{foo}\nB")
+        self.verify_image("foo.pdf")
 
     def test_includegraphics_are_reported(self):
         self.project.root_latex_code = ("\n"
@@ -374,7 +374,7 @@ class IncludeGraphicsProcessorTest(FLaPTest):
             self.run_flap()
 
 
-class SVGIncludeTest(FLaPTest):
+class SVGIncludeTest(FlapUnitTest):
 
     def testLinksToSVGAreAdjusted(self):
         self.project.root_latex_code = "A \\includesvg{img/foo} Z"
@@ -384,8 +384,8 @@ class SVGIncludeTest(FLaPTest):
 
         self.run_flap()
 
-        self.verify.merged_content_is(r"A \includesvg{foo} Z")
-        self.verify.image("foo.svg")
+        self.verify_merge(r"A \includesvg{foo} Z")
+        self.verify_image("foo.svg")
 
     def test_includesvg_in_separated_file(self):
         self.project.root_latex_code =  "A \\input{parts/foo} A"
@@ -396,8 +396,8 @@ class SVGIncludeTest(FLaPTest):
 
         self.run_flap()
 
-        self.verify.merged_content_is("A B \\includesvg{test} B A")
-        self.verify.image("test.svg")
+        self.verify_merge("A B \\includesvg{test} B A")
+        self.verify_image("test.svg")
 
     def testSVGFilesAreCopiedEvenWhenJPGAreAvailable(self):
         self.project.root_latex_code =  "A \\includesvg{img/foo} Z"
@@ -412,11 +412,11 @@ class SVGIncludeTest(FLaPTest):
 
         self.run_flap()
 
-        self.verify.merged_content_is(r"A \includesvg{foo} Z")
-        self.verify.image("foo.svg")
+        self.verify_merge(r"A \includesvg{foo} Z")
+        self.verify_image("foo.svg")
 
 
-class OverpicAdjuster(FLaPTest):
+class OverpicAdjuster(FlapUnitTest):
     """
     Specification of the processor for 'overpic' environment
     """
@@ -432,14 +432,14 @@ class OverpicAdjuster(FLaPTest):
 
         self.run_flap()
 
-        self.verify.merged_content_is("\\begin{overpic}[scale=0.25,unit=1mm,grid,tics=10]{picture}\n"
+        self.verify_merge("\\begin{overpic}[scale=0.25,unit=1mm,grid,tics=10]{picture}\n"
                            "blablabla\n"
                            "\\end{overpic}\n"
                            "")
-        self.verify.image("picture.pdf")
+        self.verify_image("picture.pdf")
 
 
-class MiscellaneousTests(FLaPTest):
+class MiscellaneousTests(FlapUnitTest):
 
     def test_indentation_is_preserved(self):
         self.project.root_latex_code = "\t\\input{part}"
@@ -453,12 +453,12 @@ class MiscellaneousTests(FLaPTest):
 
         self.run_flap()
 
-        self.verify.merged_content_is("\t\n"
+        self.verify_merge("\t\n"
                                       "\\begin{center}\n"
                                       "\t\\includegraphics[width=4cm]{foo}\n"
                                       "  \\includegraphics[width=5cm]{foo}\n"
                                       "\\end{center}")
-        self.verify.image("foo.pdf")
+        self.verify_image("foo.pdf")
 
     def test_resources_are_copied(self):
         self.project.root_latex_code = "xxx"
@@ -466,7 +466,7 @@ class MiscellaneousTests(FLaPTest):
 
         self.run_flap()
 
-        self.verify.resources()
+        self.verify_resources()
 
 
 if __name__ == "__main__":
