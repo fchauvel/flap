@@ -22,6 +22,7 @@ from flap.FileSystem import InMemoryFileSystem, File, MissingFile
 from flap.engine import Flap, Fragment, Listener, CommentsRemover, Processor, GraphicNotFound, TexFileNotFound
 from flap.path import Path, ROOT, TEMP
 
+from tests.commons import LatexProject
 
 class FragmentTest(TestCase):
     """
@@ -95,6 +96,9 @@ class FLaPTest(TestCase):
         self.fileSystem = InMemoryFileSystem()
         self._prepare_listener()
         self.flap = Flap(self.fileSystem, self.listener)
+        self.project = LatexProject()
+
+        # To be removed
         self.project_directory = "project"
         self.main_tex_file = "main.tex"
 
@@ -111,26 +115,30 @@ class FLaPTest(TestCase):
         self.fileSystem.createFile(path, content)
 
     def create_main_file(self, content):
-        self.create_file(self.project_directory + "/" + self.main_tex_file, content)
+        self.project.root_latex_code = content
+        #self.create_file(self.project_directory + "/" + self.main_tex_file, content)
 
     def create_image(self, location):
-        path = Path.fromText(self.project_directory + "/" + location)
-        self.fileSystem.createFile(path, "image")
+        self.project.images.append(location)
+        #path = Path.fromText(self.project_directory + "/" + location)
+        #self.fileSystem.createFile(path, "image")
 
     def create_tex_file(self, location, content):
-        self.create_file(self.project_directory + "/" + location, content)
+        self.project.parts[location] = content
+        #self.create_file(self.project_directory + "/" + location, content)
 
     def open(self, location):
         return self.fileSystem.open(Path.fromText(self.project_directory + "/" + location))
 
     def run_flap(self):
-        self.flap.flatten(ROOT / self.project_directory / self.main_tex_file, ROOT / "result")
+        self.project.create_on(self.fileSystem)
+        self.flap.flatten(self.project.root_latex_file, ROOT / "result")
 
     def verify_merged(self, content):
         self.verifyFile(ROOT / "result" / "merged.tex", content)
 
     def verify_image(self, path):
-        self.verifyFile(ROOT / "result" / path, "image")
+        self.verifyFile(ROOT / "result" / path, LatexProject.IMAGE_CONTENT)
 
     def verify_listener(self, handler, fileName, lineNumber, text):
         fragment = handler.call_args[0][0]
@@ -275,7 +283,9 @@ class GraphicPathTest(FLaPTest):
                               "blabla"
                               "\\includegraphics[witdh=5cm]{plot}"
                               "blabla")
-        self.create_image("img/plot.pdf")
+
+        self.project.images_directory = "img"
+        self.create_image("plot.pdf")
 
         self.run_flap()
 
@@ -291,7 +301,9 @@ class IncludeGraphicsProcessorTest(FLaPTest):
 
     def test_links_to_graphics_are_adjusted(self):
         self.create_main_file(r"A \includegraphics[width=3cm]{img/foo} Z")
-        self.create_image("img/foo.pdf")
+
+        self.project.images_directory = "img"
+        self.create_image("foo.pdf")
 
         self.run_flap()
 
@@ -300,7 +312,9 @@ class IncludeGraphicsProcessorTest(FLaPTest):
 
     def test_paths_with_extension(self):
         self.create_main_file(r"A \includegraphics[width=3cm]{img/foo.pdf} Z")
-        self.create_image("img/foo.pdf")
+
+        self.project.images_directory = "img"
+        self.create_image("foo.pdf")
 
         self.run_flap()
 
@@ -309,10 +323,14 @@ class IncludeGraphicsProcessorTest(FLaPTest):
 
     def test_local_paths(self):
         self.create_main_file("A \\includegraphics[width=3cm]{foo} Z")
+
+        self.project.images_directory = None
         self.create_image("foo.pdf")
 
+        self.project.create_on(self.fileSystem)
+
         self.move_to_directory(self.project_directory)
-        self.flap.flatten(Path.fromText("main.tex"), ROOT / "result")
+        self.flap.flatten(self.project.root_latex_file, ROOT / "result")
 
         self.verify_merged(r"A \includegraphics[width=3cm]{foo} Z")
         self.verify_image("foo.pdf")
@@ -320,6 +338,8 @@ class IncludeGraphicsProcessorTest(FLaPTest):
     def test_path_to_local_images_are_not_adjusted(self):
         self.create_main_file("\\includegraphics[interpolate,width=11.445cm]{%\n"
                               "startingPlace}")
+
+        self.project.images_directory = None
         self.create_image("startingPlace.pdf")
 
         self.run_flap()
@@ -334,6 +354,7 @@ class IncludeGraphicsProcessorTest(FLaPTest):
         self.create_tex_file("slides/foo.tex", "ccc\n"
                                                "\\includegraphics{foo}\n"
                                                "ddd")
+        self.project.images_directory = None
         self.create_image("foo.pdf")
 
         self.run_flap()
@@ -348,7 +369,9 @@ class IncludeGraphicsProcessorTest(FLaPTest):
     def test_paths_are_recursively_adjusted(self):
         self.create_main_file(r"AA \input{foo} AA")
         self.create_tex_file("foo.tex", r"BB \includegraphics[width=3cm]{img/foo} BB")
-        self.create_image("img/foo.pdf")
+
+        self.project.images_directory = "img"
+        self.create_image("foo.pdf")
 
         self.run_flap()
 
@@ -362,7 +385,8 @@ class IncludeGraphicsProcessorTest(FLaPTest):
                    "}\n"
                    "B")
         self.create_main_file(content)
-        self.create_image("img/foo.pdf")
+        self.project.images_directory = "img"
+        self.create_image("foo.pdf")
 
         self.run_flap()
 
@@ -372,6 +396,8 @@ class IncludeGraphicsProcessorTest(FLaPTest):
     def test_includegraphics_are_reported(self):
         self.create_main_file("""
         \includegraphics{foo}""")
+
+        self.project.images_directory = None
         self.create_image("foo.pdf")
 
         self.run_flap()
@@ -392,7 +418,9 @@ class SVGIncludeTest(FLaPTest):
 
     def testLinksToSVGAreAdjusted(self):
         self.create_main_file(r"A \includesvg{img/foo} Z")
-        self.create_image("img/foo.svg")
+
+        self.project.images_directory = "img"
+        self.create_image("foo.svg")
 
         self.run_flap()
 
@@ -402,7 +430,9 @@ class SVGIncludeTest(FLaPTest):
     def test_includesvg_in_separated_file(self):
         self.create_main_file("A \\input{parts/foo} A")
         self.create_tex_file("parts/foo.tex", "B \\includesvg{img/sources/test} B")
-        self.create_image("img/sources/test.svg")
+
+        self.project.images_directory = "img/sources"
+        self.create_image("test.svg")
 
         self.run_flap()
 
@@ -412,12 +442,15 @@ class SVGIncludeTest(FLaPTest):
     def testSVGFilesAreCopiedEvenWhenJPGAreAvailable(self):
         self.create_main_file(r"A \includesvg{img/foo} Z")
 
-        images = ["img/foo.eps", "img/foo.svg"]
+        self.project.images_directory = "img"
+        images = ["foo.eps", "foo.svg"]
         for eachImage in images :
             self.create_image(eachImage)
 
+        self.project.create_on(self.fileSystem)
+
         self.fileSystem.filesIn = MagicMock()
-        self.fileSystem.filesIn.return_value = [ self.open(eachImage) for eachImage in images ]
+        self.fileSystem.filesIn.return_value = [ self.fileSystem.open(self.project.path_to_image(eachImage)) for eachImage in images ]
 
         self.run_flap()
 
@@ -437,7 +470,8 @@ class OverpicAdjuster(FLaPTest):
         blablabla
         \end{overpic}
         """)
-        self.create_image("img/picture.pdf")
+        self.project.images_directory = "img"
+        self.create_image("picture.pdf")
 
         self.run_flap()
 
@@ -458,7 +492,8 @@ class MiscellaneousTests(FLaPTest):
                                          "\t\\includegraphics[width=4cm]{img/foo}\n"
                                          "  \\includegraphics[width=5cm]{img/foo}\n"
                                          "\\end{center}")
-        self.create_image("img/foo.pdf")
+        self.project.images_directory = "img"
+        self.create_image("foo.pdf")
 
         self.run_flap()
 

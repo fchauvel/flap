@@ -122,6 +122,9 @@ class FileSystem:
     
     def createDirectory(self, path):
         pass
+
+    def deleteDirectory(self, path):
+        pass
     
     def open(self, path):
         pass

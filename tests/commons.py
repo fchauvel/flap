@@ -61,7 +61,14 @@ class LatexProject:
 
     @images_directory.setter
     def images_directory(self, path):
-        self._images_directory = self._directory / path
+        if path is None:
+            self._images_directory = self.directory
+        else:
+            self._images_directory = self._directory / path
+
+    def path_to_image(self, image):
+        assert image in self.images, "Unknown image '%s'! Candidates images are '%s'" % (image, self.images)
+        return self.images_directory / image
 
     def create_on(self, file_system):
         file_system.deleteDirectory(self.directory)
