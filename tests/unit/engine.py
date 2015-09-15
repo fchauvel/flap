@@ -111,9 +111,6 @@ class FLaPTest(TestCase):
         path = Path.fromText(location)
         self.fileSystem.createFile(path, content)
 
-    def create_image(self, location):
-        self.project.images.append(location)
-
     def open(self, location):
         return self.fileSystem.open(Path.fromText(self.project_directory + "/" + location))
 
@@ -275,7 +272,7 @@ class GraphicPathTest(FLaPTest):
                                         "blabla"
 
         self.project.images_directory = "img"
-        self.create_image("plot.pdf")
+        self.project.images = ["plot.pdf"]
 
         self.run_flap()
 
@@ -293,7 +290,7 @@ class IncludeGraphicsProcessorTest(FLaPTest):
         self.project.root_latex_code = "A \\includegraphics[width=3cm]{img/foo} Z"
 
         self.project.images_directory = "img"
-        self.create_image("foo.pdf")
+        self.project.images = ["foo.pdf"]
 
         self.run_flap()
 
@@ -304,7 +301,7 @@ class IncludeGraphicsProcessorTest(FLaPTest):
         self.project.root_latex_code = "A \\includegraphics[width=3cm]{img/foo.pdf} Z"
 
         self.project.images_directory = "img"
-        self.create_image("foo.pdf")
+        self.project.images = ["foo.pdf"]
 
         self.run_flap()
 
@@ -315,7 +312,7 @@ class IncludeGraphicsProcessorTest(FLaPTest):
         self.project.root_latex_code = "A \\includegraphics[width=3cm]{foo} Z"
 
         self.project.images_directory = None
-        self.create_image("foo.pdf")
+        self.project.images = ["foo.pdf"]
 
         self.project.create_on(self.fileSystem)
 
@@ -330,7 +327,7 @@ class IncludeGraphicsProcessorTest(FLaPTest):
                                         "startingPlace}")
 
         self.project.images_directory = None
-        self.create_image("startingPlace.pdf")
+        self.project.images = ["startingPlace.pdf"]
 
         self.run_flap()
 
@@ -345,7 +342,7 @@ class IncludeGraphicsProcessorTest(FLaPTest):
                                                 "\\includegraphics{foo}\n"
                                                 "ddd")
         self.project.images_directory = None
-        self.create_image("foo.pdf")
+        self.project.images = ["foo.pdf"]
 
         self.run_flap()
 
@@ -361,7 +358,7 @@ class IncludeGraphicsProcessorTest(FLaPTest):
         self.project.parts["foo.tex"] = "BB \\includegraphics[width=3cm]{img/foo} BB"
 
         self.project.images_directory = "img"
-        self.create_image("foo.pdf")
+        self.project.images = ["foo.pdf"]
 
         self.run_flap()
 
@@ -375,7 +372,7 @@ class IncludeGraphicsProcessorTest(FLaPTest):
                                         "}\n"
                                         "B")
         self.project.images_directory = "img"
-        self.create_image("foo.pdf")
+        self.project.images = ["foo.pdf"]
 
         self.run_flap()
 
@@ -387,7 +384,7 @@ class IncludeGraphicsProcessorTest(FLaPTest):
                                         "\\includegraphics{foo}")
 
         self.project.images_directory = None
-        self.create_image("foo.pdf")
+        self.project.images = ["foo.pdf"]
 
         self.run_flap()
 
@@ -408,7 +405,7 @@ class SVGIncludeTest(FLaPTest):
         self.project.root_latex_code = "A \\includesvg{img/foo} Z"
 
         self.project.images_directory = "img"
-        self.create_image("foo.svg")
+        self.project.images = ["foo.svg"]
 
         self.run_flap()
 
@@ -420,7 +417,7 @@ class SVGIncludeTest(FLaPTest):
         self.project.parts["parts/foo.tex"] = "B \\includesvg{img/sources/test} B"
 
         self.project.images_directory = "img/sources"
-        self.create_image("test.svg")
+        self.project.images = ["test.svg"]
 
         self.run_flap()
 
@@ -431,14 +428,12 @@ class SVGIncludeTest(FLaPTest):
         self.project.root_latex_code =  "A \\includesvg{img/foo} Z"
 
         self.project.images_directory = "img"
-        images = ["foo.eps", "foo.svg"]
-        for eachImage in images :
-            self.create_image(eachImage)
+        self.project.images = ["foo.eps", "foo.svg"]
 
         self.project.create_on(self.fileSystem)
 
         self.fileSystem.filesIn = MagicMock()
-        self.fileSystem.filesIn.return_value = [ self.fileSystem.open(self.project.path_to_image(eachImage)) for eachImage in images ]
+        self.fileSystem.filesIn.return_value = [ self.fileSystem.open(self.project.path_to_image(eachImage)) for eachImage in self.project.images ]
 
         self.run_flap()
 
@@ -458,7 +453,7 @@ class OverpicAdjuster(FLaPTest):
                                         "\\end{overpic}\n"
                                         "")
         self.project.images_directory = "img"
-        self.create_image("picture.pdf")
+        self.project.images = ["picture.pdf"]
 
         self.run_flap()
 
@@ -479,7 +474,7 @@ class MiscellaneousTests(FLaPTest):
                                           "  \\includegraphics[width=5cm]{img/foo}\n"
                                           "\\end{center}")
         self.project.images_directory = "img"
-        self.create_image("foo.pdf")
+        self.project.images = ["foo.pdf"]
 
         self.run_flap()
 
