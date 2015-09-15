@@ -76,7 +76,7 @@ class LatexProject:
         for (path, content) in self.parts.items():
             file_system.createFile(self.directory / path, content)
         for eachImage in self.images:
-            file_system.createFile(self.images_directory / eachImage, LatexProject.IMAGE_CONTENT)
+            file_system.createFile(self.path_to_image(eachImage), LatexProject.IMAGE_CONTENT)
         for eachResource in self.resources:
             file_system.createFile(self.directory / eachResource, LatexProject.RESOURCE_CONTENT)
 
