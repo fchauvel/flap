@@ -107,13 +107,6 @@ class FLaPTest(TestCase):
         self.assertTrue(actual_content.exists(), "Missing file '%s'" % path)
         self.assertEqual(expected_content, actual_content.content(),  "Wrong merged")
 
-    def create_file(self, location, content):
-        path = Path.fromText(location)
-        self.fileSystem.createFile(path, content)
-
-    def open(self, location):
-        return self.fileSystem.open(Path.fromText(self.project_directory + "/" + location))
-
     def run_flap(self):
         self.project.create_on(self.fileSystem)
         self.flap.flatten(self.project.root_latex_file, ROOT / "result")
@@ -129,10 +122,6 @@ class FLaPTest(TestCase):
         self.assertEqual(fragment.file().fullname(), fileName)
         self.assertEqual(fragment.line_number(), lineNumber)
         self.assertEqual(fragment.text().strip(), text)
-
-    def move_to_directory(self, directory):
-        self.fileSystem.move_to_directory(Path.fromText(directory))
-
 
 class TestEndinputRemover(FLaPTest):
     """
