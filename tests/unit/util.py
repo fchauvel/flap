@@ -138,7 +138,8 @@ class ReleaseTest(TestCase):
 
         sources.readVersion.assert_called_once_with()
         scm.tag.assert_called_once_with(Version(1, 4, 0))
-        sources.writeVersion.assert_has_calls([call(Version(1, 4, 0)), call(Version(1,4,1))])
+        sources.writeVersion.assert_has_calls([call(Version(1,4,0)),
+                                               call(Version(1,4,1))])
         scm.commit.assert_has_calls([call("Releasing version 1.4.0"), 
                                      call("Preparing version 1.4.1")])
 

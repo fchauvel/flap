@@ -133,7 +133,7 @@ class Release(Command):
             self.distribution.metadata.version = str(released_version)
             self.scm.commit("Releasing version %s" % released_version)
         self.scm.tag(released_version)
-        self.build(released_version)
+        self.build()
         self.publish()
         return released_version
 
@@ -148,7 +148,7 @@ class Release(Command):
             raise ValueError("Unknown release kind '%s' (options are 'micro', 'minor' or 'major')" % self.type)
         return releasedVersion
 
-    def build(self, version):
+    def build(self):
         self.run_command("bdist_egg")
         self.run_command("sdist")
 
