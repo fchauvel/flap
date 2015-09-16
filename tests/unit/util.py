@@ -16,9 +16,9 @@
 #
 
 from unittest import TestCase, main
-from mock import Mock, MagicMock, call, patch, ANY
+from mock import Mock, MagicMock, call, patch, ANY, mock_open
 
-from flap.util import Version, Release, SourceControl, Sources 
+from flap.util import Version, Release, SourceControl
 from distutils.dist import Distribution
 
 
@@ -56,20 +56,23 @@ class VersionTest(TestCase):
         v2 = self.makeVersion("1.3.dev3")
         self.assertTrue(v1 != v2)
 
-
-
-class SourcesTest(TestCase):
-    
-    def testReadVersion(self):
+    def test_read_from_source_code(self):
         with patch("flap.__version__", "1.3.4"):
-            sources = Sources()
-            version = sources.readVersion() 
-            self.assertEqual(version, Version(1,3,4))            
-        
+            version = Version.from_source_code()
+            self.assertEqual(version, Version(1, 3, 4))
+
+    def test_update_source_code(self):
+        mock = mock_open(read_data="__version__ = 1.2.3")
+        with patch('flap.util.open', mock, create=True):
+            Version.update_source_code(Version(1, 3, 0))
+        mock().write.assert_called_once_with("__version__ = 1.3.0")
+
+
+
 
 class SourceControlTest(TestCase):
     
-    def testCommit(self):
+    def test_commit(self):
         mock = MagicMock()
         with patch("subprocess.call", mock):
             scm = SourceControl()
@@ -77,7 +80,7 @@ class SourceControlTest(TestCase):
         mock.assert_has_calls([call(["git.exe", "add", "-u"], env=ANY, shell=True),
                                call(["git.exe", "commit", "-m", "my message"], env=ANY, shell=True)])
 
-    def testTag(self):
+    def test_tag(self):
         mock = MagicMock()
         with patch("subprocess.call", mock):
             scm = SourceControl()
@@ -88,14 +91,10 @@ class SourceControlTest(TestCase):
 class ReleaseTest(TestCase):
     
     def createSourceWithVersion(self, text):
-        sources = Sources()
-        sources.readVersion = MagicMock()
-        sources.readVersion.return_value = Version.fromText(text)
-        sources.writeVersion = MagicMock()
-        return sources
+        return None
 
-    def release(self, sources, scm, kind):
-        release = Release(Distribution(), scm, sources)
+    def release(self, scm, kind):
+        release = Release(Distribution(), scm)
         release.run_command = MagicMock()
         release.type = kind
         release.run()
@@ -107,19 +106,6 @@ class ReleaseTest(TestCase):
         scm.commit = MagicMock()
         return scm
 
-    def testMicroRelease(self):
-        sources = self.createSourceWithVersion("1.3.3")
-        scm = self.createSCM()
-        
-        release = self.release(sources, scm, "micro")
-
-        self._verify_command_invocations(release)
-
-        scm.tag.assert_called_once_with(Version(1, 3, 3))
-        sources.readVersion.assert_called_once_with()
-        sources.writeVersion.assert_called_once_with(Version(1, 3, 4))
-        scm.commit.assert_called_once_with("Preparing version 1.3.4")
-
     def _verify_command_invocations(self, release):
         release.run_command.assert_has_calls([
             call("bdist_egg"),
@@ -128,33 +114,48 @@ class ReleaseTest(TestCase):
             call("upload"),
         ])
 
-    def testMinorRelease(self):
-        sources = self.createSourceWithVersion("1.3.3")
+    @patch("flap.util.Version.from_source_code", return_value=Version(1, 3, 3))
+    @patch("flap.util.Version.update_source_code")
+    def testMicroRelease(self, write_version, read_version):
         scm = self.createSCM()
-        
-        release = self.release(sources, scm, "minor")
+
+        release = self.release(scm, "micro")
 
         self._verify_command_invocations(release)
 
-        sources.readVersion.assert_called_once_with()
+        scm.tag.assert_called_once_with(Version(1, 3, 3))
+        read_version.assert_called_once_with()
+        write_version.assert_called_once_with(Version(1, 3, 4))
+        scm.commit.assert_called_once_with("Preparing version 1.3.4")\
+
+    @patch("flap.util.Version.from_source_code", return_value=Version(1, 3, 3))
+    @patch("flap.util.Version.update_source_code")
+    def testMinorRelease(self, write_version, read_version):
+        scm = self.createSCM()
+        
+        release = self.release(scm, "minor")
+
+        self._verify_command_invocations(release)
+
+        read_version.assert_called_once_with()
         scm.tag.assert_called_once_with(Version(1, 4, 0))
-        sources.writeVersion.assert_has_calls([call(Version(1,4,0)),
+        write_version.assert_has_calls([call(Version(1,4,0)),
                                                call(Version(1,4,1))])
         scm.commit.assert_has_calls([call("Releasing version 1.4.0"), 
                                      call("Preparing version 1.4.1")])
 
-
-    def testMajorRelease(self):
-        sources = self.createSourceWithVersion("1.3.3")        
+    @patch("flap.util.Version.from_source_code", return_value=Version(1, 3, 3))
+    @patch("flap.util.Version.update_source_code")
+    def testMajorRelease(self, write_version, read_version):
         scm = self.createSCM()
         
-        release = self.release(sources, scm, "major")
+        release = self.release(scm, "major")
 
         self._verify_command_invocations(release)
 
-        sources.readVersion.assert_called_once_with()
+        read_version.assert_called_once_with()
         scm.tag.assert_called_once_with(Version(2, 0, 0))
-        sources.writeVersion.assert_has_calls([call(Version(2, 0, 0)), call(Version(2,0,1))])
+        write_version.assert_has_calls([call(Version(2, 0, 0)), call(Version(2,0,1))])
         scm.commit.assert_has_calls([call("Releasing version 2.0.0"), 
                                      call("Preparing version 2.0.1")])
      

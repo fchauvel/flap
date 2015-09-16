@@ -24,7 +24,22 @@ import flap
 
 
 class Version:
-    
+
+    LOCATION = "flap/__init__.py"
+
+    @staticmethod
+    def from_source_code():
+        return Version.fromText(flap.__version__)
+
+    @staticmethod
+    def update_source_code(version):
+        content = open(Version.LOCATION).read()
+        replacement = "__version__ = %s" % str(version)
+        new_content = re.sub(r"__version__\s*=\s*\d+\.\d+\.\d+", replacement, content)
+        with open(Version.LOCATION, "w") as updated:
+            updated.write(new_content)
+            updated.flush()
+
     @staticmethod
     def fromText(text):
         pattern = re.compile("(\\d+)\\.(\\d+)(?:\\.(?:dev)?(\\d+))?")
@@ -69,21 +84,6 @@ class Version:
                 other.hasMajor(self.major) and
                 other.hasMinor(self.minor))
 
-class Sources:
-    
-    LOCATION = "flap/__init__.py"
-    
-    def readVersion(self):
-        return Version.fromText(flap.__version__)
-    
-    def writeVersion(self, version):
-        content = open(Sources.LOCATION).read()
-        content = content.replace(flap.__version__, str(version))
-        updated = open(Sources.LOCATION, "w")
-        updated.write(content)
-        updated.flush()
-        updated.close()
-
 
 class SourceControl:
     
@@ -91,7 +91,6 @@ class SourceControl:
         self.environment = os.environ.copy()
         self.environment["PATH"] += ";C:/Program Files (x86)/Git/bin/"
 
-    
     def commit(self, message):
         command = ["git.exe", "add", "-u"]
         subprocess.call(command, env=self.environment, shell=True)
@@ -105,11 +104,10 @@ class SourceControl:
     
 class Release(Command):
             
-    def __init__(self, dist, scm = SourceControl(), sources = Sources()):
+    def __init__(self, dist, scm = SourceControl()):
         super().__init__(dist)
         self.scm = scm
-        self.sources = sources
-            
+
     user_options = [('type=', None, 'The type of release (micro, minor or major')]
     
     def initialize_options(self):
@@ -119,16 +117,16 @@ class Release(Command):
         pass
     
     def run(self):      
-        releasedVersion = self.release()
-        self.prepare_next_release(releasedVersion)
+        released = self.release()
+        self.prepare_next_release(released)
 
     def release(self):
-        current_version = self.sources.readVersion()
+        current_version = Version.from_source_code()
         print("Current version: %s" % current_version)
         released_version = self.releasedVersion(current_version)
         print("Releasing version %s" % released_version)
         if current_version != released_version:
-            self.sources.writeVersion(released_version)
+            Version.update_source_code(released_version)
             self.distribution.version = str(released_version)
             self.distribution.metadata.version = str(released_version)
             self.scm.commit("Releasing version %s" % released_version)
@@ -158,7 +156,7 @@ class Release(Command):
 
     def prepare_next_release(self, releasedVersion):
         newVersion = releasedVersion.nextMicroRelease()
-        self.sources.writeVersion(newVersion)
+        Version.update_source_code(newVersion)
         print("Preparing version " + str(newVersion))
         self.scm.commit("Preparing version %s" % newVersion)
         
