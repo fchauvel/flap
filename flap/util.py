@@ -120,21 +120,22 @@ class Release(Command):
     
     def run(self):      
         releasedVersion = self.release()
-        
-        self.prepareNextRelease(releasedVersion)
+        self.prepare_next_release(releasedVersion)
 
     def release(self):
-        currentVersion = self.sources.readVersion()
-        print("Current version: %s" % currentVersion)
-        releasedVersion = self.releasedVersion(currentVersion)
-        print("Releasing version %s" % releasedVersion)
-        if currentVersion != releasedVersion:
-            self.sources.writeVersion(releasedVersion)
-            self.scm.commit("Releasing version %s" % releasedVersion)
-        self.scm.tag(releasedVersion)
-        self.build()
+        current_version = self.sources.readVersion()
+        print("Current version: %s" % current_version)
+        released_version = self.releasedVersion(current_version)
+        print("Releasing version %s" % released_version)
+        if current_version != released_version:
+            self.sources.writeVersion(released_version)
+            self.distribution.version = str(released_version)
+            self.distribution.metadata.version = str(released_version)
+            self.scm.commit("Releasing version %s" % released_version)
+        self.scm.tag(released_version)
+        self.build(released_version)
         self.publish()
-        return releasedVersion
+        return released_version
 
     def releasedVersion(self, currentVersion):
         if self.type == "micro":
@@ -147,7 +148,7 @@ class Release(Command):
             raise ValueError("Unknown release kind '%s' (options are 'micro', 'minor' or 'major')" % self.type)
         return releasedVersion
 
-    def build(self):
+    def build(self, version):
         self.run_command("bdist_egg")
         self.run_command("sdist")
 
@@ -155,9 +156,9 @@ class Release(Command):
         self.run_command("register")
         self.run_command("upload")
 
-    def prepareNextRelease(self, releasedVersion):
+    def prepare_next_release(self, releasedVersion):
         newVersion = releasedVersion.nextMicroRelease()
         self.sources.writeVersion(newVersion)
         print("Preparing version " + str(newVersion))
-        self.scm.commit("Preparing version %s" % newVersion)                
+        self.scm.commit("Preparing version %s" % newVersion)
         
