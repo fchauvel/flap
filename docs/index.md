@@ -16,9 +16,9 @@ in a flat directory.
 
  * __Yet Another One?__ 
    There is already a couple of tools that merge latex projects such as [latexpand](http://www.ctan.org/pkg/latexpand),
-   [flatex](http://www.ctan.org/pkg/flatex) or [flatten](http://www.ctan.org/pkg/flatten). As far as I know, they only merge
-   TeX files, without moving graphics around. I learned recently about
-   [texdirflatten](http://www.ctan.org/pkg/texdirflatten), which seems to be an alternative, but I haven't tried it.
+   [flatex](http://www.ctan.org/pkg/flatex), [flatten](http://www.ctan.org/pkg/flatten) or 
+   [texdirflatten](http://www.ctan.org/pkg/texdirflatten). As far as I know, they do not support directives such as 
+   `\graphicspath` and `\includeonly` and only merge TeX files, without moving graphics around (except for `texdirflatten`).
 
 ## Install
 
