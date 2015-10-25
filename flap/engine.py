@@ -169,7 +169,8 @@ class CommentsRemover(ProcessorDecorator):
     def fragments(self):
         for each_fragment in self._delegate.fragments():
             text = each_fragment.text()
-            without_comments = re.sub(r"%(?:[^\n])*\n", "\n", text)
+            #without_comments = re.sub(r"[^\\]%(?:[^\n])*\n", "\n", text)
+            without_comments = re.sub(r"(?<!\\)%(?:[^\n]*)\n", "\n", text)
             each_fragment._text = without_comments
             yield each_fragment
 
@@ -369,7 +370,7 @@ class Flap:
     OUTPUT_FILE = "merged.tex"
     
     def __init__(self, fileSystem, listener=Listener()):
-        self._fileSystem = fileSystem
+        self._file_system = fileSystem
         self._listener = listener
         self._included_files = []
         self._graphics_directory = None
@@ -381,7 +382,7 @@ class Flap:
         self.copy_resource_files()
 
     def open_file(self, source):
-        self._root = self._fileSystem.open(source)
+        self._root = self._file_system.open(source)
         if self._root.isMissing():
             raise ValueError("The file '%s' could not be found." % source)
 
@@ -392,15 +393,15 @@ class Flap:
         pipeline = Processor.flap_pipeline(self)
         fragments = pipeline.fragments()
         merge = ''.join([ each.text() for each in fragments ])
-        self._fileSystem.createFile(self._output / Flap.OUTPUT_FILE, merge)
+        self._file_system.createFile(self._output / Flap.OUTPUT_FILE, merge)
             
     def copy_resource_files(self):
         project = self._root.container()
         for eachFile in project.files():
-            if self.is_resource(eachFile):
-                self._fileSystem.copy(eachFile, self._output)
+            if self._is_resource(eachFile):
+                self._file_system.copy(eachFile, self._output)
 
-    def is_resource(self, eachFile):
+    def _is_resource(self, eachFile):
         return eachFile.hasExtension() and eachFile.extension() in Flap.RESOURCE_FILES
 
     def is_ignored(self, file):
@@ -420,14 +421,14 @@ class Flap:
         self._listener.on_input(fragment)
     
     def on_include_graphics(self, fragment, graphicFile):
-        self._fileSystem.copy(graphicFile, self._output)
+        self._file_system.copy(graphicFile, self._output)
         self._listener.on_include_graphics(fragment)
         
     def on_include(self, fragment):
         self._listener.on_include(fragment)
         
     def on_include_SVG(self, fragment, graphicFile):
-        self._fileSystem.copy(graphicFile, self._output)
+        self._file_system.copy(graphicFile, self._output)
         self._listener.on_include_SVG(fragment)
 
     def on_include_only(self, included_files):
@@ -435,7 +436,7 @@ class Flap:
 
     def set_graphics_directory(self, texPath):
         path = self.file().container().path() / texPath
-        self._graphics_directory = self._fileSystem.open(path)
+        self._graphics_directory = self._file_system.open(path)
 
     def graphics_directory(self):
         if self._graphics_directory:

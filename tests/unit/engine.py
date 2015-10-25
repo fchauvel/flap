@@ -59,6 +59,7 @@ class FragmentTest(TestCase):
 
 
 class CommentRemoverTest(TestCase):
+
     def testRemoveCommentedLines(self):
         self.runTest("\nfoo\n% this is a comment\nbar",
                      "\nfoo\n\nbar")
@@ -70,6 +71,17 @@ class CommentRemoverTest(TestCase):
                 "}\n"
                 "B")
         self.runTest(text, "A\\includegraphics[width=8cm]{\nfoo\n}\nB")
+
+    def test_does_not_takes_percent_as_comments(self):
+        input = ("25 \\% of that \n"
+                 "% this is a comment \n"
+                 "blah bla")
+        expected_output = ("25 \\% of that \n"
+                           "\n"
+                           "blah bla")
+        self.runTest(input,
+                     expected_output)
+
 
     def runTest(self, text, expectation):
         source = File(None, TEMP / "test", None)
