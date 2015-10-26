@@ -82,6 +82,16 @@ class CommentRemoverTest(TestCase):
         self.runTest(input,
                      expected_output)
 
+    def test_does_not_takes_verbatim_comments_as_comments(self):
+        input = ("25 \\verb|%| of that \n"
+                 "% this is a comment \n"
+                 "blah bla")
+        expected_output = ("25 \\verb|%| of that \n"
+                           "\n"
+                           "blah bla")
+        self.runTest(input,
+                     expected_output)
+
 
     def runTest(self, text, expectation):
         source = File(None, TEMP / "test", None)
