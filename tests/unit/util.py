@@ -62,10 +62,10 @@ class VersionTest(TestCase):
             self.assertEqual(version, Version(1, 3, 4))
 
     def test_update_source_code(self):
-        mock = mock_open(read_data="__version__ = 1.2.3")
+        mock = mock_open(read_data="__version__ = \"1.2.3\"")
         with patch('flap.util.open', mock, create=True):
             Version.update_source_code(Version(1, 3, 0))
-        mock().write.assert_called_once_with("__version__ = 1.3.0")
+        mock().write.assert_called_once_with("__version__ = \"1.3.0\"")
 
 
 

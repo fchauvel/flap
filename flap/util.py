@@ -34,8 +34,8 @@ class Version:
     @staticmethod
     def update_source_code(version):
         content = open(Version.LOCATION).read()
-        replacement = "__version__ = %s" % str(version)
-        new_content = re.sub(r"__version__\s*=\s*\d+\.\d+\.\d+", replacement, content)
+        replacement = "__version__ = \"%s\"" % str(version)
+        new_content = re.sub(r"__version__\s*=\s*\"\d+\.\d+\.\d+\"", replacement, content)
         with open(Version.LOCATION, "w") as updated:
             updated.write(new_content)
             updated.flush()
