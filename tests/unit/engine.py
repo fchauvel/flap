@@ -60,24 +60,24 @@ class FragmentTest(TestCase):
 
 class CommentRemoverTest(TestCase):
 
-    def testRemoveCommentedLines(self):
+    def test_remove_commented_lines(self):
         self.runTest("\nfoo\n% this is a comment\nbar",
-                     "\nfoo\n\nbar")
+                     "\nfoo\nbar")
 
-    def testRemoveEndLineComments(self):
+    def test_remove_end_line_comments(self):
         text = ("A"
                 "\\includegraphics[width=8cm]{%\n"
                 "foo%\n"
                 "}\n"
                 "B")
-        self.runTest(text, "A\\includegraphics[width=8cm]{\nfoo\n}\nB")
+        expected = "A\\includegraphics[width=8cm]{foo}\nB"
+        self.runTest(text, expected)
 
     def test_does_not_takes_percent_as_comments(self):
         input = ("25 \\% of that \n"
                  "% this is a comment \n"
                  "blah bla")
         expected_output = ("25 \\% of that \n"
-                           "\n"
                            "blah bla")
         self.runTest(input,
                      expected_output)
@@ -87,7 +87,6 @@ class CommentRemoverTest(TestCase):
                  "% this is a comment \n"
                  "blah bla")
         expected_output = ("25 \\verb|%| of that \n"
-                           "\n"
                            "blah bla")
         self.runTest(input,
                      expected_output)
@@ -192,7 +191,6 @@ class InputMergerTests(FlapUnitTest):
 
         self.verify_merge("\n"
                            "blah blah blah\n"
-                           "\n"
                            "blah blah blah\n"
                            "")
 
