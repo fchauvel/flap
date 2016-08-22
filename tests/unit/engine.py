@@ -91,7 +91,6 @@ class CommentRemoverTest(TestCase):
         self.runTest(input,
                      expected_output)
 
-
     def runTest(self, text, expectation):
         source = File(None, TEMP / "test", None)
         source.isMissing = MagicMock()

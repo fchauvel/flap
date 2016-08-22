@@ -74,7 +74,8 @@ class AcceptanceTest(FlapTest):
                                        "\\end{document}"
 
         self.project.parts["partA.tex"] = "\\input{result}"
-        self.project.parts["result.tex"] = "\\includegraphics{plot}"
+        self.project.parts["result.tex"] = "\\includegraphics[width=\\textwidth]% Test multi-lines commands\n" \
+                                           "{plot}"
         self.project.parts["partB.tex"] = "blablah"
 
         self.project.images = ["plot.pdf"]
@@ -97,7 +98,7 @@ class AcceptanceTest(FlapTest):
         self.verify_merge("\documentclass{article}\n"
                           "\n"
                           "\\begin{document}\n"
-                          "    \\includegraphics{plot}\\clearpage \n"
+                          "    \\includegraphics[width=\\textwidth]{plot}\\clearpage \n"
                           "    blablah\\clearpage \n"
                           "\\end{document}")
 
