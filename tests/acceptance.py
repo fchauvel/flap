@@ -67,15 +67,20 @@ class AcceptanceTest(FlapTest):
     def prepareLatexProject(self):
         self.project.root_latex_code = "\\documentclass{article}\n" \
                                        "\\graphicspath{images}\n" \
-                                       "\\includeonly{partA,partB}" \
+                                       "\\includeonly{partA,partB}\n" \
                                        "\\begin{document}\n" \
-                                       "    \\include{partA}\n" \
+                                       "    \\subfile{partA}\n" \
                                        "    \\include{partB}\n" \
                                        "\\end{document}"
 
-        self.project.parts["partA.tex"] = "\\input{result}"
+        self.project.parts["partA.tex"] = "\\documentclass[../main.tex]{subfiles}" \
+                                          "\\begin{document}" \
+                                          "\\input{result}" \
+                                          "\\end{document}"
+
         self.project.parts["result.tex"] = "\\includegraphics[width=\\textwidth]% Test multi-lines commands\n" \
                                            "{plot}"
+
         self.project.parts["partB.tex"] = "blablah"
 
         self.project.images = ["plot.pdf"]
@@ -95,10 +100,10 @@ class AcceptanceTest(FlapTest):
 
         self.run_flap(self.project)
 
-        self.verify_merge("\documentclass{article}\n"
-                          "\n"
+        self.verify_merge("\\documentclass{article}\n"
+                          "\n\n"
                           "\\begin{document}\n"
-                          "    \\includegraphics[width=\\textwidth]{plot}\\clearpage \n"
+                          "    \\includegraphics[width=\\textwidth]{plot}\n"
                           "    blablah\\clearpage \n"
                           "\\end{document}")
 

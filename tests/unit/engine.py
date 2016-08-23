@@ -170,8 +170,8 @@ class InputMergerTests(FlapUnitTest):
         self.verify_merge("blahblah bar blah")
 
     def test_recursive_merge(self):
-        self.project.root_latex_code = "A \input{foo} Z"
-        self.project.parts["foo.tex" ] = "B \input{bar} Y"
+        self.project.root_latex_code = "A \\input{foo} Z"
+        self.project.parts["foo.tex" ] = "B \\input{bar} Y"
         self.project.parts["bar.tex"] = "blah"
 
         self.run_flap()

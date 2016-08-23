@@ -88,12 +88,12 @@ class Fragment:
     def is_commented_out(self):
         return self._text.strip().startswith("%")
 
-    def extract(self, match):
+    def extract(self, match, desired_group=0):
         """
         :return: a sub fragment corresponding to the given match in the container fragment
         """
         line_number = self.line_number() + self[:match.start()].text().count("\n")
-        text = match.group(0)
+        text = match.group(desired_group)
         return Fragment(self.file(), line_number, text)
 
     def replace(self, searched, replacement):
@@ -102,7 +102,10 @@ class Fragment:
 
     def __getitem__(self, key):
         return Fragment(self._file, self._lineNumber, self._text[key])
-    
+
+    def __repr__(self):
+        return self._text
+
 
 class Processor:
     """
@@ -116,21 +119,52 @@ class Processor:
         pass
 
     @staticmethod
-    def input_merger(file, proxy):
-        return Input(EndInput(CommentsRemover(FileWrapper(file)), proxy), proxy)
-
-    @staticmethod
-    def flap_pipeline(proxy):
-        processors = [Include,
-                      IncludeOnly,
-                      GraphicsPath,
-                      IncludeGraphics,
-                      IncludeSVG,
-                      Overpic]
-        pipeline = Processor.input_merger(proxy.file(), proxy)
+    def chain(proxy, source, processors):
+        pipeline = source
         for eachProcessor in processors:
             pipeline = eachProcessor(pipeline, proxy)
         return pipeline
+
+    @staticmethod
+    def input_merger(file, proxy):
+        return Processor.chain(
+            proxy,
+            CommentsRemover(FileWrapper(file)),
+            [SubFileExtractor, SubFile, Input, EndInput])
+
+    @staticmethod
+    def flap_pipeline(proxy):
+        return Processor.chain(
+            proxy,
+            Processor.input_merger(proxy.file(), proxy),
+            [Include, IncludeOnly, GraphicsPath, IncludeGraphics, IncludeSVG, Overpic])
+
+
+class ProcessorFactory:
+    """
+    Create chains of processors
+    """
+
+    @staticmethod
+    def chain(proxy, source, processors):
+        pipeline = source
+        for eachProcessor in processors:
+            pipeline = eachProcessor(pipeline, proxy)
+        return pipeline
+
+    @staticmethod
+    def input_merger(file, proxy):
+        return Processor.chain(
+            proxy,
+            CommentsRemover(FileWrapper(file)),
+            [SubFileExtractor, SubFile, Input, EndInput])
+
+    @staticmethod
+    def flap_pipeline(proxy):
+        return Processor.chain(
+            proxy,
+            Processor.input_merger(proxy.file(), proxy),
+            [Include, IncludeOnly, GraphicsPath, IncludeGraphics, IncludeSVG, Overpic])
 
 
 class FileWrapper(Processor):
@@ -186,13 +220,15 @@ class Substitution(ProcessorDecorator):
     def fragments(self):
         self.pattern = self.prepare_pattern()
         for each_fragment in self._delegate.fragments():
-            for f in self.process_fragment(each_fragment): yield f
+            for f in self.process_fragment(each_fragment):
+                yield f
 
     def process_fragment(self, fragment):
         current = 0
         for eachMatch in self.all_matches(fragment):
             yield fragment[current:eachMatch.start()] 
-            for f in self.replacements_for(fragment.extract(eachMatch), eachMatch): yield f
+            for f in self.replacements_for(fragment.extract(eachMatch), eachMatch):
+                yield f
             current = eachMatch.end()
         yield fragment[current:]
 
@@ -234,6 +270,44 @@ class Input(Substitution):
         if included_file.isMissing():
             raise TexFileNotFound(fragment)
         return Processor.input_merger(included_file, self.flap).fragments()
+
+
+class SubFile(Substitution):
+    """
+    Detects fragments that contains an subfile directive (i.e., '\subfile{foo}).
+    When one is detected, it extracts all the fragments from the file that
+    is referred (such as 'foo.tex')
+    """
+
+    def __init__(self, delegate, flap):
+        super().__init__(delegate, flap)
+
+    def prepare_pattern(self):
+        return re.compile(r"\\subfile\{([^}]+)\}")
+
+    def replacements_for(self, fragment, match):
+        self.flap.on_input(fragment) # TODO: Update this line
+        included_file = self.file().sibling(match.group(1) + ".tex")
+        if included_file.isMissing():
+            raise TexFileNotFound(fragment)
+        return self.flap._processors.input_merger(included_file, self.flap).fragments()
+
+
+class SubFileExtractor(Substitution):
+    """
+    Extract the content of the 'subfile', that is the text between \begin{document} and \end{document}.
+    """
+
+    def __init__(self, delegate, flap):
+        super().__init__(delegate, flap)
+
+    def prepare_pattern(self):
+        return re.compile(r"\\documentclass.*\{subfiles\}.*\\begin\{document\}(.+)\\end\{document\}", re.DOTALL)
+
+    def replacements_for(self, fragment, match):
+        if match is None:
+            raise ValueError("This is not a valid subfile!")
+        return [fragment.extract(match, 1)]
 
 
 class IncludeOnly(Substitution):
@@ -367,12 +441,13 @@ class Flap:
 
     OUTPUT_FILE = "merged.tex"
     
-    def __init__(self, fileSystem, listener=Listener()):
+    def __init__(self, fileSystem, listener=Listener(), factory=ProcessorFactory):
         self._file_system = fileSystem
         self._listener = listener
         self._included_files = []
         self._graphics_directory = None
-               
+        self._processors = factory
+
     def flatten(self, root, output):
         self._output = output
         self.open_file(root)
@@ -388,9 +463,10 @@ class Flap:
         return self._root
         
     def merge_latex_source(self):
-        pipeline = Processor.flap_pipeline(self)
+        pipeline = self._processors.flap_pipeline(self)
         fragments = pipeline.fragments()
-        merge = ''.join([ each.text() for each in fragments ])
+        texts = [ each.text() for each in fragments ]
+        merge = ''.join(texts)
         self._file_system.createFile(self._output / Flap.OUTPUT_FILE, merge)
             
     def copy_resource_files(self):

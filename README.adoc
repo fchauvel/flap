@@ -46,6 +46,6 @@ Should you need any further information, feel free to email mailto:franck.chauve
 
 Here is a list of features, which are not yet supported:
 
+. Refactoring, break down engine.py into one file per directive
 . Support for backward relative links in directives, for instance `\input{../img/foo}`.
 . Support for star-form of directives, such as `\includegraphics*{foo}`
-. Adjust copyright and credits in flap.__init__.py
