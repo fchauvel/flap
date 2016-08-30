@@ -66,7 +66,8 @@ class CommentRemoverTest(TestCase):
 
     def test_remove_end_line_comments(self):
         text = ("A"
-                "\\includegraphics[width=8cm]{%\n"
+                "\\includegraphics% This is a comment \n"
+                "[width=8cm]{%\n"
                 "foo%\n"
                 "}\n"
                 "B")
@@ -169,6 +170,14 @@ class InputMergerTests(FlapUnitTest):
 
         self.verify_merge("blahblah bar blah")
 
+    def test_subdirectory_merge(self):
+        self.project.root_latex_code = "blahblah \\input{partA/foo} blah"
+        self.project.parts["partA/foo.tex"] = "bar"
+
+        self.run_flap()
+
+        self.verify_merge("blahblah bar blah")
+
     def test_recursive_merge(self):
         self.project.root_latex_code = "A \\input{foo} Z"
         self.project.parts["foo.tex" ] = "B \\input{bar} Y"
@@ -232,6 +241,15 @@ class IncludeMergeTest(FlapUnitTest):
 
         self.verify_merge("blahblah bar\clearpage  blah")
 
+    def test_subdirectory_merge(self):
+        self.project.root_latex_code = "blahblah \include{partA/foo} blah"
+
+        self.project.parts["partA/foo.tex"] = "bar"
+
+        self.run_flap()
+
+        self.verify_merge("blahblah bar\clearpage  blah")
+
     def test_include_only_effect(self):
         self.project.root_latex_code = ("bla blab"
                                         "\includeonly{foo, baz}"
@@ -255,6 +273,13 @@ class IncludeMergeTest(FlapUnitTest):
                            "baz\\clearpage "
                            "bla")
 
+    def test_missing_tex_file_are_detected(self):
+        self.project.root_latex_code = "\n" \
+                                       "\\include{foo}"
+
+        with self.assertRaises(TexFileNotFound):
+            self.run_flap()
+
 
 class GraphicPathTest(FlapUnitTest):
     """
@@ -267,8 +292,7 @@ class GraphicPathTest(FlapUnitTest):
                                         "\\includegraphics[witdh=5cm]{plot}" \
                                         "blabla"
 
-        self.project.images_directory = "img"
-        self.project.images = ["plot.pdf"]
+        self.project.images = ["img/plot.pdf"]
 
         self.run_flap()
 
@@ -285,8 +309,7 @@ class IncludeGraphicsProcessorTest(FlapUnitTest):
     def test_links_to_graphics_are_adjusted(self):
         self.project.root_latex_code = "A \\includegraphics[width=3cm]{img/foo} Z"
 
-        self.project.images_directory = "img"
-        self.project.images = ["foo.pdf"]
+        self.project.images = ["img/foo.pdf"]
 
         self.run_flap()
 
@@ -296,8 +319,7 @@ class IncludeGraphicsProcessorTest(FlapUnitTest):
     def test_paths_with_extension(self):
         self.project.root_latex_code = "A \\includegraphics[width=3cm]{img/foo.pdf} Z"
 
-        self.project.images_directory = "img"
-        self.project.images = ["foo.pdf"]
+        self.project.images = ["img/foo.pdf"]
 
         self.run_flap()
 
@@ -353,8 +375,7 @@ class IncludeGraphicsProcessorTest(FlapUnitTest):
         self.project.root_latex_code = "AA \\input{foo} AA"
         self.project.parts["foo.tex"] = "BB \\includegraphics[width=3cm]{img/foo} BB"
 
-        self.project.images_directory = "img"
-        self.project.images = ["foo.pdf"]
+        self.project.images = ["img/foo.pdf"]
 
         self.run_flap()
 
@@ -367,8 +388,7 @@ class IncludeGraphicsProcessorTest(FlapUnitTest):
                                         "img/foo%\n"
                                         "}\n"
                                         "B")
-        self.project.images_directory = "img"
-        self.project.images = ["foo.pdf"]
+        self.project.images = ["img/foo.pdf"]
 
         self.run_flap()
 
@@ -398,8 +418,7 @@ class SVGIncludeTest(FlapUnitTest):
     def testLinksToSVGAreAdjusted(self):
         self.project.root_latex_code = "A \\includesvg{img/foo} Z"
 
-        self.project.images_directory = "img"
-        self.project.images = ["foo.svg"]
+        self.project.images = ["img/foo.svg"]
 
         self.run_flap()
 
@@ -410,8 +429,7 @@ class SVGIncludeTest(FlapUnitTest):
         self.project.root_latex_code =  "A \\input{parts/foo} A"
         self.project.parts["parts/foo.tex"] = "B \\includesvg{img/sources/test} B"
 
-        self.project.images_directory = "img/sources"
-        self.project.images = ["test.svg"]
+        self.project.images = ["img/sources/test.svg"]
 
         self.run_flap()
 
@@ -421,13 +439,12 @@ class SVGIncludeTest(FlapUnitTest):
     def testSVGFilesAreCopiedEvenWhenJPGAreAvailable(self):
         self.project.root_latex_code =  "A \\includesvg{img/foo} Z"
 
-        self.project.images_directory = "img"
-        self.project.images = ["foo.eps", "foo.svg"]
+        self.project.images = ["img/foo.eps", "img/foo.svg"]
 
         self.project.create_on(self.file_system)
 
         self.file_system.filesIn = MagicMock()
-        self.file_system.filesIn.return_value = [ self.file_system.open(self.project.path_to_image(eachImage)) for eachImage in self.project.images ]
+        self.file_system.filesIn.return_value = [ self.file_system.open(self.project.directory / eachImage) for eachImage in self.project.images ]
 
         self.run_flap()
 
@@ -446,8 +463,7 @@ class OverpicAdjuster(FlapUnitTest):
                                         "blablabla\n"
                                         "\\end{overpic}\n"
                                         "")
-        self.project.images_directory = "img"
-        self.project.images = ["picture.pdf"]
+        self.project.images = ["img/picture.pdf"]
 
         self.run_flap()
 
@@ -467,8 +483,7 @@ class MiscellaneousTests(FlapUnitTest):
                                           "\t\\includegraphics[width=4cm]{img/foo}\n"
                                           "  \\includegraphics[width=5cm]{img/foo}\n"
                                           "\\end{center}")
-        self.project.images_directory = "img"
-        self.project.images = ["foo.pdf"]
+        self.project.images = ["img/foo.pdf"]
 
         self.run_flap()
 

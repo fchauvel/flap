@@ -65,23 +65,26 @@ class AcceptanceTest(FlapTest):
         self.prepareLatexProject()
 
     def prepareLatexProject(self):
-        self.project.root_latex_code = "\\documentclass{article}\n" \
-                                       "\\graphicspath{images}\n" \
-                                       "\\includeonly{partA,partB}\n" \
-                                       "\\begin{document}\n" \
-                                       "    \\subfile{partA}\n" \
-                                       "    \\include{partB}\n" \
-                                       "\\end{document}"
+        self.project.root_latex_code = \
+            "\\documentclass{article}\n" \
+            "\\includeonly{partB/main}\n" \
+            "\\begin{document}\n" \
+            "   \\subfile{partA}\n" \
+            "   \\include{partB/main}\n" \
+            "\\end{document}"
 
-        self.project.parts["partA.tex"] = "\\documentclass[../main.tex]{subfiles}" \
-                                          "\\begin{document}" \
-                                          "\\input{result}" \
-                                          "\\end{document}"
+        self.project.parts["partA.tex"] = \
+            "\\documentclass[../main.tex]{subfiles}\n" \
+            "\\begin{document}\n" \
+            "   \\input{result}\n" \
+            "\\end{document}\n"
 
-        self.project.parts["result.tex"] = "\\includegraphics[width=\\textwidth]% Test multi-lines commands\n" \
-                                           "{plot}"
+        self.project.parts["result.tex"] = \
+            "\\includegraphics% This is a multi-lines command\n" \
+            "[width=\\textwidth]%\n" \
+            "{plot}"
 
-        self.project.parts["partB.tex"] = "blablah"
+        self.project.parts["partB/main.tex"] = "blablah"
 
         self.project.images = ["plot.pdf"]
 
@@ -101,10 +104,13 @@ class AcceptanceTest(FlapTest):
         self.run_flap(self.project)
 
         self.verify_merge("\\documentclass{article}\n"
-                          "\n\n"
+                          "\n"
                           "\\begin{document}\n"
-                          "    \\includegraphics[width=\\textwidth]{plot}\n"
-                          "    blablah\\clearpage \n"
+                          "   \n"
+                          "   \\includegraphics[width=\\textwidth]{plot}\n"
+                          "\n"
+                          "\n"
+                          "   blablah\\clearpage \n"
                           "\\end{document}")
 
         self.verify_images()

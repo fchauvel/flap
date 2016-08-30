@@ -57,28 +57,13 @@ class LatexProject:
     def root_latex_file(self, path):
         self._root_latex_file = self._directory / path
 
-    @property
-    def images_directory(self):
-        return self._images_directory
-
-    @images_directory.setter
-    def images_directory(self, path):
-        if path is None:
-            self._images_directory = self.directory
-        else:
-            self._images_directory = self._directory / path
-
-    def path_to_image(self, image):
-        assert image in self.images, "Unknown image '%s'! Candidates images are '%s'" % (image, self.images)
-        return self.images_directory / image
-
     def create_on(self, file_system):
         file_system.deleteDirectory(self.directory)
         file_system.createFile(self.root_latex_file, self.root_latex_code)
         for (path, content) in self.parts.items():
             file_system.createFile(self.directory / path, content)
         for eachImage in self.images:
-            file_system.createFile(self.path_to_image(eachImage), LatexProject.IMAGE_CONTENT)
+            file_system.createFile(self.directory / eachImage, LatexProject.IMAGE_CONTENT)
         for eachResource in self.resources:
             file_system.createFile(self.directory / eachResource, LatexProject.RESOURCE_CONTENT)
 
