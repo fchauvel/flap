@@ -266,7 +266,8 @@ class Input(Substitution):
    
     def replacements_for(self, fragment, match):
         self.flap.on_input(fragment)
-        included_file = self.file().sibling(match.group(1) + ".tex")
+        file_name = match.group(1) if match.group(1).endswith(".tex") else match.group(1) + ".tex"
+        included_file = self.file().sibling(file_name)
         if included_file.isMissing():
             raise TexFileNotFound(fragment)
         return Processor.input_merger(included_file, self.flap).fragments()
@@ -486,7 +487,7 @@ class Flap:
         candidates = self.graphics_directory().files_that_matches(Path.fromText(text_path))
         for each_extension in extensions_by_priority:
             for each_graphic in candidates:
-                if each_graphic.extension() == each_extension:
+                if each_graphic.extension().lower() == each_extension:
                     return each_graphic
         raise GraphicNotFound(fragment)
 

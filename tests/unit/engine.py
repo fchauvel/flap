@@ -170,6 +170,14 @@ class InputMergerTests(FlapUnitTest):
 
         self.verify_merge("blahblah bar blah")
 
+    def test_simple_merge_with_extension(self):
+        self.project.root_latex_code = "blahblah \\input{foo.tex} blah"
+        self.project.parts["foo.tex"] = "bar"
+
+        self.run_flap()
+
+        self.verify_merge("blahblah bar blah")
+
     def test_subdirectory_merge(self):
         self.project.root_latex_code = "blahblah \\input{partA/foo} blah"
         self.project.parts["partA/foo.tex"] = "bar"
@@ -325,6 +333,16 @@ class IncludeGraphicsProcessorTest(FlapUnitTest):
 
         self.verify_merge(r"A \includegraphics[width=3cm]{img_foo} Z")
         self.verify_image("img_foo.pdf")
+
+    def test_path_with_extension_in_a_different_case(self):
+        self.project.root_latex_code = "A \\includegraphics[width=3cm]{img/foo} Z"
+
+        self.project.images = ["img/foo.PDF"]
+
+        self.run_flap()
+
+        self.verify_merge(r"A \includegraphics[width=3cm]{img_foo} Z")
+        self.verify_image("img_foo.PDF")
 
     def test_local_paths(self):
         self.project.root_latex_code = "A \\includegraphics[width=3cm]{foo} Z"

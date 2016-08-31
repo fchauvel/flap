@@ -4,8 +4,8 @@
 
 image:https://img.shields.io/pypi/v/FLaP.svg[]
 image:https://img.shields.io/pypi/l/FLaP.svg[]
-image:https://img.shields.io/codeship/ad32e1e0-27d8-0133-8e78-7af7072ae828.svg[]
-image:https://img.shields.io/codecov/c/github/fchauvel/flap/master.svg[]
+link:https://codeship.com/projects/97486[image:https://img.shields.io/codeship/ad32e1e0-27d8-0133-8e78-7af7072ae828.svg[]]
+link:https://codecov.io/gh/fchauvel/flap[image:https://img.shields.io/codecov/c/github/fchauvel/flap/master.svg[]]
 image:https://img.shields.io/pypi/dm/FLaP.svg[]
 
 Flap is a simple utility that flattens LaTeX projects. It takes a well organised LaTeX project 
@@ -49,3 +49,10 @@ Here is a list of features, which are not yet supported:
 . Refactoring, break down engine.py into one file per directive
 . Support for backward relative links in directives, for instance `\input{../img/foo}`.
 . Support for star-form of directives, such as `\includegraphics*{foo}`
+
+== Next Release
+. Fix bug on `\input` directives that include extension
+. Fix for LaTeX commands broken down over multiple lines (see Issue #12)
+. Fix for images whose name conflict once merged (see Issue #14)
+. Add support for `subfile` directives (see Issue #13)
+
