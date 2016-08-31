@@ -24,7 +24,7 @@ from flap.ui import main
 from flap.FileSystem import OSFileSystem
 from flap.path import TEMP
 
-from tests.commons import LatexProject, FlapTest
+from tests.commons import LatexProject, FlapTest, TEST_DIRECTORY
 
 
 class OSFileSystemTest(TestCase):
@@ -55,6 +55,17 @@ class OSFileSystemTest(TestCase):
         copy = self.fileSystem.open(copyPath / "test.txt")
         
         self.assertEqual(copy.content(), self.content)
+
+    def test_copyAndRename(self):
+        file = self.createAndOpenTestFile()
+
+        copyPath = TEMP / "dir" / "copy.txt"
+        self.fileSystem.copy(file, copyPath)
+        
+
+        copy = self.fileSystem.open(copyPath)
+        self.assertEqual(copy.content(), self.content)
+        
 
 
 class AcceptanceTest(FlapTest):
@@ -96,7 +107,7 @@ class AcceptanceTest(FlapTest):
         main(["-v", root, output])
 
     def tearDown(self):
-        self.file_system.move_to_directory(TEMP)
+        self.file_system.deleteDirectory(TEST_DIRECTORY)
 
     def run_test(self):
         self.project.create_on(self.file_system)

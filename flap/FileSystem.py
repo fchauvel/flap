@@ -155,9 +155,7 @@ class OSFileSystem(FileSystem):
         os.chdir(self.forOS(path))
         
     def createFile(self, path, content):
-        osDirPath = self.forOS(path.container())
-        if not os.path.exists(osDirPath):
-            os.makedirs(osDirPath)
+        self._create_path(path)
         osPath = self.forOS(path) 
         with open(osPath, "w") as f:
             f.write(content)
@@ -180,13 +178,23 @@ class OSFileSystem(FileSystem):
 
     def copy(self, file, destination):
         import shutil
-        targetDir = self.forOS(destination)
-        if not os.path.exists(targetDir):
-            os.makedirs(targetDir) 
-        source = self.forOS(file.path())
-        target = self.forOS(destination / file.fullname())
-        shutil.copyfile(source, target)
 
+        self._create_path(destination)
+        
+        source = self.forOS(file.path())
+        target = destination if destination.hasExtension() else destination / file.fullname()
+
+        shutil.copyfile(source, self.forOS(target))
+
+    def _create_path(self, path):
+        targetDir = path
+        if path.hasExtension():
+            targetDir = path.container()
+
+        os_target = self.forOS(targetDir)
+        if not os.path.exists(os_target):
+            os.makedirs(os_target) 
+        
     def load(self, path):
         assert path, "Invalid path (found '%s')" % path
         osPath = self.forOS(path)

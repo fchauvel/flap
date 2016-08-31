@@ -502,14 +502,12 @@ class Flap:
         self._listener.on_input(fragment)
     
     def on_include_graphics(self, fragment, graphicFile):
-        self._file_system.copy(graphicFile, self._output)
         self._listener.on_include_graphics(fragment)
         
     def on_include(self, fragment):
         self._listener.on_include(fragment)
         
     def on_include_SVG(self, fragment, graphicFile):
-        self._file_system.copy(graphicFile, self._output)
         self._listener.on_include_SVG(fragment)
 
     def on_include_only(self, included_files):
