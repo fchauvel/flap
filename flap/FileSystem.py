@@ -229,7 +229,10 @@ class InMemoryFileSystem(FileSystem):
             return MissingFile(absolute)
 
     def copy(self, file, destination):
-        path = destination / file.path().fullname()
+        if destination.hasExtension():
+            path = destination
+        else:
+            path = destination / file.path().fullname()
         absolute = path.absolute_from(self._current_directory)
         self.drive[absolute] = File(self, absolute, file.content())
 

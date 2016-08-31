@@ -73,6 +73,15 @@ class Path:
             parts = current_directory.parts() + parts
         return Path.fromText("/".join([each.fullname() for each in parts]))
 
+    def relative_to(self, location):
+        position = 0
+        while position < len(location._parts) and self._parts[position] == location._parts[position]:
+            position += 1
+        return Path(self._parts[position:])
+
+    def without_extension(self):
+        return Path(self._parts[:-1] + [Unit(self._parts[-1].basename())])
+
     def parts(self):
         return self._parts
     

@@ -297,7 +297,7 @@ class GraphicPathTest(FlapUnitTest):
         self.run_flap()
 
         self.verify_merge("blabla"
-                           "\\includegraphics[witdh=5cm]{plot}"
+                           "\\includegraphics[witdh=5cm]{img_plot}"
                            "blabla")
 
 
@@ -313,8 +313,8 @@ class IncludeGraphicsProcessorTest(FlapUnitTest):
 
         self.run_flap()
 
-        self.verify_merge(r"A \includegraphics[width=3cm]{foo} Z")
-        self.verify_image("foo.pdf")
+        self.verify_merge(r"A \includegraphics[width=3cm]{img_foo} Z")
+        self.verify_image("img_foo.pdf")
 
     def test_paths_with_extension(self):
         self.project.root_latex_code = "A \\includegraphics[width=3cm]{img/foo.pdf} Z"
@@ -323,8 +323,8 @@ class IncludeGraphicsProcessorTest(FlapUnitTest):
 
         self.run_flap()
 
-        self.verify_merge(r"A \includegraphics[width=3cm]{foo} Z")
-        self.verify_image("foo.pdf")
+        self.verify_merge(r"A \includegraphics[width=3cm]{img_foo} Z")
+        self.verify_image("img_foo.pdf")
 
     def test_local_paths(self):
         self.project.root_latex_code = "A \\includegraphics[width=3cm]{foo} Z"
@@ -379,8 +379,8 @@ class IncludeGraphicsProcessorTest(FlapUnitTest):
 
         self.run_flap()
 
-        self.verify_merge(r"AA BB \includegraphics[width=3cm]{foo} BB AA")
-        self.verify_image("foo.pdf")
+        self.verify_merge(r"AA BB \includegraphics[width=3cm]{img_foo} BB AA")
+        self.verify_image("img_foo.pdf")
 
     def test_multi_lines_directives(self):
         self.project.root_latex_code = ("A"
@@ -392,8 +392,8 @@ class IncludeGraphicsProcessorTest(FlapUnitTest):
 
         self.run_flap()
 
-        self.verify_merge("A\\includegraphics[width=8cm]{foo}\nB")
-        self.verify_image("foo.pdf")
+        self.verify_merge("A\\includegraphics[width=8cm]{img_foo}\nB")
+        self.verify_image("img_foo.pdf")
 
     def test_includegraphics_are_reported(self):
         self.project.root_latex_code = ("\n"
@@ -422,10 +422,11 @@ class SVGIncludeTest(FlapUnitTest):
 
         self.run_flap()
 
-        self.verify_merge(r"A \includesvg{foo} Z")
-        self.verify_image("foo.svg")
+        self.verify_merge(r"A \includesvg{img_foo} Z")
+        self.verify_image("img_foo.svg")
 
     def test_includesvg_in_separated_file(self):
+        # TODO check if this example would actually compile in latex
         self.project.root_latex_code =  "A \\input{parts/foo} A"
         self.project.parts["parts/foo.tex"] = "B \\includesvg{img/sources/test} B"
 
@@ -433,8 +434,8 @@ class SVGIncludeTest(FlapUnitTest):
 
         self.run_flap()
 
-        self.verify_merge("A B \\includesvg{test} B A")
-        self.verify_image("test.svg")
+        self.verify_merge("A B \\includesvg{img_sources_test} B A")
+        self.verify_image("img_sources_test.svg")
 
     def testSVGFilesAreCopiedEvenWhenJPGAreAvailable(self):
         self.project.root_latex_code =  "A \\includesvg{img/foo} Z"
@@ -448,8 +449,8 @@ class SVGIncludeTest(FlapUnitTest):
 
         self.run_flap()
 
-        self.verify_merge(r"A \includesvg{foo} Z")
-        self.verify_image("foo.svg")
+        self.verify_merge(r"A \includesvg{img_foo} Z")
+        self.verify_image("img_foo.svg")
 
 
 class OverpicAdjuster(FlapUnitTest):
@@ -467,11 +468,11 @@ class OverpicAdjuster(FlapUnitTest):
 
         self.run_flap()
 
-        self.verify_merge("\\begin{overpic}[scale=0.25,unit=1mm,grid,tics=10]{picture}\n"
+        self.verify_merge("\\begin{overpic}[scale=0.25,unit=1mm,grid,tics=10]{img_picture}\n"
                            "blablabla\n"
                            "\\end{overpic}\n"
                            "")
-        self.verify_image("picture.pdf")
+        self.verify_image("img_picture.pdf")
 
 
 class MiscellaneousTests(FlapUnitTest):
@@ -489,10 +490,28 @@ class MiscellaneousTests(FlapUnitTest):
 
         self.verify_merge("\t\n"
                                       "\\begin{center}\n"
-                                      "\t\\includegraphics[width=4cm]{foo}\n"
-                                      "  \\includegraphics[width=5cm]{foo}\n"
+                                      "\t\\includegraphics[width=4cm]{img_foo}\n"
+                                      "  \\includegraphics[width=5cm]{img_foo}\n"
                                       "\\end{center}")
-        self.verify_image("foo.pdf")
+        self.verify_image("img_foo.pdf")
+
+    def test_conflicting_images_names(self):
+        self.project.root_latex_code = \
+            "\\includegraphics[width=\\textwidth]{partA/result}\\n" \
+            "\\includegraphics[width=\\textwidth]{partB/result}\\n"
+
+        self.project.images = [
+            "partA/result.pdf",
+            "partB/result.pdf"]
+
+        self.run_flap()
+
+        self.verify_merge(
+            "\\includegraphics[width=\\textwidth]{partA_result}\\n"
+            "\\includegraphics[width=\\textwidth]{partB_result}\\n")
+
+        self.verify_image("partA_result.pdf")
+        self.verify_image("partB_result.pdf")
 
     def test_resources_are_copied(self):
         self.project.root_latex_code = "xxx"

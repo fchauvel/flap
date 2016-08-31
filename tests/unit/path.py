@@ -77,6 +77,25 @@ class PathTests(unittest.TestCase):
 
         self.assertEqual(absolute_path, Path.fromText("/home/test/foo.txt"))
 
+    def test_relative_to_directory(self):
+        path = Path.fromText("/home/test/foo.txt")
+
+        relative = path.relative_to(Path.fromText("/home"))
+
+        self.assertEquals(relative, Path.fromText("test/foo.txt"))
+
+    def test_relative_to_file(self):
+        path = Path.fromText("/home/test/foo.txt")
+
+        relative = path.relative_to(Path.fromText("/home/test"))
+
+        self.assertEquals(relative, Path.fromText("foo.txt"))
+
+    def test_without_extension(self):
+        path = Path.fromText("/home/test/foo.txt")
+
+        self.assertEquals(path.without_extension(), Path.fromText("/home/test/foo"))
+
     def testContainment(self):
         path1 = ROOT / "dir" / "file.txt"
         path2 = ROOT / "dir"

@@ -379,7 +379,8 @@ class IncludeGraphics(Substitution):
     def replacements_for(self, fragment, match):
         included_graphic = match.group(1)
         graphic = self.flap.find_graphics(fragment, included_graphic, self.extensions_by_priority())
-        replacement = fragment.replace(included_graphic, graphic.basename())
+        new_graphic_name = self.flap.relocate(graphic)
+        replacement = fragment.replace(included_graphic, new_graphic_name)
         self.notify(fragment, graphic)
         return [replacement]
 
@@ -488,6 +489,12 @@ class Flap:
                 if each_graphic.extension() == each_extension:
                     return each_graphic
         raise GraphicNotFound(fragment)
+
+    def relocate(self, graphic):
+        new_graphic_path = graphic._path.relative_to(self._root.container()._path)
+        new_graphic_file_name = str(new_graphic_path).replace("/", "_")
+        self._file_system.copy(graphic, self._output / new_graphic_file_name)
+        return str(new_graphic_path.without_extension()).replace("/", "_")
 
     RESOURCE_FILES = ["cls", "sty", "bib", "bst"]       
         

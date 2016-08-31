@@ -106,6 +106,19 @@ class InMemoryFileSystemTest(unittest.TestCase):
         copy = self.fileSystem.open(destination / "test.txt")
         self.assertTrue(copy.exists())
         self.assertEqual(copy.content(), "whatever")
+
+    def test_copy_while_renaming(self):
+        source = Path.fromText("dir/test.txt")
+        self.fileSystem.createFile(source, "whatever")
+
+        file = self.fileSystem.open(source)
+
+        destination = Path.fromText("dir2/clone/test_copy.txt")
+        self.fileSystem.copy(file, destination)
+
+        copy = self.fileSystem.open(destination)
+        self.assertTrue(copy.exists())
+        self.assertEqual(copy.content(), "whatever")
         
     def testFilesThatMatch(self):
         self.fileSystem.createFile(Path.fromText("dir/foo/bar/test.txt"), "x")
