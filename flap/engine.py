@@ -354,7 +354,7 @@ class GraphicsPath(Substitution):
         super().__init__(delegate, flap)
 
     def prepare_pattern(self):
-        return re.compile(r"\\graphicspath{([^}]+)}")
+        return re.compile(r"\\graphicspath{{?([^}]+)}?}")
 
     def replacements_for(self, fragment, match):
         """

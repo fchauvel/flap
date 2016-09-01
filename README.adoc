@@ -51,6 +51,7 @@ Here is a list of features, which are not yet supported:
 . Support for star-form of directives, such as `\includegraphics*{foo}`
 
 == Next Release
+. Fix bug on `\graphicpath` directives using double curly braces (e.g., `\graphicpath{{./img/}}`).
 . Fix bug on `\input` directives that include extension
 . Fix for LaTeX commands broken down over multiple lines (see Issue #12)
 . Fix for images whose name conflict once merged (see Issue #14)

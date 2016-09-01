@@ -32,7 +32,7 @@ class Path:
     def __init__(self, parts):
         if not parts:
             raise ValueError("Invalid path, no part given")
-        self._parts = parts
+        self._parts = [anyPart for anyPart in parts if not anyPart.is_current_directory() ]
 
     def resource(self):
         return self._parts[-1]

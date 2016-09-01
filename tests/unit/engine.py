@@ -308,6 +308,21 @@ class GraphicPathTest(FlapUnitTest):
                            "\\includegraphics[witdh=5cm]{img_plot}"
                            "blabla")
 
+    def test_escaped_graphicpath(self):
+        self.project.root_latex_code = "\\graphicspath{{./img/}}" \
+                                        "blabla" \
+                                        "\\includegraphics[witdh=5cm]{plot}" \
+                                        "blabla"
+
+        self.project.images = ["img/plot.pdf"]
+
+        self.run_flap()
+
+        self.verify_merge("blabla"
+                           "\\includegraphics[witdh=5cm]{img_plot}"
+                           "blabla")
+
+
 
 class IncludeGraphicsProcessorTest(FlapUnitTest):
     """

@@ -33,13 +33,25 @@ class PathTests(unittest.TestCase):
         self.assertEqual(path.container(), ROOT / "test")
         self.assertEqual(path.fullname(), "source.tex")
 
-    def testAppendingAPath(self):
+    def test_appending_a_path(self):
         path1 = ROOT / "dir/test"
         path2 = ROOT / "dir" / "test"
         
         self.assertEqual(path1, path2)
 
-    def testHasExtension(self):
+    def test_appending_a_path_that_ends_with_a_slash(self):
+        path1 = ROOT / "dir/test/"
+        path2 = ROOT / "dir" / "test"
+
+        self.assertEqual(path1, path2)
+
+    def test_appending_a_path_that_starts_with_a_dot(self):
+        path1 = ROOT / "./dir/test/"
+        path2 = ROOT / "dir" / "test"
+
+        self.assertEqual(path1, path2)
+
+    def test_has_extension(self):
         path = ROOT / "source.tex"
         
         self.assertTrue(path.hasExtension())
