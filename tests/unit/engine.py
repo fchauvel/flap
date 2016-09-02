@@ -195,6 +195,15 @@ class InputMergerTests(FlapUnitTest):
 
         self.verify_merge("A B blah Y Z")
 
+    def test_path_are_considered_from_root_in_recursive_input(self):
+        self.project.root_latex_code = "A \\input{parts/foo} Z"
+        self.project.parts["parts/foo.tex" ] = "B \\input{parts/subparts/bar} Y"
+        self.project.parts["parts/subparts/bar.tex"] = "blah"
+
+        self.run_flap()
+
+        self.verify_merge("A B blah Y Z")
+
     def test_commented_lines_are_ignored(self):
         self.project.root_latex_code = "\n" \
                                        "blah blah blah\n" \
@@ -321,7 +330,6 @@ class GraphicPathTest(FlapUnitTest):
         self.verify_merge("blabla"
                            "\\includegraphics[witdh=5cm]{img_plot}"
                            "blabla")
-
 
 
 class IncludeGraphicsProcessorTest(FlapUnitTest):
