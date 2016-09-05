@@ -137,7 +137,7 @@ class Processor:
         return Processor.chain(
             proxy,
             Processor.input_merger(proxy.file(), proxy),
-            [Include, IncludeOnly, GraphicsPath, IncludeGraphics, IncludeSVG, Overpic])
+            [Include, IncludeOnly, GraphicsPath, IncludeGraphics, IncludeSVG, Overpic, Bibliography])
 
 
 class ProcessorFactory:
@@ -164,7 +164,7 @@ class ProcessorFactory:
         return Processor.chain(
             proxy,
             Processor.input_merger(proxy.file(), proxy),
-            [Include, IncludeOnly, GraphicsPath, IncludeGraphics, IncludeSVG, Overpic])
+            [Include, IncludeOnly, GraphicsPath, IncludeGraphics, IncludeSVG, Overpic, Bibliography])
 
 
 class FileWrapper(Processor):
@@ -365,7 +365,34 @@ class GraphicsPath(Substitution):
         return []
 
 
-class IncludeGraphics(Substitution):
+class LinkSubstitution(Substitution):
+    """
+    Detects links, such as includgraphics or bibliography. When one is detected, it produces a new fragment
+    where the link to the file is corrected.
+    """
+
+    def __init__(self, delegate, flap):
+        super().__init__(delegate, flap)
+
+    def replacements_for(self, fragment, match):
+        reference = match.group(1)
+        resource = self.find(fragment, reference)
+        new_resource_name = self.flap.relocate(resource)
+        replacement = fragment.replace(reference, new_resource_name)
+        self.notify(fragment, resource)
+        return [replacement]
+
+    def find(self, fragment, reference):
+        pass
+
+    def extensions_by_priority(self):
+        return ["pdf", "eps", "png", "jpg"]
+
+    def notify(self, fragment, graphic):
+        return self.flap.on_include_graphics(fragment, graphic)
+
+
+class IncludeGraphics(LinkSubstitution):
     """
     Detects "\includegraphics". When one is detected, it produces a new fragment
     where the link to the file is corrected.
@@ -377,17 +404,35 @@ class IncludeGraphics(Substitution):
     def prepare_pattern(self):
         pattern = r"\\includegraphics\s*(?:\[(?:[^\]]+)\])*\{([^\}]+)\}"
         return re.compile(pattern)
-    
-    def replacements_for(self, fragment, match):
-        included_graphic = match.group(1)
-        graphic = self.flap.find_graphics(fragment, included_graphic, self.extensions_by_priority())
-        new_graphic_name = self.flap.relocate(graphic)
-        replacement = fragment.replace(included_graphic, new_graphic_name)
-        self.notify(fragment, graphic)
-        return [replacement]
+
+    def find(self, fragment, reference):
+        return self.flap.find_graphics(fragment, reference, self.extensions_by_priority())
 
     def extensions_by_priority(self):
         return ["pdf", "eps", "png", "jpg"]
+
+    def notify(self, fragment, graphic):
+        return self.flap.on_include_graphics(fragment, graphic)
+
+
+class Bibliography(LinkSubstitution):
+    """
+    Detects "\bibliography". When one is detected, it produces a new fragment
+    where the link to the file is corrected.
+    """
+
+    def __init__(self, delegate, flap):
+        super().__init__(delegate, flap)
+
+    def prepare_pattern(self):
+        pattern = r"\\bibliography\s*(?:\[(?:[^\]]+)\])*\{([^\}]+)\}"
+        return re.compile(pattern)
+
+    def find(self, fragment, reference):
+        return self.flap.find_resource(fragment, reference, self.extensions_by_priority())
+
+    def extensions_by_priority(self):
+        return ["bib"]
 
     def notify(self, fragment, graphic):
         return self.flap.on_include_graphics(fragment, graphic)
@@ -494,13 +539,19 @@ class Flap:
     def is_ignored(self, file):
         return self._included_files and file not in self._included_files
 
-    def find_graphics(self, fragment, text_path, extensions_by_priority):
-        candidates = self.graphics_directory().files_that_matches(Path.fromText(text_path))
-        for each_extension in extensions_by_priority:
-            for each_graphic in candidates:
-                if each_graphic.extension().lower() == each_extension:
-                    return each_graphic
-        raise GraphicNotFound(fragment)
+    def find_graphics(self, fragment, path, extensions_by_priority):
+        return self._find(fragment, path, self.graphics_directory(), extensions_by_priority, GraphicNotFound)
+
+    def find_resource(self, fragment, path, extensions_by_priority):
+        return self._find(fragment, path, self._root.container(), extensions_by_priority, ResourceNotFound)
+
+    def _find(self, fragment, path, directory, extensions, error):
+        candidates = directory.files_that_matches(Path.fromText(path))
+        for each_extension in extensions:
+            for each_resource in candidates:
+                if each_resource.extension().lower() == each_extension:
+                    return each_resource
+        raise error(fragment)
 
     def locate(self, file):
         return self._root.sibling(file)
@@ -511,7 +562,7 @@ class Flap:
         self._file_system.copy(graphic, self._output / new_graphic_file_name)
         return str(new_graphic_path.without_extension()).replace("/", "_")
 
-    RESOURCE_FILES = ["cls", "sty", "bib", "bst"]       
+    RESOURCE_FILES = ["cls", "sty", "bst"]
         
     def on_input(self, fragment):
         self._listener.on_input(fragment)

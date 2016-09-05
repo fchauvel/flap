@@ -100,8 +100,8 @@ class FlapTest(TestCase):
     def verify_image(self, image):
         self.assertEqual(self._content_of(image), LatexProject.IMAGE_CONTENT)
 
-    def verify_resources(self):
+    def verify_resources(self, expected_content=LatexProject.RESOURCE_CONTENT):
         for eachResource in self.project.resources:
-            self.assertEqual(self._content_of(eachResource), LatexProject.RESOURCE_CONTENT)
+            self.assertEqual(self._content_of(eachResource), expected_content)
 
 

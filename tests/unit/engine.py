@@ -517,6 +517,40 @@ class OverpicAdjuster(FlapUnitTest):
         self.verify_image("img_picture.pdf")
 
 
+class BibliographyTests(FlapUnitTest):
+
+    def test_fetching_bibliography(self):
+        self.project.root_latex_code = "\\bibliography{biblio}"
+
+        self.project.images = ["biblio.bib"]
+
+        self.run_flap()
+
+        self.verify_merge("\\bibliography{biblio}")
+        self.verify_image("biblio.bib")
+
+    def test_fetching_bibliography_stored_in_sub_directories(self):
+        self.project.root_latex_code = "\\bibliography{parts/biblio}"
+
+        self.project.images = ["parts/biblio.bib"]
+
+        self.run_flap()
+
+        self.verify_merge("\\bibliography{parts_biblio}")
+        self.verify_image("parts_biblio.bib")
+
+    def test_interaction_with_graphicpath(self):
+        self.project.root_latex_code = "\\graphicspath{img}" \
+                                       "\\bibliography{parts/biblio}"
+
+        self.project.images = ["parts/biblio.bib"]
+
+        self.run_flap()
+
+        self.verify_merge("\\bibliography{parts_biblio}")
+        self.verify_image("parts_biblio.bib")
+
+
 class MiscellaneousTests(FlapUnitTest):
 
     def test_indentation_is_preserved(self):

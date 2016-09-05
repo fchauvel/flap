@@ -65,7 +65,6 @@ class OSFileSystemTest(TestCase):
 
         copy = self.fileSystem.open(copyPath)
         self.assertEqual(copy.content(), self.content)
-        
 
 
 class AcceptanceTest(FlapTest):
