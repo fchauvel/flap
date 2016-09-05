@@ -7,5 +7,6 @@ pages:
    - "Installation": installation.md
    - "Usage Example": example.md
    - "Supported Commands": features.md
+ - "Known Caveats": caveats.md
  - Contributing: contributing.md
 theme: flatly
