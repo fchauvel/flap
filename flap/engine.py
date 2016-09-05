@@ -17,7 +17,7 @@
 
 import re
 import itertools
-from flap.path import Path
+from flap.path import Path, TEMP
 
 
 class Listener:
@@ -450,12 +450,22 @@ class Flap:
         self._included_files = []
         self._graphics_directory = None
         self._processors = factory
+        self._merged_file = self.OUTPUT_FILE
 
     def flatten(self, root, output):
-        self._output = output
+        self.find_output_directory(output)
         self.open_file(root)
         self.merge_latex_source()
         self.copy_resource_files()
+
+    def find_output_directory(self, output):
+        if output is None: return
+        if output.hasExtension():
+            self._merged_file = output.fullname()
+            self._output = output.container()
+        else:
+            self._merged_file = self.OUTPUT_FILE
+            self._output = output
 
     def open_file(self, source):
         self._root = self._file_system.open(source)
@@ -470,8 +480,8 @@ class Flap:
         fragments = pipeline.fragments()
         texts = [ each.text() for each in fragments ]
         merge = ''.join(texts)
-        self._file_system.createFile(self._output / Flap.OUTPUT_FILE, merge)
-            
+        self._file_system.createFile(self._output / self._merged_file, merge)
+
     def copy_resource_files(self):
         project = self._root.container()
         for eachFile in project.files():

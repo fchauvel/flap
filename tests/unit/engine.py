@@ -120,9 +120,10 @@ class FlapUnitTest(FlapTest):
         self.listener = MagicMock(Listener())
         self.flap = Flap(self.file_system, self.listener)
 
-    def run_flap(self):
+    def run_flap(self, output=Flap.OUTPUT_FILE):
+        super().run_flap(output)
         self.project.create_on(self.file_system)
-        self.flap.flatten(self.project.root_latex_file, self.output_directory)
+        self.flap.flatten(self.project.root_latex_file, self.output_directory / self.merged_file)
 
     def verify_listener(self, handler, fileName, lineNumber, text):
         fragment = handler.call_args[0][0]
@@ -553,6 +554,14 @@ class MiscellaneousTests(FlapUnitTest):
 
         self.verify_image("partA_result.pdf")
         self.verify_image("partB_result.pdf")
+
+    def test_flattening_in_a_file(self):
+        self.project.root_latex_code = "blablabla"
+
+        self.run_flap(output="output/root.tex")
+
+        self.verify_merge("blablabla")
+
 
     def test_resources_are_copied(self):
         self.project.root_latex_code = "xxx"

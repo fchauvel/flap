@@ -20,7 +20,7 @@ import sys
 import flap
 from flap.FileSystem import OSFileSystem
 from flap.engine import Flap, Listener, GraphicNotFound, TexFileNotFound
-from flap.path import Path
+from flap.path import Path, TEMP
 
 
 class UI(Listener):
@@ -103,7 +103,7 @@ class Controller:
         self._ui = factory.ui()
         self._flap = factory.flap()
         self._root_file = "main.tex"
-        self._output = "/temp/"
+        self._output = TEMP / "flap"
         self._verbose = False
 
     def run(self, arguments):
@@ -130,11 +130,17 @@ class Controller:
         if len(arguments) < 3 or len(arguments) > 4:
             raise IllegalArguments("Wrong number of arguments (found %s)" % str(arguments))
 
+        root_set = False
         for any_argument in arguments:
-            if any_argument.endswith(".tex"):
-                self._root_file = Path.fromText(any_argument)
-            elif any_argument == "-v" or any_argument == "--verbose":
+            if any_argument == "__main__.py": continue
+            if any_argument in ["-v", "--verbose"]:
                 self._verbose = True
+            elif any_argument.endswith(".tex"):
+                if not root_set:
+                    self._root_file = Path.fromText(any_argument)
+                    root_set = True
+                else:
+                    self._output = Path.fromText(any_argument)
             else:
                 self._output = Path.fromText(any_argument)
 

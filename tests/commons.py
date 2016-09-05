@@ -78,12 +78,17 @@ class FlapTest(TestCase):
         self.project = LatexProject()
         self.output_directory = TEST_DIRECTORY / "output"
         self.working_directory = TEST_DIRECTORY
+        self.merged_file = Flap.OUTPUT_FILE
 
-    def run_flap(self, project):
+    def run_flap(self, output):
+        self.output_directory = TEST_DIRECTORY / output
+        if self.output_directory.hasExtension():
+            self.merged_file = self.output_directory.fullname()
+            self.output_directory = self.output_directory.container()
         pass
 
     def verify_merge(self, expected):
-        self.assertEqual(self._content_of(Flap.OUTPUT_FILE), expected)
+        self.assertEqual(self._content_of(self.merged_file), expected)
 
     def _content_of(self, path):
         return self.file_system.open(self.output_directory / path).content()
