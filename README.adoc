@@ -52,6 +52,7 @@ Here is a list of features, which are not yet supported:
 
 == Next Release
 
+. Fix flattening `\bibliography`stored in a subdirectory
 . Fix bug on `\graphicpath` directives using double curly braces (e.g., `\graphicpath{{./img/}}`).
 . Fix bugs on `\input` directives:
 .. `\input` directive that specify the `.tex` extension are properly handled;
