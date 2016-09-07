@@ -17,7 +17,46 @@
 
 from flap.path import Path
 
+class Listener:
+    """
+    Handle events emitted by FLaP. Errors are raised as exceptions.
+    """
 
+    def on_input(self, fragment):
+        """
+        Triggered when an input directive was found in the LaTeX source.
+
+        :param fragment: the fragment which was expanded
+        :type fragment: Fragment
+        """
+        pass
+
+    def on_include(self, fragment):
+        """
+        Triggered when an '\include' directive was found in the LaTeX source.
+
+        :param fragment: the fragment which was expanded
+        :type fragment: Fragment
+        """
+        pass
+
+    def on_include_graphics(self, fragment):
+        """
+        Triggered when an 'includegraphics' directive is detected in the LaTeX source.
+
+        :param fragment: the text fragment of interest
+        :type fragment: Fragment
+        """
+        pass
+
+    def on_include_SVG(self, fragment):
+        """
+        Triggered when an 'includesvg' directive is detected in the LaTeX source.
+
+        :param fragment: the text fragment of interest
+        :type fragment: Fragment
+        """
+        pass
 
 
 class Processor:
@@ -186,47 +225,6 @@ class Flap:
         else:
             return self.file().container()
 
-
-class Listener:
-    """
-    Handle events emitted by FLaP. Errors are raised as exceptions.
-    """
-
-    def on_input(self, fragment):
-        """
-        Triggered when an input directive was found in the LaTeX source.
-
-        :param fragment: the fragment which was expanded
-        :type fragment: Fragment
-        """
-        pass
-
-    def on_include(self, fragment):
-        """
-        Triggered when an '\include' directive was found in the LaTeX source.
-
-        :param fragment: the fragment which was expanded
-        :type fragment: Fragment
-        """
-        pass
-
-    def on_include_graphics(self, fragment):
-        """
-        Triggered when an 'includegraphics' directive is detected in the LaTeX source.
-
-        :param fragment: the text fragment of interest
-        :type fragment: Fragment
-        """
-        pass
-
-    def on_include_SVG(self, fragment):
-        """
-        Triggered when an 'includesvg' directive is detected in the LaTeX source.
-
-        :param fragment: the text fragment of interest
-        :type fragment: Fragment
-        """
-        pass
 
 
 
