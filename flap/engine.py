@@ -17,45 +17,13 @@
 
 from flap.path import Path
 
+
 class Listener:
     """
     Handle events emitted by FLaP. Errors are raised as exceptions.
     """
 
-    def on_input(self, fragment):
-        """
-        Triggered when an input directive was found in the LaTeX source.
-
-        :param fragment: the fragment which was expanded
-        :type fragment: Fragment
-        """
-        pass
-
-    def on_include(self, fragment):
-        """
-        Triggered when an '\include' directive was found in the LaTeX source.
-
-        :param fragment: the fragment which was expanded
-        :type fragment: Fragment
-        """
-        pass
-
-    def on_include_graphics(self, fragment):
-        """
-        Triggered when an 'includegraphics' directive is detected in the LaTeX source.
-
-        :param fragment: the text fragment of interest
-        :type fragment: Fragment
-        """
-        pass
-
-    def on_include_SVG(self, fragment):
-        """
-        Triggered when an 'includesvg' directive is detected in the LaTeX source.
-
-        :param fragment: the text fragment of interest
-        :type fragment: Fragment
-        """
+    def on_fragment(self, fragment):
         pass
 
 
@@ -199,18 +167,9 @@ class Flap:
         return str(new_graphic_path.without_extension()).replace("/", "_")
 
     RESOURCE_FILES = ["cls", "sty", "bst"]
-        
-    def on_input(self, fragment):
-        self._listener.on_input(fragment)
-    
-    def on_include_graphics(self, fragment, graphicFile):
-        self._listener.on_include_graphics(fragment)
-        
-    def on_include(self, fragment):
-        self._listener.on_include(fragment)
-        
-    def on_include_SVG(self, fragment, graphicFile):
-        self._listener.on_include_SVG(fragment)
+
+    def on_fragment(self, fragment):
+        self._listener.on_fragment(fragment)
 
     def on_include_only(self, included_files):
         self._included_files = [each_file.strip() for each_file in included_files]
@@ -224,8 +183,6 @@ class Flap:
             return self._graphics_directory
         else:
             return self.file().container()
-
-
 
 
 class ResourceNotFound(Exception):

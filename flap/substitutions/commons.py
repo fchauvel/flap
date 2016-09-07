@@ -15,7 +15,7 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-
+from re import compile, DOTALL
 from flap.engine import Fragment, Processor
 
 
@@ -66,6 +66,7 @@ class Substitution(ProcessorDecorator):
     def process_fragment(self, fragment):
         current = 0
         for eachMatch in self.all_matches(fragment):
+            self.flap.on_fragment(fragment.extract(eachMatch))
             yield fragment[current:eachMatch.start()]
             for f in self.replacements_for(fragment.extract(eachMatch), eachMatch):
                 yield f
@@ -105,7 +106,6 @@ class LinkSubstitution(Substitution):
         resource = self.find(fragment, reference)
         new_resource_name = self.flap.relocate(resource)
         replacement = fragment.replace(reference, new_resource_name)
-        self.notify(fragment, resource)
         return [replacement]
 
     def find(self, fragment, reference):
@@ -114,9 +114,6 @@ class LinkSubstitution(Substitution):
     def extensions_by_priority(self):
         return ["pdf", "eps", "png", "jpg"]
 
-    def notify(self, fragment, graphic):
-        return self.flap.on_include_graphics(fragment, graphic)
-
 
 class EndInput(Substitution):
     """
@@ -124,7 +121,7 @@ class EndInput(Substitution):
     """
 
     def prepare_pattern(self):
-        return re.compile(r"\\endinput.+\Z", re.DOTALL)
+        return compile(r"\\endinput.+\Z", DOTALL)
 
     def replacements_for(self, fragment, match):
         return []

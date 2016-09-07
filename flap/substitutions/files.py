@@ -36,7 +36,6 @@ class Input(Substitution):
         return compile(r"\\input\{([^}]+)\}")
 
     def replacements_for(self, fragment, match):
-        self.flap.on_input(fragment)
         file_name = match.group(1) if match.group(1).endswith(".tex") else match.group(1) + ".tex"
         included_file = self.flap.locate(file_name)
         if included_file.isMissing():
@@ -58,7 +57,6 @@ class SubFile(Substitution):
         return compile(r"\\subfile\{([^}]+)\}")
 
     def replacements_for(self, fragment, match):
-        self.flap.on_input(fragment) # TODO: Update this line
         included_file = self.file().sibling(match.group(1) + ".tex")
         if included_file.isMissing():
             raise TexFileNotFound(fragment)

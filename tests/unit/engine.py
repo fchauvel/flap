@@ -240,7 +240,7 @@ class InputMergerTests(FlapUnitTest):
 
         self.run_flap()
 
-        self.verify_listener(self.listener.on_input, "main.tex", 2, "\input{foo}")
+        self.verify_listener(self.listener.on_fragment, "main.tex", 2, "\input{foo}")
 
     def test_missing_tex_file_are_detected(self):
         self.project.root_latex_code = "\n" \
@@ -448,7 +448,7 @@ class IncludeGraphicsProcessorTest(FlapUnitTest):
 
         self.run_flap()
 
-        self.verify_listener(self.listener.on_include_graphics, "main.tex", 2, "\\includegraphics{foo}")
+        self.verify_listener(self.listener.on_fragment, "main.tex", 2, "\\includegraphics{foo}")
 
     def test_missing_graphics_are_detected(self):
         self.project.root_latex_code = "\\includegraphics{foo}"

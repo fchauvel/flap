@@ -39,24 +39,9 @@ class UiTest(TestCase):
         self.verify_output_contains(mock, flap.__version__)
 
     @patch('sys.stdout', new_callable=StringIO)
-    def test_ui_reports_input(self, mock):
+    def test_ui_reports_fragment(self, mock):
         ui = self.makeUI(mock)     
-        self.run_test(ui.on_input, mock, ["main.tex", "3", "foo"])
-    
-    @patch('sys.stdout', new_callable=StringIO)
-    def test_ui_reports_includesvg(self, mock):
-        ui = self.makeUI(mock)
-        self.run_test(ui.on_include_SVG, mock, ["main.tex", "3", "foo"])
-
-    @patch('sys.stdout', new_callable=StringIO)
-    def test_ui_reports_include(self, mock):
-        ui = self.makeUI(mock)        
-        self.run_test(ui.on_include, mock,["main.tex", "3", "foo"])
-        
-    @patch('sys.stdout', new_callable=StringIO)
-    def test_ui_reports_includegraphics(self, mock):
-        ui = self.makeUI(mock)
-        self.run_test(ui.on_include_graphics, mock, ["main.tex", "3", "foo"])
+        self.run_test(ui.on_fragment, mock, ["main.tex", "3", "foo"])
 
     @patch("sys.stdout", new_callable=StringIO)
     def test_ui_reports_missing_image(self, mock):
@@ -92,7 +77,7 @@ class UiTest(TestCase):
         ui = self.makeUI(mock)
         ui.set_verbose(False)
 
-        ui.on_include_graphics(Fragment(File(None, ROOT/"main.tex", None), 3, "foo"))
+        ui.on_fragment(Fragment(File(None, ROOT/"main.tex", None), 3, "foo"))
 
         self.assertFalse(mock.getvalue())
 

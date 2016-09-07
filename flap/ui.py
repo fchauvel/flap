@@ -38,19 +38,10 @@ class UI(Listener):
     
     def show_opening_message(self):
         self._show("FLaP v" + flap.__version__ + " -- Flat LaTeX Projects")
-        
-    def on_input(self, fragment):
-        self._show_fragment(fragment)
-        
-    def on_include_graphics(self, fragment):
-        self._show_fragment(fragment)
-        
-    def on_include_SVG(self, fragment):
-        self._show_fragment(fragment)
-        
-    def on_include(self, fragment):
-        self._show_fragment(fragment)
-        
+
+    def on_fragment(self, fragment):
+        self.show_fragment(fragment)
+
     def show_closing_message(self):
         self._show("Flatten complete.")
 
@@ -65,7 +56,7 @@ class UI(Listener):
     def report_unexpected_error(self, message):
         self._show("Error: %s" % message)
 
-    def _show_fragment(self, fragment):
+    def show_fragment(self, fragment):
         if self._verbose:
             text = "+ in '%s' line %d: '%s'" % (fragment.file().fullname(), fragment.line_number(), fragment.text().strip())
             self._show(text)
