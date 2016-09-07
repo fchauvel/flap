@@ -19,6 +19,7 @@ import sys
 
 import flap
 from flap.FileSystem import OSFileSystem
+from flap.substitutions.factory import ProcessorFactory
 from flap.engine import Flap, Listener, GraphicNotFound, TexFileNotFound
 from flap.path import Path, TEMP
 
@@ -84,7 +85,7 @@ class Factory:
     def __init__(self, file_system = OSFileSystem(), ui=UI()):
         self._file_system = file_system
         self._ui = ui
-        self._flap = Flap(self._file_system, self._ui)
+        self._flap = Flap(self._file_system, ProcessorFactory(), self._ui)
 
     def ui(self):
         return self._ui

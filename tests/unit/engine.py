@@ -19,8 +19,10 @@ from unittest import TestCase, main, skip
 from mock import MagicMock
 
 from flap.FileSystem import InMemoryFileSystem, File, MissingFile
-from flap.engine import Flap, Fragment, Listener, CommentsRemover, Processor, GraphicNotFound, TexFileNotFound
+from flap.engine import Flap, Fragment, Listener,  Processor, GraphicNotFound, TexFileNotFound
+from flap.substitutions.comments import CommentsRemover
 from flap.path import Path, ROOT, TEMP
+from flap.substitutions.factory import ProcessorFactory
 
 from tests.commons import LatexProject, FlapTest
 
@@ -118,7 +120,7 @@ class FlapUnitTest(FlapTest):
         super().setUp()
         self.file_system = InMemoryFileSystem()
         self.listener = MagicMock(Listener())
-        self.flap = Flap(self.file_system, self.listener)
+        self.flap = Flap(self.file_system, ProcessorFactory(), self.listener)
 
     def run_flap(self, output=Flap.OUTPUT_FILE):
         super().run_flap(output)
