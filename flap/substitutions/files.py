@@ -18,7 +18,7 @@
 from re import compile, split, DOTALL
 from itertools import chain
 
-from flap.engine import Fragment, TexFileNotFound
+from flap.engine import Fragment
 from flap.substitutions.commons import Substitution
 
 
@@ -84,7 +84,7 @@ class SubFileExtractor(Substitution):
 class IncludeOnly(Substitution):
     """
     Detects 'includeonly' directives and notify the engine to later discard it.
-    """
+        """
 
     def prepare_pattern(self):
         return compile(r"\\includeonly\{([^\}]+)\}")

@@ -32,8 +32,8 @@ class Processor:
     Interface of a processor, exposes a list of fragments.
     """
 
-    def file(self):
-        pass
+#    def file(self):
+#        pass
 
     def fragments(self):
         pass
@@ -126,8 +126,7 @@ class Flap:
         
     def merge_latex_source(self):
         pipeline = self._processors.flap_pipeline(self)
-        fragments = pipeline.fragments()
-        texts = [ each.text() for each in fragments ]
+        texts = [each.text() for each in pipeline.fragments()]
         merge = ''.join(texts)
         self._file_system.createFile(self._output / self._merged_file, merge)
 
@@ -138,7 +137,8 @@ class Flap:
                 self._file_system.copy(eachFile, self._output)
 
     def _is_resource(self, eachFile):
-        return eachFile.hasExtension() and eachFile.extension() in Flap.RESOURCE_FILES
+        return eachFile.hasExtension() and \
+               eachFile.extension() in Flap.RESOURCE_FILES
 
     def is_ignored(self, file):
         return self._included_files and file not in self._included_files

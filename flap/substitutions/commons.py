@@ -43,9 +43,6 @@ class ProcessorDecorator(Processor):
         super().__init__()
         self._delegate = delegate
 
-    def file(self):
-        return self._delegate.file()
-
 
 class Substitution(ProcessorDecorator):
     """

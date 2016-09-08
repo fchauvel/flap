@@ -122,23 +122,27 @@ class SubfileMergerTests(FlapUnitTest):
         self.verify_merge("Blahblah blah!\\n")
 
     def test_recursive_merge(self):
-        self.project.root_latex_code = "\\subfile{subpart}"
+        self.project.root_latex_code = "PRE\\subfile{subpart}POST"
 
         self.project.parts["subpart.tex"] \
             = "\\documentclass[../main.tex]{subfiles}" \
-              "\\begin{document}" \
-              "\\subfile{subsubpart}\\n" \
+              "\\begin{document}\\n" \
+              "PRE\\subfile{subsubpart}POST\\n" \
               "\\end{document}"
 
         self.project.parts["subsubpart.tex"] \
             = "\\documentclass[../main.tex]{subfiles}" \
-              "\\begin{document}" \
+              "\\begin{document}\\n" \
               "Blahblah blah!\\n" \
               "\\end{document}"
 
         self.run_flap()
 
-        self.verify_merge("Blahblah blah!\\n\\n")
+        self.verify_merge("PRE\\n"
+                          "PRE\\n"
+                          "Blahblah blah!\\n"
+                          "POST\\n"
+                          "POST")
 
     def test_does_not_break_document(self):
         self.project.root_latex_code = \

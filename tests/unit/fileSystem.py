@@ -120,10 +120,17 @@ class InMemoryFileSystemTest(unittest.TestCase):
         self.assertTrue(copy.exists())
         self.assertEqual(copy.content(), "whatever")
         
-    def testFilesThatMatch(self):
+    def test_files_that_match(self):
         self.fileSystem.createFile(Path.fromText("dir/foo/bar/test.txt"), "x")
         directory = self.fileSystem.open(Path.fromText("dir/foo"))
         results = directory.files_that_matches("bar/test")
+        self.assertEqual(len(results), 1)
+
+    def test_files_that_match_with_multiple_matches(self):
+        self.fileSystem.createFile(Path.fromText("dir/foo/test.txt"), "x")
+        self.fileSystem.createFile(Path.fromText("dir/foo/subtest.txt"), "x")
+        directory = self.fileSystem.open(Path.fromText("dir/foo"))
+        results = directory.files_that_matches("test")
         self.assertEqual(len(results), 1)
 
     def test_finding_files_in_the_current_directory(self):

@@ -74,10 +74,11 @@ class File:
         return []
     
     def files_that_matches(self, pattern):
-        path = Path.fromText(str(self._path) + "/" + str(pattern)) 
+        path = Path.fromText(str(self._path) + "/" + str(pattern))
         directory = self.fileSystem.open(path.container())
-        return [ file for file in directory.files() if re.search(path.fullname(), str(file.path())) ]
-    
+        #return [ file for file in directory.files() if re.search(path.fullname(), str(file.path())) ]
+        return [ any_file for any_file in directory.files() if str(any_file.path()).startswith(str(path)) ]
+
     def __repr__(self):
         return self.path()
     
