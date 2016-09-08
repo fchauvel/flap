@@ -70,7 +70,7 @@ class FlapUnitTest(FlapTest):
         self.listener = MagicMock(Listener())
         self.flap = Flap(self.file_system, ProcessorFactory(), self.listener)
 
-    def run_flap(self, output=Flap.OUTPUT_FILE):
+    def run_flap(self, output=Flap.DEFAULT_OUTPUT_FILE):
         super().run_flap(output)
         self.project.create_on(self.file_system)
         self.flap.flatten(self.project.root_latex_file, self.output_directory / self.merged_file)

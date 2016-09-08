@@ -78,7 +78,7 @@ class FlapTest(TestCase):
         self.project = LatexProject()
         self.output_directory = TEST_DIRECTORY / "output"
         self.working_directory = TEST_DIRECTORY
-        self.merged_file = Flap.OUTPUT_FILE
+        self.merged_file = Flap.DEFAULT_OUTPUT_FILE
 
     def run_flap(self, output):
         self.output_directory = TEST_DIRECTORY / output

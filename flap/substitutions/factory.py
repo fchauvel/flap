@@ -42,8 +42,8 @@ class ProcessorFactory:
             CommentsRemover(FileWrapper(file)),
             [SubFileExtractor, SubFile, Input, EndInput])
 
-    def flap_pipeline(self, proxy):
+    def flap_pipeline(self, proxy, file):
         return ProcessorFactory.chain(
             proxy,
-            self.input_merger(proxy.file(), proxy),
+            self.input_merger(file, proxy),
             [Include, IncludeOnly, GraphicsPath, IncludeGraphics, IncludeSVG, Overpic, Bibliography])

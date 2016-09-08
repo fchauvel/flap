@@ -32,9 +32,6 @@ class Processor:
     Interface of a processor, exposes a list of fragments.
     """
 
-#    def file(self):
-#        pass
-
     def fragments(self):
         pass
 
@@ -91,15 +88,15 @@ class Flap:
     and bibliography 
     """
 
-    OUTPUT_FILE = "merged.tex"
+    DEFAULT_OUTPUT_FILE = "merged.tex"
     
-    def __init__(self, fileSystem, factory, listener=Listener()):
-        self._file_system = fileSystem
+    def __init__(self, file_system, factory, listener=Listener()):
+        self._file_system = file_system
         self._listener = listener
         self._included_files = []
         self._graphics_directory = None
-        self._processors = factory
-        self._merged_file = self.OUTPUT_FILE
+        self._create = factory
+        self._merged_file = self.DEFAULT_OUTPUT_FILE
 
     def flatten(self, root, output):
         self.find_output_directory(output)
@@ -113,7 +110,7 @@ class Flap:
             self._merged_file = output.fullname()
             self._output = output.container()
         else:
-            self._merged_file = self.OUTPUT_FILE
+            self._merged_file = self.DEFAULT_OUTPUT_FILE
             self._output = output
 
     def open_file(self, source):
@@ -121,14 +118,12 @@ class Flap:
         if self._root.isMissing():
             raise ValueError("The file '%s' could not be found." % source)
 
-    def file(self):
-        return self._root
-        
     def merge_latex_source(self):
-        pipeline = self._processors.flap_pipeline(self)
-        texts = [each.text() for each in pipeline.fragments()]
-        merge = ''.join(texts)
-        self._file_system.createFile(self._output / self._merged_file, merge)
+        merged = ''.join((each.text() for each in self._fragments()))
+        self._file_system.createFile(self._output / self._merged_file, merged)
+
+    def _fragments(self):
+        return self._create.flap_pipeline(self, self._root).fragments()
 
     def copy_resource_files(self):
         project = self._root.container()
@@ -161,7 +156,7 @@ class Flap:
         raise error
 
     def raw_fragments_from(self, file):
-        return self._processors.input_merger(file, self).fragments()
+        return self._create.input_merger(file, self).fragments()
 
     def relocate(self, graphic):
         new_graphic_path = graphic._path.relative_to(self._root.container()._path)
@@ -178,14 +173,14 @@ class Flap:
         self._included_files = [each_file.strip() for each_file in included_files]
 
     def set_graphics_directory(self, texPath):
-        path = self.file().container().path() / texPath
+        path = self._root.container().path() / texPath
         self._graphics_directory = self._file_system.open(path)
 
     def graphics_directory(self):
         if self._graphics_directory:
             return self._graphics_directory
         else:
-            return self.file().container()
+            return self._root.container()
 
 
 class ResourceNotFound(Exception):
