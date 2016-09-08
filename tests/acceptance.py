@@ -18,8 +18,11 @@
 from unittest import TestCase, main as testmain
 
 from mock import patch
+
 from io import StringIO
 from re import search
+from os import chdir
+
 from flap.ui import main
 from flap.FileSystem import OSFileSystem
 from flap.path import TEMP
@@ -81,6 +84,7 @@ class AcceptanceTest(FlapTest):
             "\\begin{document}\n" \
             "   \\subfile{partA}\n" \
             "   \\include{partB/main}\n" \
+            "   \\input{partC}\n" \
             "\\end{document}"
 
         self.project.parts["partA.tex"] = \
@@ -96,22 +100,31 @@ class AcceptanceTest(FlapTest):
 
         self.project.parts["partB/main.tex"] = "blablah"
 
+        self.project.parts["partC.tex"] = "PART C"
+
         self.project.images = ["plot.pdf"]
 
         self.project.resources = ["style.sty", "test.cls" ]
 
-    def run_flap(self, project):
-        root = self.file_system.forOS(project.root_latex_file)
-        output = self.file_system.forOS(self.output_directory)
-        main(["-v", root, output])
+    def run_flap(self, arguments):
+        chdir(self.file_system.forOS(self.working_directory))
+        print("python -m flap ", *arguments)
+
+        mock = StringIO()
+        def patched_show(message):
+            mock.write(message)
+        with patch("flap.ui.UI._show", side_effect=patched_show):
+            main(arguments)
+        return mock.getvalue()
 
     def tearDown(self):
-        self.file_system.deleteDirectory(TEST_DIRECTORY)
+        #self.file_system.deleteDirectory(TEST_DIRECTORY)
+        pass
 
-    def run_test(self):
+    def run_test(self, arguments):
         self.project.create_on(self.file_system)
 
-        self.run_flap(self.project)
+        output = self.run_flap(arguments)
 
         self.verify_merge("\\documentclass{article}\n"
                           "\n"
@@ -121,17 +134,27 @@ class AcceptanceTest(FlapTest):
                           "\n"
                           "\n"
                           "   blablah\\clearpage \n"
+                          "   PART C\n"
                           "\\end{document}")
 
         self.verify_images()
         self.verify_resources()
+        return output
 
     def test_flatten_latex_project(self):
-        self.run_test()
+        arguments = ["-v",
+                     self.file_system.forOS(self.project.root_latex_file),
+                     self.file_system.forOS(self.output_directory)]
+        output = self.run_test(arguments)
+        self.verify_no_error_in(output)
 
     def test_flatten_latex_project_locally(self):
         self.working_directory = self.project.directory
-        self.run_test()
+        output = self.run_test(["-v", "main.tex", "output"])
+        self.verify_no_error_in(output)
+
+    def verify_no_error_in(self, output):
+        self.assertFalse(search(r"Error:", output), output)
 
     def test_usage_is_shown(self):
         mock = StringIO()

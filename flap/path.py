@@ -32,7 +32,7 @@ class Path:
     def __init__(self, parts):
         if not parts:
             raise ValueError("Invalid path, no part given")
-        self._parts = [anyPart for anyPart in parts if not anyPart.is_current_directory() ]
+        self._parts = [part for (index, part) in enumerate(parts) if not (part.is_current_directory() and index > 0)]
 
     def resource(self):
         return self._parts[-1]
@@ -160,3 +160,5 @@ class Unit:
 ROOT = Path([Unit("")])
 
 TEMP = Path.fromText(tempfile.gettempdir())
+
+CURRENT_DIRECTORY = Path([Unit(".")])

@@ -16,7 +16,7 @@
 #
 
 from unittest import TestCase
-from flap.ui import main
+
 from flap.path import TEMP
 from flap.engine import Flap
 
@@ -85,7 +85,6 @@ class FlapTest(TestCase):
         if self.output_directory.hasExtension():
             self.merged_file = self.output_directory.fullname()
             self.output_directory = self.output_directory.container()
-        pass
 
     def verify_merge(self, expected):
         self.assertEqual(self._content_of(self.merged_file), expected)

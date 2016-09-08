@@ -18,7 +18,7 @@
 import unittest
 
 from tempfile import gettempdir
-from flap.path import Path, ROOT, TEMP
+from flap.path import Path, ROOT, TEMP, CURRENT_DIRECTORY
 
 
 class PathTests(unittest.TestCase):
@@ -107,6 +107,15 @@ class PathTests(unittest.TestCase):
         path = Path.fromText("/home/test/foo.txt")
 
         self.assertEquals(path.without_extension(), Path.fromText("/home/test/foo"))
+
+    def test_container(self):
+        path = ROOT / "foo.tex"
+        self.assertEquals(ROOT, path.container())
+
+    def test_empty_container(self):
+        path = Path.fromText("foo.tex")
+        self.assertEquals(CURRENT_DIRECTORY, path.container())
+
 
     def testContainment(self):
         path1 = ROOT / "dir" / "file.txt"

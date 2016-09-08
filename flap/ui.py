@@ -50,7 +50,7 @@ class UI(Listener):
         self._show("Check %s, line %d" % (fragment.file().fullname(), fragment.line_number()))
 
     def report_missing_tex_file(self, fragment):
-        self._show("Error: Unable to find LaTeX file '%s'" % fragment.text().strip())
+        self._show("Error: Unable to find LaTeX file referred in '%s'" % fragment.text().strip())
         self._show("Check %s, line %d" % (fragment.file().fullname(), fragment.line_number()))
 
     def report_unexpected_error(self, message):
