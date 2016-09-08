@@ -22,7 +22,21 @@ from flap.engine import Fragment, TexFileNotFound
 from flap.substitutions.commons import Substitution
 
 
-class Input(Substitution):
+class FileSubstitution(Substitution):
+    """
+    Replace the link to a TeX file by its content
+    """
+
+    def replacements_for(self, fragment, match):
+        included_file = self.flap.find_tex_source(fragment, match.group(1), self.tex_file_extensions())
+        return self.flap.raw_fragments_from(included_file)
+
+    @staticmethod
+    def tex_file_extensions():
+        return ["tex"]
+
+
+class Input(FileSubstitution):
     """
     Detects fragments that contains an input directive (such as '\input{foo}).
     When one is detected, it extracts all the fragments from the file that
@@ -35,17 +49,10 @@ class Input(Substitution):
     def prepare_pattern(self):
         return compile(r"\\input\{([^}]+)\}")
 
-    def replacements_for(self, fragment, match):
-        file_name = match.group(1) if match.group(1).endswith(".tex") else match.group(1) + ".tex"
-        included_file = self.flap.locate(file_name)
-        if included_file.isMissing():
-            raise TexFileNotFound(fragment)
-        return self.flap._processors.input_merger(included_file, self.flap).fragments()
 
-
-class SubFile(Substitution):
+class SubFile(FileSubstitution):
     """
-    Detects fragments that contains an subfile directive (i.e., '\subfile{foo}).
+    Detects fragments that contains an subfile directive (i.e., '\subfile{foo}').
     When one is detected, it extracts all the fragments from the file that
     is referred (such as 'foo.tex')
     """
@@ -55,12 +62,6 @@ class SubFile(Substitution):
 
     def prepare_pattern(self):
         return compile(r"\\subfile\{([^}]+)\}")
-
-    def replacements_for(self, fragment, match):
-        included_file = self.file().sibling(match.group(1) + ".tex")
-        if included_file.isMissing():
-            raise TexFileNotFound(fragment)
-        return self.flap._processors.input_merger(included_file, self.flap).fragments()
 
 
 class SubFileExtractor(Substitution):
@@ -86,8 +87,7 @@ class IncludeOnly(Substitution):
     """
 
     def prepare_pattern(self):
-        pattern = r"\\includeonly\{([^\}]+)\}"
-        return compile(pattern)
+        return compile(r"\\includeonly\{([^\}]+)\}")
 
     def replacements_for(self, fragment, match):
         included_files = split(",", match.group(1))

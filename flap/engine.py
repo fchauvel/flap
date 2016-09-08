@@ -143,22 +143,25 @@ class Flap:
     def is_ignored(self, file):
         return self._included_files and file not in self._included_files
 
+    def find_tex_source(self, fragment, path, extensions):
+        return self._find(path, self._root.container(), extensions, TexFileNotFound(fragment))
+
     def find_graphics(self, fragment, path, extensions_by_priority):
-        return self._find(fragment, path, self.graphics_directory(), extensions_by_priority, GraphicNotFound)
+        return self._find(path, self.graphics_directory(), extensions_by_priority, GraphicNotFound(fragment))
 
     def find_resource(self, fragment, path, extensions_by_priority):
-        return self._find(fragment, path, self._root.container(), extensions_by_priority, ResourceNotFound)
+        return self._find(path, self._root.container(), extensions_by_priority, ResourceNotFound(fragment))
 
-    def _find(self, fragment, path, directory, extensions, error):
+    def _find(self, path, directory, extensions, error):
         candidates = directory.files_that_matches(Path.fromText(path))
         for each_extension in extensions:
             for each_resource in candidates:
                 if each_resource.extension().lower() == each_extension:
                     return each_resource
-        raise error(fragment)
+        raise error
 
-    def locate(self, file):
-        return self._root.sibling(file)
+    def raw_fragments_from(self, file):
+        return self._processors.input_merger(file, self).fragments()
 
     def relocate(self, graphic):
         new_graphic_path = graphic._path.relative_to(self._root.container()._path)
