@@ -66,7 +66,8 @@ class SubFile(FileSubstitution):
 
 class SubFileExtractor(Substitution):
     """
-    Extract the content of the 'subfile', that is the text between \begin{document} and \end{document}.
+    Extract the content of the 'subfile', that is the text between
+    \begin{document} and \end{document}.
     """
 
     def __init__(self, delegate, flap):
@@ -83,22 +84,23 @@ class SubFileExtractor(Substitution):
 
 class IncludeOnly(Substitution):
     """
-    Detects 'includeonly' directives and notify the engine to later discard it.
-        """
+    Detects '\includeonly' directives and notify the engine to later
+    discard the specified files.
+    """
 
     def prepare_pattern(self):
         return compile(r"\\includeonly\{([^\}]+)\}")
 
     def replacements_for(self, fragment, match):
         included_files = split(",", match.group(1))
-        self.flap.on_include_only(included_files)
+        self.flap.restrict_inclusion_to(included_files)
         return []
 
 
 class Include(Input):
     """
-    Traverse the fragments available and search for next `\include{file.tex}`. It
-    replaces them by the content of the file and append a \clearpage after.
+    Matches `\include{file.tex}`. It replaces them by the content of the
+    file and append a \clearpage after.
     """
     def __init__(self, delegate, flap):
         super().__init__(delegate, flap)

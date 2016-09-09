@@ -54,7 +54,7 @@ class PathTests(unittest.TestCase):
     def test_has_extension(self):
         path = ROOT / "source.tex"
         
-        self.assertTrue(path.hasExtension())
+        self.assertTrue(path.has_extension())
 
     def test_basename(self):
         path = ROOT / "source.tex"

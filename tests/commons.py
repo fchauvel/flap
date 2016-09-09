@@ -82,7 +82,7 @@ class FlapTest(TestCase):
 
     def run_flap(self, output):
         self.output_directory = TEST_DIRECTORY / output
-        if self.output_directory.hasExtension():
+        if self.output_directory.has_extension():
             self.merged_file = self.output_directory.fullname()
             self.output_directory = self.output_directory.container()
 

@@ -16,23 +16,24 @@
 #
 
 from flap.path import Path
-
-
-class Listener:
-    """
-    Handle events emitted by FLaP. Errors are raised as exceptions.
-    """
-
-    def on_fragment(self, fragment):
-        pass
+from flap.FileSystem import MissingFile
 
 
 class Processor:
     """
-    Interface of a processor, exposes a list of fragments.
+    Exposes a list of fragments, likely as a generator.
     """
 
     def fragments(self):
+        pass
+
+
+class Listener:
+    """
+    May react to specific fragments
+    """
+
+    def on_fragment(self, fragment):
         pass
 
 
@@ -97,6 +98,7 @@ class Flap:
         self._graphics_directory = None
         self._create = factory
         self._merged_file = self.DEFAULT_OUTPUT_FILE
+        self._root = MissingFile("main.tex")
 
     def flatten(self, root, output):
         self.find_output_directory(output)
@@ -106,7 +108,7 @@ class Flap:
 
     def find_output_directory(self, output):
         if output is None: return
-        if output.hasExtension():
+        if output.has_extension():
             self._merged_file = output.fullname()
             self._output = output.container()
         else:
@@ -131,56 +133,59 @@ class Flap:
             if self._is_resource(eachFile):
                 self._file_system.copy(eachFile, self._output)
 
-    def _is_resource(self, eachFile):
-        return eachFile.hasExtension() and \
-               eachFile.extension() in Flap.RESOURCE_FILES
+    def _is_resource(self, file):
+        return file.has_extension() and \
+               file.extension() in Flap.RESOURCE_FILES
+
+    RESOURCE_FILES = ["cls", "sty", "bst"]
 
     def is_ignored(self, file):
-        return self._included_files and file not in self._included_files
+        return self._included_files and \
+               file not in self._included_files
+
+    def _root_directory(self):
+        return self._root.container()
 
     def find_tex_source(self, fragment, path, extensions):
-        return self._find(path, self._root.container(), extensions, TexFileNotFound(fragment))
+        return self._find(path, self._root_directory(), extensions, TexFileNotFound(fragment))
 
     def find_graphics(self, fragment, path, extensions_by_priority):
         return self._find(path, self.graphics_directory(), extensions_by_priority, GraphicNotFound(fragment))
 
     def find_resource(self, fragment, path, extensions_by_priority):
-        return self._find(path, self._root.container(), extensions_by_priority, ResourceNotFound(fragment))
+        return self._find(path, self._root_directory(), extensions_by_priority, ResourceNotFound(fragment))
 
     def _find(self, path, directory, extensions, error):
         candidates = directory.files_that_matches(Path.fromText(path))
-        for each_extension in extensions:
-            for each_resource in candidates:
-                if each_resource.extension().lower() == each_extension:
-                    return each_resource
+        for any_possible_extension in extensions:
+            for any_resource in candidates:
+                if any_resource.has_extension(any_possible_extension):
+                    return any_resource
         raise error
 
     def raw_fragments_from(self, file):
         return self._create.input_merger(file, self).fragments()
 
-    def relocate(self, graphic):
-        new_graphic_path = graphic._path.relative_to(self._root.container()._path)
-        new_graphic_file_name = str(new_graphic_path).replace("/", "_")
-        self._file_system.copy(graphic, self._output / new_graphic_file_name)
-        return str(new_graphic_path.without_extension()).replace("/", "_")
-
-    RESOURCE_FILES = ["cls", "sty", "bst"]
+    def relocate(self, resource):
+        new_path = resource._path.relative_to(self._root_directory()._path)
+        new_file_name = str(new_path).replace("/", "_")
+        self._file_system.copy(resource, self._output / new_file_name)
+        return str(new_path.without_extension()).replace("/", "_")
 
     def on_fragment(self, fragment):
         self._listener.on_fragment(fragment)
 
-    def on_include_only(self, included_files):
+    def restrict_inclusion_to(self, included_files):
         self._included_files = [each_file.strip() for each_file in included_files]
 
-    def set_graphics_directory(self, texPath):
-        path = self._root.container().path() / texPath
+    def set_graphics_directory(self, path_to_graphics):
+        path = self._root_directory().path() / path_to_graphics
         self._graphics_directory = self._file_system.open(path)
 
     def graphics_directory(self):
         if self._graphics_directory:
             return self._graphics_directory
-        else:
-            return self._root.container()
+        return self._root_directory()
 
 
 class ResourceNotFound(Exception):

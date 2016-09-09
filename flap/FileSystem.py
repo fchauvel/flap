@@ -58,9 +58,9 @@ class File:
     def basename(self):
         return self._path.basename()
     
-    def hasExtension(self):
-        return self._path.hasExtension()
-    
+    def has_extension(self, extension=None):
+        return self._path.has_extension(extension)
+
     def extension(self):
         return self._path.extension()
     
@@ -182,13 +182,13 @@ class OSFileSystem(FileSystem):
         self._create_path(destination)
         
         source = self.forOS(file.path())
-        target = destination if destination.hasExtension() else destination / file.fullname()
+        target = destination if destination.has_extension() else destination / file.fullname()
 
         shutil.copyfile(source, self.forOS(target))
 
     def _create_path(self, path):
         targetDir = path
-        if path.hasExtension():
+        if path.has_extension():
             targetDir = path.container()
 
         os_target = self.forOS(targetDir)
@@ -237,7 +237,7 @@ class InMemoryFileSystem(FileSystem):
             return MissingFile(absolute)
 
     def copy(self, file, destination):
-        if destination.hasExtension():
+        if destination.has_extension():
             path = destination
         else:
             path = destination / file.path().fullname()

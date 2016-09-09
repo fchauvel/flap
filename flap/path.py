@@ -45,9 +45,12 @@ class Path:
 
     def extension(self):
         return self.resource().extension()
-    
-    def hasExtension(self):
-        return self.resource().has_any_extension()
+
+    def has_extension(self, extension=None):
+        if extension:
+            return self.resource().has_extension(extension)
+        else:
+            return self.resource().has_any_extension()
 
     def container(self):
         if len(self._parts) == 1:
@@ -136,7 +139,7 @@ class Unit:
         return self._match and not self._match.group(2) is None
 
     def has_extension(self, extension):
-        return self.has_any_extension() and self.extension() == extension
+        return self.has_any_extension() and self.extension().lower() == extension.lower()
 
     def is_root(self):
         return re.match(Unit.DRIVE, self._name) or self._name == ""
