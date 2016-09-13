@@ -38,7 +38,11 @@ class TokenStream:
         self._stream = iter(input_stream)
 
     def __iter__(self):
+<<<<<<< HEAD
         return self
+=======
+       return self
+>>>>>>> 236bad5c4d4572693dd2a0b71e9e01ef26556781
 
     def __next__(self):
         return Token(next(self._stream))
@@ -46,6 +50,7 @@ class TokenStream:
     def prepend(self, text):
         self._stream = chain(iter(text), self._stream)
 
+<<<<<<< HEAD
     def extract_macro_name(self):
         return self._extract_while(lambda token: token.belongs_to_the_macro_name())
 
@@ -83,12 +88,15 @@ class TokenStream:
         assert next(self).starts_replacement()
         return self._extract_until(lambda token: token.ends_replacement())
 
+=======
+>>>>>>> 236bad5c4d4572693dd2a0b71e9e01ef26556781
 
 class Token:
 
     def __init__(self, character):
         self._character = character
 
+<<<<<<< HEAD
     def _is(self, character):
         return self._character == character
 
@@ -109,6 +117,13 @@ class Token:
 
     def ends_replacement(self):
         return self._is("}")
+=======
+    def starts_a_macro(self):
+        return self._character == "\\"
+
+    def belongs_to_the_macro_name(self):
+        return self.starts_a_macro() or self._character.isalpha()
+>>>>>>> 236bad5c4d4572693dd2a0b71e9e01ef26556781
 
     def __str__(self):
         return self._character
@@ -127,6 +142,7 @@ class TeXInterpreter:
         tokens = TokenStream(input)
         for any_token in tokens:
             if any_token.starts_a_macro():
+<<<<<<< HEAD
                 (parameters, replacement) = self._match_macro(tokens)
                 tokens.prepend(replacement)
             else:
@@ -137,11 +153,21 @@ class TeXInterpreter:
         if name == "def":
             self._define(tokens)
             return ([], "")
+=======
+                macro = self._match_macro(tokens)
+                tokens.prepend(macro)
+            else:
+                self._output.write(str(any_token))
+
+    def _match_macro(self, input_stream):
+        name = self._read_macro_name_from(input_stream)
+>>>>>>> 236bad5c4d4572693dd2a0b71e9e01ef26556781
         macro = self._environment.get(name, None)
         if macro is None:
             raise UnknownMacroException(name)
         return macro
 
+<<<<<<< HEAD
     def _define(self, tokens):
         assert next(tokens).starts_a_macro()
         macro_name = tokens.extract_macro_name()
@@ -149,6 +175,14 @@ class TeXInterpreter:
         replacement = tokens.extract_replacement()
         assert next(tokens).ends_replacement()
         self._environment[macro_name] = (parameters, replacement)
+=======
+    def _read_macro_name_from(self, input_stream):
+        name = ""
+        for any_token in input_stream:
+            if any_token.belongs_to_the_macro_name():
+                name += str(any_token)
+        return name
+>>>>>>> 236bad5c4d4572693dd2a0b71e9e01ef26556781
 
 
 class UnknownMacroException(Exception):

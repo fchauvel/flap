@@ -46,6 +46,7 @@ class TeXParserTests(TestCase):
 
     def test_unknown_macro(self):
         with self.assertRaises(UnknownMacroException):
+<<<<<<< HEAD
             self.tex.evaluate(r"\name")
 
     def test_typesetting_a_macro(self):
@@ -64,6 +65,15 @@ class TeXParserTests(TestCase):
     def test_definition_of_a_macro_with_one_parameter(self):
         self.tex.evaluate(r"\def\value(#1){The value is '#1'!}")
         self.assertEquals((["(", "#1", ")"], "The value is '#1'!"), self.environment[r"value"])
+=======
+            self.tex.evaluate("\\name")
+
+    def test_typesetting_a_macro(self):
+        self.environment["name"] = "franck"
+        self.tex.evaluate("\\name")
+        self.assertEqual("franck", self.output.getvalue())
+
+>>>>>>> 236bad5c4d4572693dd2a0b71e9e01ef26556781
 
 if __name__ == "__main__":
     main()
