@@ -53,15 +53,18 @@ class TeXParserTests(TestCase):
 
     def setUp(self):
         self.environment = dict()
-        self.output = StringIO()
-        self.tex = TeXInterpreter(self.environment, self.output)
+        self._output = StringIO()
+        self.tex = TeXInterpreter(self.environment, self._output)
         self.tex.define(DefineMacro())
+
+    def output(self):
+        return self._output.getvalue()
 
     def test_typesetting_a_text(self):
         tex_input = "This is a text!"
         self.tex.evaluate(tex_input)
 
-        self.assertEquals(tex_input, self.output.getvalue())
+        self.assertEquals(tex_input, self.output())
 
     def test_unknown_macro(self):
         with self.assertRaises(UnknownMacroException):
@@ -70,7 +73,7 @@ class TeXParserTests(TestCase):
     def test_typesetting_a_macro(self):
         self.tex.define(Macro("name", [""], "franck"))
         self.tex.evaluate(r"Hello \name")
-        self.assertEqual("Hello franck", self.output.getvalue())
+        self.assertEqual("Hello franck", self.output())
 
     def test_definition_macro(self):
         self.tex.evaluate(r"\def\hello{Hi Guys!}")
@@ -79,7 +82,7 @@ class TeXParserTests(TestCase):
     def test_expanding_a_macro(self):
         self.tex.define(Macro("hello", [""], "Hi Guys!"))
         self.tex.evaluate(r"\hello")
-        self.assertEqual("Hi Guys!", self.output.getvalue())
+        self.assertEqual("Hi Guys!", self.output())
 
     def test_defining_a_one_parameter_macro(self):
         self.tex.evaluate(r"\def\value(#1){The value is '#1'!}")
@@ -88,17 +91,37 @@ class TeXParserTests(TestCase):
     def test_expanding_a_one_parameter_macro(self):
         self.tex.define(Macro("value", ["(", "#1", ")"], "The value is '#1'!"))
         self.tex.evaluate(r"\value(123)")
-        self.assertEqual("The value is '123'!", self.output.getvalue())
+        self.assertEqual("The value is '123'!", self.output())
 
     def test_expanding_a_one_parameter_macro_with_a_different_syntax(self):
         self.tex.define(Macro("value", ["[", "#1", "]"], "The value is '#1'!"))
         self.tex.evaluate(r"\value[123]")
-        self.assertEqual("The value is '123'!", self.output.getvalue())
+        self.assertEqual("The value is '123'!", self.output())
 
     def test_expanding_a_two_parameters_macro(self):
         self.tex.define(Macro("values", ["#1", "---", "#2"], "The values are '#1' and '#2'!"))
         self.tex.evaluate(r"\values123---234")
-        self.assertEqual("The values are '123' and '234'!", self.output.getvalue())
+        self.assertEqual("The values are '123' and '234'!", self.output())
+
+    def test_expanding_a_three_parameters_macro(self):
+        self.tex.define(Macro("values",  ["#1", ":", "#2", ">", "#3"], "The values are '#1', '#2' and '#3'!"))
+        self.tex.evaluate(r"\values23:45>32")
+        self.assertEqual("The values are '23', '45' and '32'!", self.output())
+
+    def test_typesetting_a_comment(self):
+        self.tex.evaluate(r"Some text % A comment!")
+        self.assertEqual("Some text % A comment!", self.output())
+
+    def test_commented_macro_are_ignored(self):
+        self.tex.define(Macro("foo", [""], "bar!"))
+        self.tex.evaluate(r"blahblah blah % \foo")
+        self.assertEqual(r"blahblah blah % \foo", self.output())
+
+    def test_comments_only_until_the_end_of_the_line(self):
+        self.tex.define(Macro("foo", [""], "bar!"))
+        self.tex.evaluate("blahblah blah % \\foo \n\\foo")
+        self.assertEqual("blahblah blah % \\foo \nbar!", self.output())
+
 
 if __name__ == "__main__":
     main()

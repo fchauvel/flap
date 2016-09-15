@@ -137,6 +137,9 @@ class TokenStream:
             return self._extract_while(lambda token: not accept(token))
         return ValueError("Invalid type of acceptance criteria (found: %s)" % type(accept))
 
+    def extract_comment(self):
+        return self._extract_until("\n")
+
     def extract_macro_parameters(self):
         parameters = [""]
         for any_token in self:
@@ -166,6 +169,9 @@ class Token:
 
     def _is(self, character):
         return self._character == character
+
+    def starts_a_comment(self):
+        return self._is("%")
 
     def starts_a_macro(self):
         return self._is("\\")
@@ -207,6 +213,10 @@ class TeXInterpreter:
             if any_token.starts_a_macro():
                 macro = self._match_macro(tokens)
                 macro.evaluate(self, tokens)
+            elif any_token.starts_a_comment():
+                self.typeset(str(any_token))
+                comment = tokens.extract_comment()
+                self.typeset(comment)
             else:
                 self.typeset(str(any_token))
 
@@ -225,6 +235,7 @@ class UnexpectedToken(Exception):
     def __init__(self, actual, expected):
         self._expected = expected
         self._actual = actual
+
 
 class UnknownMacroException(Exception):
 
