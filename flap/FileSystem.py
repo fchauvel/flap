@@ -23,17 +23,17 @@ from flap.path import Path, ROOT
 
 class File:
    
-    def __init__(self, fileSystem, path, content):
+    def __init__(self, file_system, path, content):
         assert path, "Invalid path (found '%s')" % path.full()
-        self.fileSystem = fileSystem
+        self.fileSystem = file_system
         self._path = path
         self._content = content
     
-    def isFile(self):
+    def is_file(self):
         return True
     
-    def isDirectory(self):
-        return not self.isFile()
+    def is_directory(self):
+        return not self.is_file()
     
     def exists(self):
         return True
@@ -61,6 +61,11 @@ class File:
     def has_extension(self, extension=None):
         return self._path.has_extension(extension)
 
+    def has_extension_from(self, candidates_extensions):
+        for any_extension in candidates_extensions:
+            if self._path.has_extension(any_extension):
+                return True
+
     def extension(self):
         return self._path.extension()
     
@@ -84,10 +89,10 @@ class File:
     
 class Directory(File):
     
-    def __init__(self, fileSystem, path):
-        super().__init__(fileSystem, path, None)
+    def __init__(self, file_system, path):
+        super().__init__(file_system, path, None)
              
-    def isFile(self):
+    def is_file(self):
         return False
     
     def content(self):
@@ -215,7 +220,7 @@ class InMemoryFileSystem(FileSystem):
 
     def createDirectory(self, path):
         if path in self.drive.keys():
-            if self.drive[path].isFile():
+            if self.drive[path].is_file():
                 raise ValueError("There is already a resource at '%s'" % path.full())
         self.drive[path] = Directory(self, path)
         if not path.isRoot():
