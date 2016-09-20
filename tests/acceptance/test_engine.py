@@ -20,7 +20,7 @@ from mock import MagicMock
 
 from flap.FileSystem import InMemoryFileSystem
 from flap.path import Path
-from tests.acceptance.engine import TexFile, FlapTestCase, LatexProject, FileBasedTestRepository, YamlCodec
+from tests.acceptance.engine import TexFile, FlapTestCase, LatexProject, FileBasedTestRepository, YamlCodec, InvalidYamlTestCase
 
 
 class TexFileTest(TestCase):
@@ -121,18 +121,17 @@ class TestYamlCodec(TestCase):
         self._codec = YamlCodec()
 
     def test_loading_a_simple_yaml_test_case(self):
-        file = MagicMock()
-        file.content.return_value = ("name: test 1\n"
-                                     "project:\n"
-                                     "  - path: main.tex\n"
-                                     "    content: |\n"
-                                     "      blabla\n"
-                                     "expected:\n"
-                                     "  - path: main.tex\n"
-                                     "    content: |\n"
-                                     "      blabla\n")
+        yaml_file = self._create_file("name: test 1\n"
+                                      "project:\n"
+                                      "  - path: main.tex\n"
+                                      "    content: |\n"
+                                      "      blabla\n"
+                                      "expected:\n"
+                                      "  - path: main.tex\n"
+                                      "    content: |\n"
+                                      "      blabla\n")
 
-        test_case = self._read_test_case_from(file)
+        test_case = self._read_test_case_from(yaml_file)
 
         expected = FlapTestCase(
                         "test 1",
@@ -141,19 +140,23 @@ class TestYamlCodec(TestCase):
 
         self.assertEqual(expected, test_case)
 
-    def test_loading_test_case_with_latex_code(self):
+    def _create_file(self, content):
         file = MagicMock()
-        file.content.return_value = ("name: test 1\n"
-                                     "project:\n"
-                                     "  - path: main.tex\n"
-                                     "    content: |\n"
-                                     "      \\begin{document}Awesone!\\end{document}\n"
-                                     "expected:\n"
-                                     "  - path: main.tex\n"
-                                     "    content: |\n"
-                                     "      \\begin{document}Awesone!\\end{document}\n")
+        file.content.return_value = content
+        return file
 
-        test_case = self._read_test_case_from(file)
+    def test_loading_test_case_with_latex_code(self):
+        yaml_file = self._create_file("name: test 1\n"
+                                      "project:\n"
+                                      "  - path: main.tex\n"
+                                      "    content: |\n"
+                                      "      \\begin{document}Awesone!\\end{document}\n"
+                                      "expected:\n"
+                                      "  - path: main.tex\n"
+                                      "    content: |\n"
+                                      "      \\begin{document}Awesone!\\end{document}\n")
+
+        test_case = self._read_test_case_from(yaml_file)
 
         expected = FlapTestCase(
                         "test 1",
@@ -161,6 +164,77 @@ class TestYamlCodec(TestCase):
                         LatexProject([TexFile("main.tex", "\\begin{document}Awesone!\\end{document}")]))
 
         self.assertEqual(expected, test_case)
+
+    def test_parsing_invalid_yaml_code(self):
+        yaml_file = self._create_file("This is not a valid YAML content!")
+        with self.assertRaises(InvalidYamlTestCase):
+            self._read_test_case_from(yaml_file)
+
+    def test_wrong_project_key(self):
+        yaml_file = self._create_file("name: test 1\n"
+                                      "projecttttttttt:\n"
+                                      "  - path: main.tex\n"
+                                      "    content: |\n"
+                                      "      \\begin{document}Awesone!\\end{document}\n"
+                                      "expected:\n"
+                                      "  - path: main.tex\n"
+                                      "    content: |\n"
+                                      "      \\begin{document}Awesone!\\end{document}\n")
+
+        with self.assertRaises(InvalidYamlTestCase):
+            self._read_test_case_from(yaml_file)
+
+    def test_wrong_name_key(self):
+        yaml_file = self._create_file("nameeeeeeeeeeeeeeeee: test 1\n"
+                                      "project:\n"
+                                      "  - path: main.tex\n"
+                                      "    content: |\n"
+                                      "      \\begin{document}Awesone!\\end{document}\n"
+                                      "expected:\n"
+                                      "  - path: main.tex\n"
+                                      "    content: |\n"
+                                      "      \\begin{document}Awesone!\\end{document}\n")
+        with self.assertRaises(InvalidYamlTestCase):
+            self._read_test_case_from(yaml_file)
+
+    def test_wrong_path_key(self):
+        yaml_file = self._create_file("name: test 1\n"
+                                      "project:\n"
+                                      "  - pathhhhhhhhh: main.tex\n"
+                                      "    content: |\n"
+                                      "      \\begin{document}Awesone!\\end{document}\n"
+                                      "expected:\n"
+                                      "  - path: main.tex\n"
+                                      "    content: |\n"
+                                      "      \\begin{document}Awesone!\\end{document}\n")
+        with self.assertRaises(InvalidYamlTestCase):
+            self._read_test_case_from(yaml_file)
+
+    def test_wrong_content_key(self):
+        yaml_file = self._create_file("name: test 1\n"
+                                      "project:\n"
+                                      "  - path: main.tex\n"
+                                      "    contentttttttttttt: |\n"
+                                      "      \\begin{document}Awesone!\\end{document}\n"
+                                      "expected:\n"
+                                      "  - path: main.tex\n"
+                                      "    content: |\n"
+                                      "      \\begin{document}Awesone!\\end{document}\n")
+        with self.assertRaises(InvalidYamlTestCase):
+            self._read_test_case_from(yaml_file)
+
+    def test_wrong_expected_key(self):
+        yaml_file = self._create_file("name: test 1\n"
+                                      "project:\n"
+                                      "  - path: main.tex\n"
+                                      "    content: |\n"
+                                      "      \\begin{document}Awesone!\\end{document}\n"
+                                      "expectedddddddddd:\n"
+                                      "  - path: main.tex\n"
+                                      "    content: |\n"
+                                      "      \\begin{document}Awesone!\\end{document}\n")
+        with self.assertRaises(InvalidYamlTestCase):
+            self._read_test_case_from(yaml_file)
 
     def _read_test_case_from(self, file):
         return self._codec.extract_from(file)

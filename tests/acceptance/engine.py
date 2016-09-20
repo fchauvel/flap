@@ -19,28 +19,74 @@ import yaml
 from io import StringIO
 
 
+
+
 class YamlCodec:
+    """
+    Transform a YAML snippet in a FlapTestCase, or raises an error if
+    it is not possible
+    """
 
     YAML_EXTENSIONS = ["yml", "yaml"]
+
+    NAME_KEY = "name"
+    EXPECTED_KEY = "expected"
+    PROJECT_KEY = "project"
+    PATH_KEY = "path"
+    CONTENT_KEY = "content"
 
     def detect_test_case(self, file):
         return file.has_extension_from(self.YAML_EXTENSIONS)
 
     def extract_from(self, file):
         content = yaml.load(StringIO(file.content()))
-        return FlapTestCase(
-            content["name"],
-            self._extract_project_from(content["project"]),
-            self._extract_project_from(content["expected"]))
+        arguments = [self._extract_name_from(content),
+                     self._extract_project_from(content),
+                     self._extract_expected_from(content)]
+        return FlapTestCase(*arguments)
 
-    def _extract_project_from(self, project):
+    def _extract_name_from(self, content):
+        if self.NAME_KEY not in content:
+            self._handle_missing_key(self.NAME_KEY)
+        return content[self.NAME_KEY]
+
+    def _handle_missing_key(self, key):
+        raise InvalidYamlTestCase("Invalid YAML: Expecting key '%s'!" % key)
+
+    def _extract_project_from(self, content):
+        if self.PROJECT_KEY not in content:
+            self._handle_missing_key(self.PROJECT_KEY)
+        return self._extract_latex_project_from(content[self.PROJECT_KEY])
+
+    def _extract_expected_from(self, content):
+        if self.EXPECTED_KEY not in content:
+            self._handle_missing_key(self.EXPECTED_KEY)
+        return self._extract_latex_project_from(content[self.EXPECTED_KEY])
+
+    def _extract_latex_project_from(self, project):
         project_files = []
         for each_file in project:
             project_files.append(self._extract_tex_file(each_file))
         return LatexProject(project_files)
 
     def _extract_tex_file(self, entry):
-        return TexFile(entry["path"], entry["content"].strip())
+        return TexFile(self._extract_path(entry),self._extract_content(entry))
+
+    def _extract_path(self, entry):
+        if self.PATH_KEY not in entry:
+            self._handle_missing_key(self.PATH_KEY)
+        return entry[self.PATH_KEY]
+
+    def _extract_content(self, entry):
+        if self.CONTENT_KEY not in entry:
+            self._handle_missing_key(self.CONTENT_KEY)
+        return entry[self.CONTENT_KEY].strip()
+
+
+class InvalidYamlTestCase(Exception):
+
+    def __init__(self, message):
+        super().__init__(message)
 
 
 class FileBasedTestRepository:
