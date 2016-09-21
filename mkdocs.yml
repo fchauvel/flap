@@ -8,5 +8,8 @@ pages:
    - "Usage Example": example.md
    - "Supported Commands": features.md
  - "Known Caveats": caveats.md
- - Contributing: contributing.md
+ - "Contributing":
+   - "Getting Ready": getting_ready.md
+   - "Testing": testing.md
+   - "Releasing": releasing.md
 theme: flatly
