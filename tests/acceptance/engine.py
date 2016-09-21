@@ -19,6 +19,7 @@ import yaml
 from io import StringIO
 from flap.path import Path
 
+from tests.acceptance.latex_project import TexFile, LatexProject
 
 class YamlCodec:
     """
@@ -67,7 +68,7 @@ class YamlCodec:
         project_files = []
         for each_file in project:
             project_files.append(self._extract_tex_file(each_file))
-        return LatexProject(project_files)
+        return LatexProject(*project_files)
 
     def _extract_tex_file(self, entry):
         return TexFile(self._extract_path(entry),self._extract_content(entry))
@@ -113,51 +114,6 @@ class FileBasedTestRepository:
                     test_case = self._codec.extract_from(any_file)
                     test_cases.append(test_case)
         return test_cases
-
-
-class TexFile:
-
-    def __init__(self, name, content):
-        self._name = name
-        self._content = content
-
-    @property
-    def path(self):
-        return self._name
-
-    @property
-    def content(self):
-        return self._content
-
-    def __eq__(self, other):
-        if not isinstance(other, TexFile):
-            return False
-        return self._name == other._name and self._content == other._content
-
-    def __hash__(self):
-        return hash((self._name, self._content))
-
-
-class LatexProject:
-
-    def __init__(self, files):
-        self._files = {each_file.path: each_file for each_file in files}
-
-    @property
-    def files(self):
-        return self._files
-
-    def __hash__(self):
-        return hash(self._files)
-
-    def __eq__(self, other):
-        if not isinstance(other, LatexProject):
-            return False
-        return len(set(self._files.items()) - set(other._files.items())) == 0
-
-    def setup(self, file_system):
-        for (path, file) in self.files.items():
-            file_system.create_file(Path.fromText(path), file.content)
 
 
 class FlapTestCase:

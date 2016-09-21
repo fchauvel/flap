@@ -20,66 +20,16 @@ from mock import MagicMock
 
 from flap.FileSystem import InMemoryFileSystem
 from flap.path import Path
-from tests.acceptance.engine import TexFile, FlapTestCase, LatexProject, FileBasedTestRepository, YamlCodec, \
+from tests.acceptance.latex_project import TexFile, LatexProject
+from tests.acceptance.engine import FlapTestCase, FileBasedTestRepository, YamlCodec, \
     InvalidYamlTestCase, TestRunner, Verdict
-
-
-class TexFileTest(TestCase):
-
-    def setUp(self):
-        self.path = "test/main.tex"
-        self.content = "foo"
-        self.tex_file = TexFile(self.path, self.content)
-
-    def test_name_is_exposed(self):
-        self.assertEqual(self.path, self.tex_file.path)
-
-    def test_content_is_exposed(self):
-        self.assertEquals(self.content, self.tex_file.content)
-
-    def test_equals_itself(self):
-        self.assertEqual(self.tex_file, self.tex_file)
-
-    def test_equals_a_similar_file(self):
-        self.assertEqual(TexFile("test/main.tex", "foo"),
-                         self.tex_file)
-
-    def test_does_not_equals_tex_file_with_a_different_path(self):
-        self.assertNotEqual(TexFile("dir/" + self.path, self.content),
-                            self.tex_file)
-
-    def test_does_not_equals_tex_file_with_a_different_content(self):
-        self.assertNotEqual(TexFile(self.path, self.content + "blablabla"),
-                            self.tex_file)
-
-
-class LatexProjectTests(TestCase):
-
-    def setUp(self):
-        self.files = [ TexFile("main.tex", "blabla") ]
-        self.tex = LatexProject(self.files)
-
-    def test_files_is_exposed(self):
-        self.assertEquals(self.files[0], self.tex.files["main.tex"])
-
-    def test_equals_a_project_with_similar_files(self):
-        self.assertEqual(LatexProject([TexFile("main.tex", "blabla")]),
-                         self.tex)
-
-    def test_differ_when_file_content_differ(self):
-        self.assertNotEqual(LatexProject([TexFile("main.tex", "THIS IS DIFFERENT!")]),
-                         self.tex)
-
-    def test_differ_when_file_path_differ(self):
-        self.assertNotEqual(LatexProject([TexFile("a/different/path.tex", "blabla")]),
-                         self.tex)
 
 
 class FlapTestCaseTests(TestCase):
 
     def setUp(self):
-        self.project = LatexProject([TexFile("main.tex", "blabla")])
-        self.expected = LatexProject([TexFile("main.tex", "blabla")])
+        self.project = LatexProject(TexFile("main.tex", "blabla"))
+        self.expected = LatexProject(TexFile("main.tex", "blabla"))
         self.test_case_name = "foo"
         self.test_case = FlapTestCase(self.test_case_name, self.project, self.expected)
 
@@ -102,16 +52,16 @@ class FlapTestCaseTests(TestCase):
     def test_equals_a_similar_test_case(self):
         self.assertEqual(FlapTestCase(
             "foo",
-            LatexProject([TexFile("main.tex", "blabla")]),
-            LatexProject([TexFile("main.tex", "blabla")])
+            LatexProject(TexFile("main.tex", "blabla")),
+            LatexProject(TexFile("main.tex", "blabla"))
         ),
         self.test_case)
 
     def test_differs_from_a_project_with_another_expectation(self):
         self.assertNotEqual(FlapTestCase(
             "foo",
-            LatexProject([TexFile("main.tex", "blabla")]),
-            LatexProject([TexFile("main.tex", "something different")])
+            LatexProject(TexFile("main.tex", "blabla")),
+            LatexProject(TexFile("main.tex", "something different"))
         ),
         self.test_case)
 
@@ -129,13 +79,13 @@ class TestLatexProjectSetup(TestCase):
 
     def setUp(self):
         self.file_system = InMemoryFileSystem()
-        self.project = LatexProject([TexFile("main.tex", "blabla")])
+        self.project = LatexProject(TexFile("main.tex", "blabla"))
 
     def _setup(self):
         self.project.setup(self.file_system)
 
     def test_setup_of_simple_project(self):
-        self.project = LatexProject([TexFile("main.tex", "blabla")])
+        self.project = LatexProject(TexFile("main.tex", "blabla"))
 
         self._setup()
 
@@ -144,7 +94,7 @@ class TestLatexProjectSetup(TestCase):
         self.assertEqual("blabla", file.content())
 
     def test_setup_of_project_with_subdirectories(self):
-        self.project = LatexProject([TexFile("main.tex", "blabla")])
+        self.project = LatexProject(TexFile("main.tex", "blabla"))
 
         self._setup()
 
@@ -174,8 +124,8 @@ class TestYamlCodec(TestCase):
 
         expected = FlapTestCase(
                         "test 1",
-                        LatexProject([TexFile("main.tex", "blabla")]),
-                        LatexProject([TexFile("main.tex", "blabla")]))
+                        LatexProject(TexFile("main.tex", "blabla")),
+                        LatexProject(TexFile("main.tex", "blabla")))
 
         self.assertEqual(expected, test_case)
 
@@ -199,8 +149,8 @@ class TestYamlCodec(TestCase):
 
         expected = FlapTestCase(
                         "test 1",
-                        LatexProject([TexFile("main.tex", "\\begin{document}Awesone!\\end{document}")]),
-                        LatexProject([TexFile("main.tex", "\\begin{document}Awesone!\\end{document}")]))
+                        LatexProject(TexFile("main.tex", "\\begin{document}Awesone!\\end{document}")),
+                        LatexProject(TexFile("main.tex", "\\begin{document}Awesone!\\end{document}")))
 
         self.assertEqual(expected, test_case)
 
@@ -316,14 +266,14 @@ class TestRepositoryTest(TestCase):
         self.assertEqual(1, len(test_cases))
         expected = FlapTestCase(
             "test 1",
-            LatexProject([TexFile("main.tex", ("\\documentclass{article}\n"
+            LatexProject(TexFile("main.tex", ("\\documentclass{article}\n"
                                                "\\begin{document}\n"
                                                "  This is a simple \\LaTeX document!\n"
-                                               "\\end{document}"))]),
-            LatexProject([TexFile("main.tex", ("\\documentclass{article}\n"
+                                               "\\end{document}"))),
+            LatexProject(TexFile("main.tex", ("\\documentclass{article}\n"
                                                "\\begin{document}\n"
                                                "  This is a simple \\LaTeX document!\n"
-                                               "\\end{document}"))])
+                                               "\\end{document}")))
         )
         self.assertEqual(expected, test_cases[0])
 
