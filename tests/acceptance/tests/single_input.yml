@@ -25,7 +25,7 @@ test:
     content: |
       \documentclass{article}
 
-       \begin{document}     
-       This is an example of input directive	   
-       Here are the results!	
-       \end{document}
+      \begin{document}
+      This is an example of input directive
+      Here are the results!
+      \end{document}

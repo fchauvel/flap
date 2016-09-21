@@ -41,7 +41,7 @@ class OSFileSystemTest(TestCase):
         self.fileSystem.deleteDirectory(TEMP / "flatexer_copy")
     
     def createAndOpenTestFile(self):
-        self.fileSystem.createFile(self.path, self.content)
+        self.fileSystem.create_file(self.path, self.content)
         return self.fileSystem.open(self.path)
     
     def testCreateAndOpenFile(self):

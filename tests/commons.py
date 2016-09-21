@@ -59,13 +59,13 @@ class LatexProject:
 
     def create_on(self, file_system):
         file_system.deleteDirectory(self.directory)
-        file_system.createFile(self.root_latex_file, self.root_latex_code)
+        file_system.create_file(self.root_latex_file, self.root_latex_code)
         for (path, content) in self.parts.items():
-            file_system.createFile(self.directory / path, content)
+            file_system.create_file(self.directory / path, content)
         for eachImage in self.images:
-            file_system.createFile(self.directory / eachImage, LatexProject.IMAGE_CONTENT)
+            file_system.create_file(self.directory / eachImage, LatexProject.IMAGE_CONTENT)
         for eachResource in self.resources:
-            file_system.createFile(self.directory / eachResource, LatexProject.RESOURCE_CONTENT)
+            file_system.create_file(self.directory / eachResource, LatexProject.RESOURCE_CONTENT)
 
 
 class FlapTest(TestCase):

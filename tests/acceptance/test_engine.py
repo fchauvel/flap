@@ -20,7 +20,8 @@ from mock import MagicMock
 
 from flap.FileSystem import InMemoryFileSystem
 from flap.path import Path
-from tests.acceptance.engine import TexFile, FlapTestCase, LatexProject, FileBasedTestRepository, YamlCodec, InvalidYamlTestCase
+from tests.acceptance.engine import TexFile, FlapTestCase, LatexProject, FileBasedTestRepository, YamlCodec, \
+    InvalidYamlTestCase, TestRunner, Verdict
 
 
 class TexFileTest(TestCase):
@@ -113,6 +114,44 @@ class FlapTestCaseTests(TestCase):
             LatexProject([TexFile("main.tex", "something different")])
         ),
         self.test_case)
+
+    def test_preparation_on_file_system(self):
+        file_system = InMemoryFileSystem()
+
+        self.test_case.setup(file_system)
+
+        file = file_system.open(Path.fromText("main.tex"))
+        self.assertIsNotNone(file)
+        self.assertEqual("blabla", file.content())
+
+
+class TestLatexProjectSetup(TestCase):
+
+    def setUp(self):
+        self.file_system = InMemoryFileSystem()
+        self.project = LatexProject([TexFile("main.tex", "blabla")])
+
+    def _setup(self):
+        self.project.setup(self.file_system)
+
+    def test_setup_of_simple_project(self):
+        self.project = LatexProject([TexFile("main.tex", "blabla")])
+
+        self._setup()
+
+        file = self.file_system.open(Path.fromText("main.tex"))
+        self.assertIsNotNone(file)
+        self.assertEqual("blabla", file.content())
+
+    def test_setup_of_project_with_subdirectories(self):
+        self.project = LatexProject([TexFile("main.tex", "blabla")])
+
+        self._setup()
+
+        file = self.file_system.open(Path.fromText("main.tex"))
+        self.assertIsNotNone(file)
+        self.assertEqual("blabla", file.content())
+
 
 
 class TestYamlCodec(TestCase):
@@ -311,4 +350,55 @@ class TestRepositoryTest(TestCase):
         return self.repository.fetch_all()
 
     def _create_file(self, path, content):
-        self.file_system.createFile(Path.fromText(path), content)
+        self.file_system.create_file(Path.fromText(path), content)
+
+
+class TestTestRunner(TestCase):
+
+    def setUp(self):
+        self.test_case = MagicMock()
+        self.runner = None
+
+    def _run_tests(self, tests):
+        self.runner = TestRunner(tests)
+        return self.runner.run()
+
+    def test_running_a_test_that_passes(self):
+        self.test_case.run.return_value = Verdict.PASS
+
+        results = self._run_tests([self.test_case])
+
+        self.assertEqual([(self.test_case, Verdict.PASS)], results)
+
+    def test_running_two_tests(self):
+        self.test_case.run.side_effect = [Verdict.PASS, Verdict.FAILED]
+
+        results = self._run_tests([self.test_case, self.test_case])
+
+        self.assertEqual(
+            [(self.test_case, Verdict.PASS),
+             (self.test_case, Verdict.FAILED)],
+            results)
+
+    def test_running_a_sequence_where_one_test_fails_midway(self):
+        self.test_case.run.side_effect = [
+            Verdict.PASS,
+            Exception("Unknown Error"),
+            Verdict.FAILED]
+
+        results = self._run_tests([self.test_case, self.test_case, self.test_case])
+
+        self.assertEqual(
+            [(self.test_case, Verdict.PASS),
+             (self.test_case, Verdict.ERROR),
+             (self.test_case, Verdict.FAILED)],
+            results)
+
+    def test_running_a_test_that_raise_an_exception(self):
+        self.test_case.run.side_effect = Exception("Unknown Error")
+
+        results = self._run_tests([self.test_case])
+
+        self.assertEqual([(self.test_case, Verdict.ERROR)], results)
+
+

@@ -17,8 +17,7 @@
 
 import yaml
 from io import StringIO
-
-
+from flap.path import Path
 
 
 class YamlCodec:
@@ -50,7 +49,8 @@ class YamlCodec:
             self._handle_missing_key(self.NAME_KEY)
         return content[self.NAME_KEY]
 
-    def _handle_missing_key(self, key):
+    @staticmethod
+    def _handle_missing_key(key):
         raise InvalidYamlTestCase("Invalid YAML: Expecting key '%s'!" % key)
 
     def _extract_project_from(self, content):
@@ -155,6 +155,10 @@ class LatexProject:
             return False
         return len(set(self._files.items()) - set(other._files.items())) == 0
 
+    def setup(self, file_system):
+        for (path, file) in self.files.items():
+            file_system.create_file(Path.fromText(path), file.content)
+
 
 class FlapTestCase:
 
@@ -183,3 +187,32 @@ class FlapTestCase:
         return self._name == other._name and \
                self._project == other._project and \
                self._expected == other._expected
+
+    def setup(self, file_system):
+        for (path, file) in self._project.files.items():
+            file_system.create_file(Path.fromText(path), file.content)
+
+
+class Verdict:
+    ERROR = 1
+    PASS = 2
+    FAILED = 3
+
+
+class TestRunner:
+    """
+    Run a list of FlapTestCase
+    """
+
+    def __init__(self, test_cases):
+        self._test_cases = test_cases
+
+    def run(self):
+        results = []
+        for each_test_case in self._test_cases:
+            try:
+                verdict = each_test_case.run()
+            except Exception:
+                verdict = Verdict.ERROR
+            results += [(each_test_case, verdict)]
+        return results

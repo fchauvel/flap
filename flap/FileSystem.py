@@ -122,7 +122,7 @@ class MissingFile(File):
 
 class FileSystem:
     
-    def createFile(self, path, content):
+    def create_file(self, path, content):
         pass
     
     def createDirectory(self, path):
@@ -159,7 +159,7 @@ class OSFileSystem(FileSystem):
     def move_to_directory(self, path):
         os.chdir(self.forOS(path))
         
-    def createFile(self, path, content):
+    def create_file(self, path, content):
         self._create_path(path)
         osPath = self.forOS(path) 
         with open(osPath, "w") as f:
@@ -226,7 +226,9 @@ class InMemoryFileSystem(FileSystem):
         if not path.isRoot():
             self.createDirectory(path.container())
 
-    def createFile(self, path, content):
+    def create_file(self, path, content):
+        if not isinstance(content, str):
+            raise ValueError("File content should be text!")
         absolute = path.absolute_from(self._current_directory)
         self.drive[absolute] = File(self, absolute, content)
         self.createDirectory(absolute.container())

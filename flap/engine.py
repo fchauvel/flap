@@ -122,7 +122,7 @@ class Flap:
 
     def merge_latex_source(self):
         merged = ''.join((each.text() for each in self._fragments()))
-        self._file_system.createFile(self._output / self._merged_file, merged)
+        self._file_system.create_file(self._output / self._merged_file, merged)
 
     def _fragments(self):
         return self._create.flap_pipeline(self, self._root).fragments()
