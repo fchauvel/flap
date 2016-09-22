@@ -82,7 +82,7 @@ class TestLatexProjectSetup(TestCase):
         self.project = LatexProject(TexFile("main.tex", "blabla"))
 
     def _setup(self):
-        self.project.setup(self.file_system)
+        self.project.setup(self.file_system, Path.fromText("."))
 
     def test_setup_of_simple_project(self):
         self.project = LatexProject(TexFile("main.tex", "blabla"))
