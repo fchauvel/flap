@@ -34,7 +34,7 @@ setup(name='FLaP',
      test_suite = "tests",
      cmdclass = { "release": Release},
      classifiers = [
-                    "Development Status :: 3 - Alpha",
+                    "Development Status :: 4 - Beta",
                     "Intended Audience :: Science/Research",
                     "Environment :: Console",
                     "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
