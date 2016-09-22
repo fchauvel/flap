@@ -16,6 +16,8 @@
 #
 
 from unittest import TestCase
+from flap.path import Path
+from flap.FileSystem import InMemoryFileSystem
 from tests.acceptance.latex_project import LatexProject, TexFile, MissingFile, ExtraFile, DifferentContent
 
 
@@ -86,3 +88,60 @@ class LatexProjectTests(TestCase):
         file = TexFile("main.tex", "something different!")
         differences = self.tex.difference_with(LatexProject(file))
         self.assertListEqual([DifferentContent(file)], differences)
+
+
+class LatexProjectExtractionTests(TestCase):
+
+    def setUp(self):
+        self._file_system = InMemoryFileSystem()
+        self._directory = "home/"
+        self._files = []
+
+    def _create_files(self, *files):
+        self._files = files
+        for (path, content) in files:
+            complete_path = Path.fromText(self._directory + path)
+            self._file_system.create_file(complete_path, content)
+
+    def _extract_project(self):
+        root = self._file_system.open(Path.fromText(self._directory))
+        return LatexProject.extract_from_directory(root)
+
+    def _verify(self, project):
+        assert len(self._files) > 0
+        return self.assertListEqual([], self._expected().difference_with(project))
+
+    def _do_test_with_files(self, *files):
+        self._create_files(*files)
+        project = self._extract_project()
+        self._verify(project)
+
+    def _expected(self):
+        tex_files = []
+        for (path, content) in self._files:
+            tex_files.append(TexFile(path, content))
+        return LatexProject(*tex_files)
+
+    def test_extracting_a_simple_file(self):
+        self._do_test_with_files(("main.tex", "content"))
+
+    def test_extracting_a_two_files_project(self):
+        self._do_test_with_files(
+            ("main.tex", "content"),
+            ("result.tex", "Here are some results"))
+
+    def test_extracting_files_in_a_subdirectory(self):
+        self._do_test_with_files(
+            ("main.tex", "content"),
+            ("test/result.tex", "Here are some results"))
+
+    def test_extracting_a_complete_project(self):
+        self._do_test_with_files(
+            ("main.tex", "blablabla"),
+            ("sections/introduction.tex", "Here are some results"),
+            ("sections/development.tex", "Some more details"),
+            ("sections/conclusions.tex", "Some more hindsight"),
+            ("images/results.pdf", "PDF CONTENT"),
+            ("images/sources/results.svg", "SVG CODE"),
+            ("article.bib", "The bibliography"))
+

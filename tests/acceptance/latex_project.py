@@ -43,6 +43,22 @@ class TexFile:
 
 class LatexProject:
 
+    @staticmethod
+    def extract_from_directory(root):
+        files = LatexProject._collect_files_from(root, root)
+        return LatexProject(*files)
+
+    @staticmethod
+    def _collect_files_from(root, directory):
+        files = []
+        for each_file in directory.files():
+            if each_file.is_directory():
+                files.extend(LatexProject._collect_files_from(root, each_file))
+            else:
+                path = str(each_file.path().relative_to(root.path()))
+                files.append(TexFile(path, each_file.content()))
+        return files
+
     def __init__(self, *files):
         self._files = {each_file.path: each_file for each_file in files}
 
@@ -88,6 +104,9 @@ class MissingFile:
         if not isinstance(other, MissingFile): return False
         return self._file == other._file
 
+    def __repr__(self):
+        return "Missing file '%s'" % self._file.path
+
 
 class ExtraFile:
     def __init__(self, file):
@@ -97,6 +116,9 @@ class ExtraFile:
         if not isinstance(other, ExtraFile): return False
         return self._file == other._file
 
+    def __repr__(self):
+        return "Extraneous file '%s'" % self._file.path
+
 
 class DifferentContent:
     def __init__(self, file):
@@ -105,3 +127,6 @@ class DifferentContent:
     def __eq__(self, other):
         if not isinstance(other, DifferentContent): return False
         return self._file == other._file
+
+    def __repr__(self):
+        return "Wrong file content for '%s'" % self._file.path
