@@ -49,14 +49,14 @@ class LatexProject:
         return LatexProject(*files)
 
     @staticmethod
-    def _collect_files_from(root, directory):
+    def _collect_files_from(anchor, directory):
         files = []
-        for each_file in directory.files():
-            if each_file.is_directory():
-                files.extend(LatexProject._collect_files_from(root, each_file))
+        for any_file in directory.files():
+            if any_file.is_directory():
+                files += LatexProject._collect_files_from(anchor, any_file)
             else:
-                path = str(each_file.path().relative_to(root.path()))
-                files.append(TexFile(path, each_file.content()))
+                path = str(any_file.path().relative_to(anchor.path()))
+                files.append(TexFile(path, any_file.content()))
         return files
 
     def __init__(self, *files):
@@ -74,9 +74,10 @@ class LatexProject:
             return False
         return len(set(self._files.items()) - set(other._files.items())) == 0
 
-    def setup(self, file_system):
+    def setup(self, file_system, anchor):
         for (path, file) in self.files.items():
-            file_system.create_file(Path.fromText(path), file.content)
+            location = anchor / path
+            file_system.create_file(location, file.content)
 
     def difference_with(self, other):
         differences = self._missing_files(other)

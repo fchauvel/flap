@@ -90,6 +90,41 @@ class LatexProjectTests(TestCase):
         self.assertListEqual([DifferentContent(file)], differences)
 
 
+class LatexProjectGenerationTests(TestCase):
+
+    def setUp(self):
+        self._file_system = InMemoryFileSystem()
+        self._directory = "home"
+
+    def test_setup_a_single_file_project(self):
+        self._do_test_setup(
+            LatexProject(TexFile("main.tex", "blabla"))
+        )
+
+    def test_setup_a_two_files_project(self):
+        self._do_test_setup(LatexProject(
+            TexFile("main.tex", "blabla"),
+            TexFile("result.tex", "Some results"))
+        )
+
+    def test_setup_a_project_with_subdirectories(self):
+        self._do_test_setup(LatexProject(
+            TexFile("main.tex", "blabla"),
+            TexFile("sections/introduction.tex", "introduction"),
+            TexFile("sections/conclusions.tex", "conclusions"),
+            TexFile("images/results.pdf", "PDF"))
+        )
+
+    def _do_test_setup(self, project):
+        project.setup(self._file_system, Path.fromText(self._directory))
+        self._verify(project)
+
+    def _verify(self, project):
+        for (path, file) in project.files.items():
+            file_on_disk = self._file_system.open(Path.fromText(self._directory) / path)
+            self.assertEqual(file.content, file_on_disk.content())
+
+
 class LatexProjectExtractionTests(TestCase):
 
     def setUp(self):
