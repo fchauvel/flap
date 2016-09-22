@@ -17,9 +17,10 @@
 
 import yaml
 from io import StringIO
-from flap.path import Path
+from flap.path import TEMP
 
 from tests.acceptance.latex_project import TexFile, LatexProject
+
 
 class YamlCodec:
     """
@@ -137,16 +138,15 @@ class FlapTestCase:
     def expected(self):
         return self._expected
 
+    def run_with(self, runner):
+        return runner.test(self._name, self._project, self._expected)
+
     def __eq__(self, other):
         if not isinstance(other, FlapTestCase):
             return False
         return self._name == other._name and \
                self._project == other._project and \
                self._expected == other._expected
-
-    def setup(self, file_system):
-        for (path, file) in self._project.files.items():
-            file_system.create_file(Path.fromText(path), file.content)
 
 
 class Verdict:
@@ -160,15 +160,36 @@ class TestRunner:
     Run a list of FlapTestCase
     """
 
-    def __init__(self, test_cases):
-        self._test_cases = test_cases
+    def __init__(self, file_system, directory):
+        self._file_system = file_system
+        self._directory = directory
 
-    def run(self):
+    def run(self, test_cases):
         results = []
-        for each_test_case in self._test_cases:
-            try:
-                verdict = each_test_case.run()
-            except Exception:
-                verdict = Verdict.ERROR
+        for each_test_case in test_cases:
+            verdict = each_test_case.run()
             results += [(each_test_case, verdict)]
         return results
+
+    def test(self, name, project, expected):
+        directory = self._directory / self._escape(name)
+        try:
+            project.setup(self._file_system, directory / "project" )
+            self._run_flap(directory / "project" / "main.tex")
+            actual = LatexProject.extract_from_directory(self._file_system, directory / "flatten")
+            return self._verify(expected, actual)
+
+        except Exception:
+            return Verdict.ERROR
+
+    def _escape(self, name):
+        return name.replace(" ", "_")
+
+    def _run_flap(self, directory):
+        raise NotImplementedError()
+
+    def _verify(self, expected, actual):
+        differences = expected.difference_with(actual)
+        if len(differences) == 0:
+            return Verdict.PASS
+        return Verdict.FAILED
