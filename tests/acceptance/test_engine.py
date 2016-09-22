@@ -16,10 +16,10 @@
 #
 
 from unittest import TestCase
-from mock import MagicMock
+from mock import MagicMock, patch
 
 from flap.FileSystem import InMemoryFileSystem
-from flap.path import Path
+from flap.path import Path, TEMP
 from tests.acceptance.latex_project import TexFile, LatexProject
 from tests.acceptance.engine import FlapTestCase, FileBasedTestRepository, YamlCodec, \
     InvalidYamlTestCase, TestRunner, Verdict
@@ -65,43 +65,10 @@ class FlapTestCaseTests(TestCase):
         ),
         self.test_case)
 
-    def test_preparation_on_file_system(self):
-        file_system = InMemoryFileSystem()
-
-        self.test_case.setup(file_system)
-
-        file = file_system.open(Path.fromText("main.tex"))
-        self.assertIsNotNone(file)
-        self.assertEqual("blabla", file.content())
-
-
-class TestLatexProjectSetup(TestCase):
-
-    def setUp(self):
-        self.file_system = InMemoryFileSystem()
-        self.project = LatexProject(TexFile("main.tex", "blabla"))
-
-    def _setup(self):
-        self.project.setup(self.file_system, Path.fromText("."))
-
-    def test_setup_of_simple_project(self):
-        self.project = LatexProject(TexFile("main.tex", "blabla"))
-
-        self._setup()
-
-        file = self.file_system.open(Path.fromText("main.tex"))
-        self.assertIsNotNone(file)
-        self.assertEqual("blabla", file.content())
-
-    def test_setup_of_project_with_subdirectories(self):
-        self.project = LatexProject(TexFile("main.tex", "blabla"))
-
-        self._setup()
-
-        file = self.file_system.open(Path.fromText("main.tex"))
-        self.assertIsNotNone(file)
-        self.assertEqual("blabla", file.content())
-
+    def test_run(self):
+        runner = MagicMock()
+        self.test_case.run_with(runner)
+        runner.test.assert_called_once_with(self.test_case.name, self.test_case.project, self.test_case.expected)
 
 
 class TestYamlCodec(TestCase):
@@ -307,11 +274,10 @@ class TestTestRunner(TestCase):
 
     def setUp(self):
         self.test_case = MagicMock()
-        self.runner = None
+        self.runner = TestRunner(InMemoryFileSystem(), TEMP / "flap")
 
     def _run_tests(self, tests):
-        self.runner = TestRunner(tests)
-        return self.runner.run()
+        return self.runner.run(tests)
 
     def test_running_a_test_that_passes(self):
         self.test_case.run.return_value = Verdict.PASS
@@ -333,7 +299,7 @@ class TestTestRunner(TestCase):
     def test_running_a_sequence_where_one_test_fails_midway(self):
         self.test_case.run.side_effect = [
             Verdict.PASS,
-            Exception("Unknown Error"),
+            Verdict.ERROR,
             Verdict.FAILED]
 
         results = self._run_tests([self.test_case, self.test_case, self.test_case])
@@ -345,10 +311,50 @@ class TestTestRunner(TestCase):
             results)
 
     def test_running_a_test_that_raise_an_exception(self):
-        self.test_case.run.side_effect = Exception("Unknown Error")
+        self.test_case.run.return_value = Verdict.ERROR
 
         results = self._run_tests([self.test_case])
 
         self.assertEqual([(self.test_case, Verdict.ERROR)], results)
 
 
+class TestRunningSingleTest(TestCase):
+
+    def setUp(self):
+        self._directory = TEMP / "flap"
+        self._file_system = InMemoryFileSystem()
+        self._runner = TestRunner(self._file_system, self._directory)
+        self._runner._run_flap = MagicMock()
+
+    @patch('tests.acceptance.latex_project.LatexProject.extract_from_directory')
+    def test_test_a_passing_test(self, mock):
+        mock.return_value = LatexProject(TexFile("main.tex", "blabla"))
+        verdict = self._runner.test("test 1",
+                              LatexProject(TexFile("main.tex", "blabla")),
+                              LatexProject(TexFile("main.tex", "blabla")))
+
+        self.assertEqual(Verdict.PASS, verdict)
+        self._runner._run_flap.assert_called_once_with(self._directory / "test_1" / "project" / "main.tex")
+        mock.assert_called_once_with(self._file_system, self._directory / "test_1" / "flatten")
+
+    @patch('tests.acceptance.latex_project.LatexProject.extract_from_directory')
+    def test_test_a_failing_test(self, mock):
+        mock.return_value = LatexProject(TexFile("caca.tex", "blabla"))
+        verdict = self._runner.test("test 1",
+                              LatexProject(TexFile("main.tex", "blabla")),
+                              LatexProject(TexFile("main.tex", "blabla")))
+
+        self.assertEqual(Verdict.FAILED, verdict)
+        self._runner._run_flap.assert_called_once_with(self._directory / "test_1" / "project" / "main.tex")
+        mock.assert_called_once_with(self._file_system, self._directory / "test_1" / "flatten")
+
+    @patch('tests.acceptance.latex_project.LatexProject.extract_from_directory')
+    def test_a_case_that_raise_an_exception(self, mock):
+        mock.return_value = LatexProject(TexFile("caca.tex", "blabla"))
+        self._runner._run_flap.side_effect = Exception()
+        verdict = self._runner.test("test 1",
+                              LatexProject(TexFile("main.tex", "blabla")),
+                              LatexProject(TexFile("main.tex", "blabla")))
+
+        self.assertEqual(Verdict.ERROR, verdict)
+        self._runner._run_flap.assert_called_once_with(self._directory / "test_1" / "project" / "main.tex")

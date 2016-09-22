@@ -84,7 +84,7 @@ class File:
         return [ any_file for any_file in directory.files() if str(any_file.path()).startswith(str(path)) ]
 
     def __repr__(self):
-        return self.path()
+        return str(self.path())
     
     
 class Directory(File):
