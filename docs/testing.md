@@ -40,10 +40,14 @@ project:
 
 # Describe the expected flattened LaTeX project
 expected:
-  - path: main.tex
+  - path: merged.tex
     content: |
       \documentclass{article}
       \begin{document}
       This is a simple LaTeX document!
       \end{document}
 ```
+
+By convention, each LaTeX project must have a file named `main.tex` at
+its top level. Similarly, FLaP will be invoked with its default options,
+and will therefore generate a file named `merged.tex`.
