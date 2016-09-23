@@ -1,24 +1,20 @@
-test:
- - name: nothing to flatten
- - description: >
+name: nothing to flatten
+description: >
    Test that FLaP does not modify LaTeX files where nothing has
    to be flatten.
  
- - project:
-   - TeX-root:
-     - path: main.tex
-     - content: |
+project:
+  -  path: main.tex
+     content: |
        \documentclass{article}
        
        \begin{document}
        This is a sample \LaTeX document!
        \end{document}
-	
-	   
- - expected:
-   - root:
-     - path: merged.tex
-     - content: |
+
+expected:
+  - path: merged.tex
+    content: |
        \documentclass{article}
        
        \begin{document}

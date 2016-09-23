@@ -16,7 +16,9 @@
 #
 
 import yaml
+from enum import Enum
 from io import StringIO
+from flap.ui import Controller, Factory, UI
 from flap.path import TEMP
 
 from tests.acceptance.latex_project import TexFile, LatexProject
@@ -149,7 +151,7 @@ class FlapTestCase:
                self._expected == other._expected
 
 
-class Verdict:
+class Verdict(Enum):
     ERROR = 1
     PASS = 2
     FAILED = 3
@@ -162,21 +164,25 @@ class TestRunner:
 
     def __init__(self, file_system, directory):
         self._file_system = file_system
+        self._ui = UI(StringIO())
         self._directory = directory
 
     def run(self, test_cases):
         results = []
         for each_test_case in test_cases:
-            verdict = each_test_case.run()
+            verdict = each_test_case.run_with(self)
             results += [(each_test_case, verdict)]
         return results
 
     def test(self, name, project, expected):
         directory = self._directory / self._escape(name)
         try:
-            project.setup(self._file_system, directory / "project" )
-            self._run_flap(directory / "project" / "main.tex")
-            actual = LatexProject.extract_from_directory(self._file_system, directory / "flatten")
+            project_path = directory / "project"
+            output_path = directory / "flatten"
+            project.setup(self._file_system, project_path)
+            self._run_flap(project_path / "main.tex", output_path)
+            output = self._file_system.open(output_path)
+            actual = LatexProject.extract_from_directory(output)
             return self._verify(expected, actual)
 
         except Exception:
@@ -185,11 +191,51 @@ class TestRunner:
     def _escape(self, name):
         return name.replace(" ", "_")
 
-    def _run_flap(self, directory):
-        raise NotImplementedError()
+    def _run_flap(self, root_latex_file, output_directory):
+        factory = Factory(self._file_system, self._ui)
+        arguments = ["__main.py__", str(root_latex_file), str(output_directory)]
+        Controller(factory).run(arguments)
 
     def _verify(self, expected, actual):
         differences = expected.difference_with(actual)
         if len(differences) == 0:
             return Verdict.PASS
         return Verdict.FAILED
+
+
+class Acceptor:
+
+    TEST_CASE = "{name:35}{verdict:10}\n"
+    HORIZONTAL_LINE = "----------\n"
+    SUMMARY = "{total} tests ({passed} success ; {failed} failure ; {error} error ; 0 Skipped)\n"
+    NO_TEST_FOUND = "Could not find any acceptance test.\n"
+
+    def __init__(self, repository, runner, output):
+        self._repository = repository
+        self._runner = runner
+        self._output = output
+
+    def check(self):
+        test_cases = self._repository.fetch_all()
+        results = self._runner.run(test_cases)
+        if not results:
+            self._show(self.NO_TEST_FOUND)
+            return
+        
+        for (test_case, verdict) in results:
+            self._show(self.TEST_CASE, name=test_case.name, verdict=verdict.name)
+        self._show(self.HORIZONTAL_LINE)
+        self._show(
+            self.SUMMARY,
+            total=len(results),
+            passed=self._count(results, Verdict.PASS),
+            failed=self._count(results, Verdict.FAILED),
+            error=self._count(results, Verdict.ERROR),
+        )
+
+    def _show(self, message, **values):
+        self._output.write(message.format(**values))
+
+    @staticmethod
+    def _count(test_cases, verdict):
+        return len([v for (t, v) in test_cases if v == verdict])

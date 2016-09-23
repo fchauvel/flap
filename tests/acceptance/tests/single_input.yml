@@ -1,11 +1,10 @@
-test:
- name: input without extension
- description: >
+name: input without extension
+description: >
    Test that FLaP does properly flatten single '\input' directives, 
    one without the .tex extension.
  
- # Describe the LaTeX projects, as found on the disk
- project:
+# Describe the LaTeX projects, as found on the disk
+project:
   - path: main.tex
     content: |
        \documentclass{article}
@@ -19,8 +18,8 @@ test:
     content: |
       Here are the results!
 
- # Describe the LaTeX project, once flattened
- expected:
+# Describe the LaTeX project, once flattened
+expected:
   - path: merged.tex
     content: |
       \documentclass{article}

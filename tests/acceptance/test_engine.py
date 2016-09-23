@@ -16,13 +16,14 @@
 #
 
 from unittest import TestCase
-from mock import MagicMock, patch
+from mock import MagicMock
 
+from io import StringIO
 from flap.FileSystem import InMemoryFileSystem
 from flap.path import Path, TEMP
 from tests.acceptance.latex_project import TexFile, LatexProject
 from tests.acceptance.engine import FlapTestCase, FileBasedTestRepository, YamlCodec, \
-    InvalidYamlTestCase, TestRunner, Verdict
+    InvalidYamlTestCase, TestRunner, Verdict, Acceptor
 
 
 class FlapTestCaseTests(TestCase):
@@ -280,14 +281,14 @@ class TestTestRunner(TestCase):
         return self.runner.run(tests)
 
     def test_running_a_test_that_passes(self):
-        self.test_case.run.return_value = Verdict.PASS
+        self.test_case.run_with.return_value = Verdict.PASS
 
         results = self._run_tests([self.test_case])
 
         self.assertEqual([(self.test_case, Verdict.PASS)], results)
 
     def test_running_two_tests(self):
-        self.test_case.run.side_effect = [Verdict.PASS, Verdict.FAILED]
+        self.test_case.run_with.side_effect = [Verdict.PASS, Verdict.FAILED]
 
         results = self._run_tests([self.test_case, self.test_case])
 
@@ -297,7 +298,7 @@ class TestTestRunner(TestCase):
             results)
 
     def test_running_a_sequence_where_one_test_fails_midway(self):
-        self.test_case.run.side_effect = [
+        self.test_case.run_with.side_effect = [
             Verdict.PASS,
             Verdict.ERROR,
             Verdict.FAILED]
@@ -311,50 +312,100 @@ class TestTestRunner(TestCase):
             results)
 
     def test_running_a_test_that_raise_an_exception(self):
-        self.test_case.run.return_value = Verdict.ERROR
+        self.test_case.run_with.return_value = Verdict.ERROR
 
         results = self._run_tests([self.test_case])
 
         self.assertEqual([(self.test_case, Verdict.ERROR)], results)
 
 
-class TestRunningSingleTest(TestCase):
+class TestRunningTestCase(TestCase):
 
     def setUp(self):
         self._directory = TEMP / "flap"
+        self._project_path = self._directory / "test_1" / "project"
+        self._root_tex_file = self._project_path / "main.tex"
+        self._output_path = self._directory / "test_1" / "flatten"
         self._file_system = InMemoryFileSystem()
+        self._test_case = None
         self._runner = TestRunner(self._file_system, self._directory)
-        self._runner._run_flap = MagicMock()
 
-    @patch('tests.acceptance.latex_project.LatexProject.extract_from_directory')
-    def test_test_a_passing_test(self, mock):
-        mock.return_value = LatexProject(TexFile("main.tex", "blabla"))
-        verdict = self._runner.test("test 1",
-                              LatexProject(TexFile("main.tex", "blabla")),
-                              LatexProject(TexFile("main.tex", "blabla")))
+    def _run_test(self):
+        assert self._test_case is not None
+        return self._test_case.run_with(self._runner)
+
+    def test_running_a_test_case_that_passes(self):
+        self._test_case = FlapTestCase("test 1",
+                                       LatexProject(TexFile("main.tex", "blabla")),
+                                       LatexProject(TexFile("merged.tex", "blabla")))
+
+        verdict = self._run_test()
 
         self.assertEqual(Verdict.PASS, verdict)
-        self._runner._run_flap.assert_called_once_with(self._directory / "test_1" / "project" / "main.tex")
-        mock.assert_called_once_with(self._file_system, self._directory / "test_1" / "flatten")
 
-    @patch('tests.acceptance.latex_project.LatexProject.extract_from_directory')
-    def test_test_a_failing_test(self, mock):
-        mock.return_value = LatexProject(TexFile("caca.tex", "blabla"))
-        verdict = self._runner.test("test 1",
-                              LatexProject(TexFile("main.tex", "blabla")),
-                              LatexProject(TexFile("main.tex", "blabla")))
+    def test_running_a_test_case_that_fails(self):
+        self._test_case = FlapTestCase("test 1",
+                                       LatexProject(TexFile("main.tex", "blabla")),
+                                       LatexProject(TexFile("merged.tex", "blabla blabla")))
+
+        verdict = self._run_test()
 
         self.assertEqual(Verdict.FAILED, verdict)
-        self._runner._run_flap.assert_called_once_with(self._directory / "test_1" / "project" / "main.tex")
-        mock.assert_called_once_with(self._file_system, self._directory / "test_1" / "flatten")
 
-    @patch('tests.acceptance.latex_project.LatexProject.extract_from_directory')
-    def test_a_case_that_raise_an_exception(self, mock):
-        mock.return_value = LatexProject(TexFile("caca.tex", "blabla"))
+    def test_running_a_test_case_that_throws_an_exception(self):
+        self._test_case = FlapTestCase("test 1",
+                                       LatexProject(TexFile("main.tex", "blabla")),
+                                       LatexProject(TexFile("merged.tex", "blabla")))
+
+        self._runner._run_flap = MagicMock()
         self._runner._run_flap.side_effect = Exception()
-        verdict = self._runner.test("test 1",
-                              LatexProject(TexFile("main.tex", "blabla")),
-                              LatexProject(TexFile("main.tex", "blabla")))
+
+        verdict = self._run_test()
 
         self.assertEqual(Verdict.ERROR, verdict)
-        self._runner._run_flap.assert_called_once_with(self._directory / "test_1" / "project" / "main.tex")
+
+
+class ControllerTest(TestCase):
+
+    def setUp(self):
+        self._file_system = InMemoryFileSystem()
+        self._output = StringIO()
+
+    def test_output_when_no_test_are_found(self):
+        self._file_system.create_file(Path.fromText("tests/this_is_not_a_test.txt"), "blabla")
+
+        self._check_acceptance()
+
+        self.assertIn(Acceptor.NO_TEST_FOUND, self._output.getvalue())
+
+
+    def test_output(self):
+        self._file_system.create_file(Path.fromText("tests/test_1.yml"),
+                                              "name: Test 1\n"
+                                              "project:\n"
+                                              " - path: main.tex\n"
+                                              "   content: blabla\n"
+                                              "expected:\n"
+                                              "  - path: merged.tex\n"
+                                              "    content: blabla\n")
+        self._file_system.create_file(Path.fromText("tests/test_2.yml"),
+                                              "name: Test 2\n"
+                                              "project:\n"
+                                              " - path: main.tex\n"
+                                              "   content: blabla\n"
+                                              "expected:\n"
+                                              "  - path: merged.tex\n"
+                                              "    content: new blabla\n")
+
+        self._check_acceptance()
+
+        self.assertIn(Acceptor.TEST_CASE.format(name="Test 1", verdict=Verdict.PASS.name), self._output.getvalue())
+        self.assertIn(Acceptor.TEST_CASE.format(name="Test 2", verdict=Verdict.FAILED.name), self._output.getvalue())
+        self.assertIn(Acceptor.HORIZONTAL_LINE, self._output.getvalue())
+        self.assertIn(Acceptor.SUMMARY.format(total=2, passed=1, failed=1, error=0), self._output.getvalue())
+
+    def _check_acceptance(self):
+        repository = FileBasedTestRepository(self._file_system, Path.fromText("tests"), YamlCodec())
+        runner = TestRunner(self._file_system, TEMP / "flap" / "acceptance")
+        acceptance = Acceptor(repository, runner, self._output)
+        acceptance.check()
