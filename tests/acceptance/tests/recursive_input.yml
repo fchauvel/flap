@@ -15,25 +15,38 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-name: nothing to flatten
+name: input without extension
 description: >
-   Test that FLaP does not modify LaTeX files where nothing has
-   to be flatten.
- 
+   Test that FLaP does properly flatten single '\input' directives
+   when '.tex' extension is given
+
+# Describe the LaTeX projects, as found on the disk
 project:
   - path: main.tex
     content: |
-       \documentclass{article}
-       
-       \begin{document}
-       This is a sample \LaTeX document!
-       \end{document}
+      \documentclass{article}
 
+      \begin{document}
+      This is an example of input directive
+      \input{result}
+      \end{document}
+
+  - path: result.tex
+    content: |
+      \input{sub_result}
+
+  - path: sub_result.tex
+    content: |
+      Here are the results!
+
+# Describe the LaTeX project, once flattened
 expected:
   - path: merged.tex
     content: |
-       \documentclass{article}
-       
-       \begin{document}
-       This is a sample \LaTeX document!
-       \end{document}
+      \documentclass{article}
+
+      \begin{document}
+      This is an example of input directive
+      Here are the results!
+      \end{document}
+
