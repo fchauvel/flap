@@ -99,6 +99,9 @@ class MissingFile:
     def __init__(self, file):
         self._file = file
 
+    def accept(self, visitor):
+        visitor.on_missing_file(self._file)
+
     def __eq__(self, other):
         if not isinstance(other, MissingFile): return False
         return self._file == other._file
@@ -111,6 +114,9 @@ class ExtraFile:
     def __init__(self, file):
         self._file = file
 
+    def accept(self, visitor):
+        visitor.on_extraneous_file(self._file)
+
     def __eq__(self, other):
         if not isinstance(other, ExtraFile): return False
         return self._file == other._file
@@ -122,6 +128,9 @@ class ExtraFile:
 class DifferentContent:
     def __init__(self, file):
         self._file = file
+
+    def accept(self, visitor):
+        visitor.on_content_mismatch(self._file)
 
     def __eq__(self, other):
         if not isinstance(other, DifferentContent): return False

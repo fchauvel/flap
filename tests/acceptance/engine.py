@@ -243,13 +243,16 @@ class Acceptor:
     TEST_PASS = "PASS"
     TEST_FAILED = "FAILED"
     TEST_ERROR = "ERROR"
-    TEST_CASE = "{name:35}{verdict:10}\n"
+    TEST_CASE = "{name:45}{verdict:10}\n"
     HORIZONTAL_LINE = "----------\n"
-    SUMMARY = "{total} tests ({passed} success ; {failed} failure ; {error} error ; 0 Skipped)\n"
+    SUMMARY = "{total} tests ({passed} success ; {failed} failure ; {error} error ; 0 skipped)\n"
     NO_TEST_FOUND = "Could not find any acceptance test.\n"
+    MISSING_FILE = "\t - Could not find file '{file_name}'\n"
+    UNEXPECTED_FILE = "\t - Unexpected file '{file_name}'\n"
+    CONTENT_MISMATCH = "\t - Content mismatch for file '{file_name}'\n"
 
     def __init__(self, repository, runner, output):
-        self._repository = repository
+        self._test_case_repository = repository
         self._runner = runner
         self._output = output
         self._counter = {
@@ -259,24 +262,34 @@ class Acceptor:
         }
 
     def check(self):
-        test_cases = self._repository.fetch_all()
-        if not test_cases:
-            self._show(self.NO_TEST_FOUND)
-            return
-
-        for each_test_case in test_cases:
+        self._show_header()
+        for each_test_case in self._test_case_repository.fetch_all():
             verdict = each_test_case.run_with(self._runner)
             verdict.accept(self)
+        self._show_summary()
 
-        self._show_summary(test_cases)
-
-    def _show_summary(self, test_cases):
+    def _show_header(self):
+        self._show(self.TEST_CASE, name="Test case name", verdict="Status")
         self._show(self.HORIZONTAL_LINE)
-        self._show(self.SUMMARY,
-                   total=len(test_cases),
-                   passed=self._counter[self.TEST_PASS],
-                   failed=self._counter[self.TEST_FAILED],
-                   error=self._counter[self.TEST_ERROR])
+
+    def _show_summary(self):
+        if self._no_test_case_found:
+            self._show(self.NO_TEST_FOUND)
+        else:
+            self._show(self.HORIZONTAL_LINE)
+            self._show(self.SUMMARY,
+                       total=self._test_case_count,
+                       passed=self._counter[self.TEST_PASS],
+                       failed=self._counter[self.TEST_FAILED],
+                       error=self._counter[self.TEST_ERROR])
+
+    @property
+    def _no_test_case_found(self):
+        return self._test_case_count == 0
+
+    @property
+    def _test_case_count(self):
+        return sum(self._counter.values())
 
     def on_success(self, test_case_name):
         self._counter[self.TEST_PASS] += 1
@@ -285,6 +298,17 @@ class Acceptor:
     def on_failure(self, test_case_name, differences):
         self._counter[self.TEST_FAILED] += 1
         self._show(self.TEST_CASE, name=test_case_name, verdict=self.TEST_FAILED)
+        for each_difference in differences:
+            each_difference.accept(self)
+
+    def on_missing_file(self, file):
+        self._show(self.MISSING_FILE, file_name=str(file.path))
+
+    def on_extraneous_file(self, file):
+        self._show(self.UNEXPECTED_FILE, file_name=str(file.path))
+
+    def on_content_mismatch(self, file):
+        self._show(self.CONTENT_MISMATCH, file_name=str(file.path))
 
     def on_error(self, test_case_name, caught_exception):
         self._counter[self.TEST_ERROR] += 1
