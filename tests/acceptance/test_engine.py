@@ -21,9 +21,9 @@ from mock import MagicMock
 from io import StringIO
 from flap.FileSystem import InMemoryFileSystem
 from flap.path import Path, TEMP
-from tests.acceptance.latex_project import TexFile, LatexProject
+from tests.acceptance.latex_project import TexFile, LatexProject, MissingFile
 from tests.acceptance.engine import FlapTestCase, FileBasedTestRepository, YamlCodec, \
-    InvalidYamlTestCase, TestRunner, Verdict, Acceptor
+    InvalidYamlTestCase, TestRunner, Verdict, Acceptor, FailedVerdict, ErrorVerdict, SuccessVerdict
 
 
 class FlapTestCaseTests(TestCase):
@@ -271,52 +271,33 @@ class TestRepositoryTest(TestCase):
         self.file_system.create_file(Path.fromText(path), content)
 
 
-class TestTestRunner(TestCase):
+class VerdictTests(TestCase):
 
     def setUp(self):
-        self.test_case = MagicMock()
-        self.runner = TestRunner(InMemoryFileSystem(), TEMP / "flap")
+        self._test_case_name = "foo"
+        self._verdict = None
+        self._spy = MagicMock()
 
-    def _run_tests(self, tests):
-        return self.runner.run(tests)
+    def _traverse(self):
+        assert self._verdict is not None, "The verdict has not been initialised!"
+        self._verdict.accept(self._spy)
 
-    def test_running_a_test_that_passes(self):
-        self.test_case.run_with.return_value = Verdict.PASS
+    def test_passed(self):
+        self._verdict = Verdict.passed(self._test_case_name)
+        self._traverse()
+        self._spy.on_success.assert_called_once_with(self._test_case_name)
 
-        results = self._run_tests([self.test_case])
+    def test_failed_expose_differences(self):
+        differences = [MissingFile("main.tex")]
+        self._verdict = Verdict.failed(self._test_case_name, differences)
+        self._traverse()
+        self._spy.on_failure.assert_called_once_with(self._test_case_name, differences)
 
-        self.assertEqual([(self.test_case, Verdict.PASS)], results)
-
-    def test_running_two_tests(self):
-        self.test_case.run_with.side_effect = [Verdict.PASS, Verdict.FAILED]
-
-        results = self._run_tests([self.test_case, self.test_case])
-
-        self.assertEqual(
-            [(self.test_case, Verdict.PASS),
-             (self.test_case, Verdict.FAILED)],
-            results)
-
-    def test_running_a_sequence_where_one_test_fails_midway(self):
-        self.test_case.run_with.side_effect = [
-            Verdict.PASS,
-            Verdict.ERROR,
-            Verdict.FAILED]
-
-        results = self._run_tests([self.test_case, self.test_case, self.test_case])
-
-        self.assertEqual(
-            [(self.test_case, Verdict.PASS),
-             (self.test_case, Verdict.ERROR),
-             (self.test_case, Verdict.FAILED)],
-            results)
-
-    def test_running_a_test_that_raise_an_exception(self):
-        self.test_case.run_with.return_value = Verdict.ERROR
-
-        results = self._run_tests([self.test_case])
-
-        self.assertEqual([(self.test_case, Verdict.ERROR)], results)
+    def test_error_expose_caught_exception(self):
+        caught_exception = Exception("Unknown error")
+        self._verdict = Verdict.error(self._test_case_name, caught_exception)
+        self._traverse()
+        self._spy.on_error.assert_called_once_with(self._test_case_name, caught_exception)
 
 
 class TestRunningTestCase(TestCase):
@@ -341,7 +322,7 @@ class TestRunningTestCase(TestCase):
 
         verdict = self._run_test()
 
-        self.assertEqual(Verdict.PASS, verdict)
+        self.assertIsInstance(verdict, SuccessVerdict)
 
     def test_running_a_test_case_that_fails(self):
         self._test_case = FlapTestCase("test 1",
@@ -350,7 +331,7 @@ class TestRunningTestCase(TestCase):
 
         verdict = self._run_test()
 
-        self.assertEqual(Verdict.FAILED, verdict)
+        self.assertIsInstance(verdict, FailedVerdict)
 
     def test_running_a_test_case_that_throws_an_exception(self):
         self._test_case = FlapTestCase("test 1",
@@ -362,7 +343,7 @@ class TestRunningTestCase(TestCase):
 
         verdict = self._run_test()
 
-        self.assertEqual(Verdict.ERROR, verdict)
+        self.assertIsInstance(verdict, ErrorVerdict)
 
 
 class ControllerTest(TestCase):
@@ -399,8 +380,8 @@ class ControllerTest(TestCase):
 
         self._check_acceptance()
 
-        self.assertIn(Acceptor.TEST_CASE.format(name="Test 1", verdict=Verdict.PASS.name), self._output.getvalue())
-        self.assertIn(Acceptor.TEST_CASE.format(name="Test 2", verdict=Verdict.FAILED.name), self._output.getvalue())
+        self.assertIn(Acceptor.TEST_CASE.format(name="Test 1", verdict=Acceptor.TEST_PASS), self._output.getvalue())
+        self.assertIn(Acceptor.TEST_CASE.format(name="Test 2", verdict=Acceptor.TEST_FAILED), self._output.getvalue())
         self.assertIn(Acceptor.HORIZONTAL_LINE, self._output.getvalue())
         self.assertIn(Acceptor.SUMMARY.format(total=2, passed=1, failed=1, error=0), self._output.getvalue())
 

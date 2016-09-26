@@ -151,10 +151,51 @@ class FlapTestCase:
                self._expected == other._expected
 
 
-class Verdict(Enum):
-    ERROR = 1
-    PASS = 2
-    FAILED = 3
+class Verdict:
+
+    def __init__(self, test_case_name):
+        self._test_case = test_case_name
+
+    @staticmethod
+    def passed(test_case):
+        return SuccessVerdict(test_case)
+
+    @staticmethod
+    def error(test_case, caught_exception):
+        return ErrorVerdict(test_case, caught_exception)
+
+    @staticmethod
+    def failed(test_case, differences):
+        return FailedVerdict(test_case, differences)
+
+
+class SuccessVerdict(Verdict):
+
+    def __init__(self, test_case_name):
+        super().__init__(test_case_name)
+
+    def accept(self, visitor):
+        visitor.on_success(self._test_case)
+
+
+class FailedVerdict(Verdict):
+
+    def __init__(self, test_case_name, differences):
+        super().__init__(test_case_name)
+        self._differences = differences
+
+    def accept(self, visitor):
+        visitor.on_failure(self._test_case, self._differences)
+
+
+class ErrorVerdict(Verdict):
+
+    def __init__(self, test_case_name, caught_exception):
+        super().__init__(test_case_name)
+        self._caught_exception = caught_exception
+
+    def accept(self, visitor):
+        visitor.on_error(self._test_case, self._caught_exception)
 
 
 class TestRunner:
@@ -167,13 +208,6 @@ class TestRunner:
         self._ui = UI(StringIO())
         self._directory = directory
 
-    def run(self, test_cases):
-        results = []
-        for each_test_case in test_cases:
-            verdict = each_test_case.run_with(self)
-            results += [(each_test_case, verdict)]
-        return results
-
     def test(self, name, project, expected):
         directory = self._directory / self._escape(name)
         try:
@@ -183,12 +217,13 @@ class TestRunner:
             self._run_flap(project_path / "main.tex", output_path)
             output = self._file_system.open(output_path)
             actual = LatexProject.extract_from_directory(output)
-            return self._verify(expected, actual)
+            return self._verify(name, expected, actual)
 
-        except Exception:
-            return Verdict.ERROR
+        except Exception as error:
+            return Verdict.error(name, error)
 
-    def _escape(self, name):
+    @staticmethod
+    def _escape(name):
         return name.replace(" ", "_")
 
     def _run_flap(self, root_latex_file, output_directory):
@@ -196,15 +231,18 @@ class TestRunner:
         arguments = ["__main.py__", str(root_latex_file), str(output_directory)]
         Controller(factory).run(arguments)
 
-    def _verify(self, expected, actual):
+    def _verify(self, test_case_name, expected, actual):
         differences = expected.difference_with(actual)
         if len(differences) == 0:
-            return Verdict.PASS
-        return Verdict.FAILED
+            return Verdict.passed(test_case_name)
+        return Verdict.failed(test_case_name, differences)
 
 
 class Acceptor:
 
+    TEST_PASS = "PASS"
+    TEST_FAILED = "FAILED"
+    TEST_ERROR = "ERROR"
     TEST_CASE = "{name:35}{verdict:10}\n"
     HORIZONTAL_LINE = "----------\n"
     SUMMARY = "{total} tests ({passed} success ; {failed} failure ; {error} error ; 0 Skipped)\n"
@@ -214,28 +252,43 @@ class Acceptor:
         self._repository = repository
         self._runner = runner
         self._output = output
+        self._counter = {
+            self.TEST_PASS: 0,
+            self.TEST_FAILED: 0,
+            self.TEST_ERROR: 0
+        }
 
     def check(self):
         test_cases = self._repository.fetch_all()
-        results = self._runner.run(test_cases)
-        if not results:
+        if not test_cases:
             self._show(self.NO_TEST_FOUND)
             return
-        
-        for (test_case, verdict) in results:
-            self._show(self.TEST_CASE, name=test_case.name, verdict=verdict.name)
+
+        for each_test_case in test_cases:
+            verdict = each_test_case.run_with(self._runner)
+            verdict.accept(self)
+
+        self._show_summary(test_cases)
+
+    def _show_summary(self, test_cases):
         self._show(self.HORIZONTAL_LINE)
-        self._show(
-            self.SUMMARY,
-            total=len(results),
-            passed=self._count(results, Verdict.PASS),
-            failed=self._count(results, Verdict.FAILED),
-            error=self._count(results, Verdict.ERROR),
-        )
+        self._show(self.SUMMARY,
+                   total=len(test_cases),
+                   passed=self._counter[self.TEST_PASS],
+                   failed=self._counter[self.TEST_FAILED],
+                   error=self._counter[self.TEST_ERROR])
+
+    def on_success(self, test_case_name):
+        self._counter[self.TEST_PASS] += 1
+        self._show(self.TEST_CASE, name=test_case_name, verdict=self.TEST_PASS)
+
+    def on_failure(self, test_case_name, differences):
+        self._counter[self.TEST_FAILED] += 1
+        self._show(self.TEST_CASE, name=test_case_name, verdict=self.TEST_FAILED)
+
+    def on_error(self, test_case_name, caught_exception):
+        self._counter[self.TEST_ERROR] += 1
+        self._show(self.TEST_CASE, name=test_case_name, verdict=self.TEST_ERROR)
 
     def _show(self, message, **values):
         self._output.write(message.format(**values))
-
-    @staticmethod
-    def _count(test_cases, verdict):
-        return len([v for (t, v) in test_cases if v == verdict])

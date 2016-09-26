@@ -15,8 +15,6 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from flap.path import Path
-
 
 class TexFile:
 
