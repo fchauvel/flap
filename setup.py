@@ -18,9 +18,8 @@
 #
 
 import flap
-
+from flap.util.releasing import Release
 from setuptools import setup, find_packages
-from flap.util import Release
 
 setup(name='FLaP',
      version=flap.__version__,
