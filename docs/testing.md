@@ -51,3 +51,19 @@ expected:
 By convention, each LaTeX project must have a file named `main.tex` at
 its top level. Similarly, FLaP will be invoked with its default options,
 and will therefore generate a file named `merged.tex`.
+
+By convention, the acceptance tests are located in `tests/acceptance/tests`. 
+To run them only, use the command:
+````bash
+$> python -m tests.acceptance
+Test case name                               Status
+----------
+Bibliography in a sub-directory              PASS
+includegrahics without extension             PASS
+input without extension                      PASS
+nothing to flatten                           PASS
+input without extension                      PASS
+----------
+5 tests (5 success ; 0 failure ; 0 error ; 0 skipped)
+````
+ 
