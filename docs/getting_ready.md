@@ -1,15 +1,15 @@
 # Getting Ready to Develop
 
-FLaP does not requires any specific packages. Yet, for checking code coverage, I
-suggest you install the coverage module (ideally in a virtual environment):
+FLaP does not require any specific package to run, but its tests do requires some. These dependencies
+are listed in `requirements.txt` and you can use pip to install them in one go, as follows:
 
     $> virtualenv venv
+    $> pip install -r requirements.txt
     $> .\venv\Scripts\activate.bat
     $> python setup.py develop
 
 You can then check the test coverage using the following commands:
 
-    $> pip install coverage
     $> coverage run setup.py test
     $> coverage report --omit="*test*,*setup*"
     
