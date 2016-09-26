@@ -16,12 +16,12 @@
 #
 
 from unittest import TestCase, main
-from mock import MagicMock
 
 from flap.engine import Fragment, Processor
 from flap.substitutions.comments import CommentsRemover
-from flap.path import TEMP
-from flap.FileSystem import File
+from flap.util.oofs import File
+from flap.util.path import TEMP
+from mock import MagicMock
 
 
 class CommentRemoverTest(TestCase):

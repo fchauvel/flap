@@ -15,8 +15,8 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from flap.path import Path
-from flap.FileSystem import MissingFile
+from flap.util.oofs import MissingFile
+from flap.util.path import Path
 
 
 class Processor:

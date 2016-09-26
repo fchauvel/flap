@@ -16,14 +16,14 @@
 #
 
 from unittest import TestCase
-from mock import MagicMock
 
+from flap.util.oofs import InMemoryFileSystem
+from flap.util.path import Path, TEMP
 from io import StringIO
-from flap.FileSystem import InMemoryFileSystem
-from flap.path import Path, TEMP
-from tests.acceptance.latex_project import TexFile, LatexProject, MissingFile
+from mock import MagicMock
 from tests.acceptance.engine import FlapTestCase, FileBasedTestRepository, YamlCodec, \
     InvalidYamlTestCase, TestRunner, Verdict, Acceptor, FailedVerdict, ErrorVerdict, SuccessVerdict
+from tests.acceptance.latex_project import TexFile, LatexProject, MissingFile
 
 
 class FlapTestCaseTests(TestCase):

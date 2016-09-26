@@ -16,8 +16,9 @@
 #
 
 from unittest import TestCase
-from flap.path import Path
-from flap.FileSystem import InMemoryFileSystem
+
+from flap.util.oofs import InMemoryFileSystem
+from flap.util.path import Path
 from tests.acceptance.latex_project import LatexProject, TexFile, MissingFile, ExtraFile, DifferentContent
 
 

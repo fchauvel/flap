@@ -17,8 +17,8 @@
 
 from unittest import TestCase
 
-from flap.path import TEMP
 from flap.engine import Flap
+from flap.util.path import TEMP
 
 
 TEST_DIRECTORY = TEMP / "flap-tests"

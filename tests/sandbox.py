@@ -14,15 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
-import os
 import subprocess
-
 from unittest import TestCase, main, skip
 
+import os
 from flap.ui import Controller, UI
-from flap.FileSystem import OSFileSystem
+from flap.util.oofs import OSFileSystem
 
-  
+
 @skip("Sandbox")
 class SandboxTest(TestCase):        
 

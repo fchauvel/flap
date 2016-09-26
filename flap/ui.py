@@ -18,10 +18,10 @@
 import sys
 
 import flap
-from flap.FileSystem import OSFileSystem
-from flap.substitutions.factory import ProcessorFactory
 from flap.engine import Flap, Listener, GraphicNotFound, TexFileNotFound
-from flap.path import Path, TEMP
+from flap.substitutions.factory import ProcessorFactory
+from flap.util.oofs import OSFileSystem
+from flap.util.path import Path, TEMP
 
 
 class UI(Listener):

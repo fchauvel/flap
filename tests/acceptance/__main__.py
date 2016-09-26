@@ -16,9 +16,10 @@
 #
 
 from sys import stdout
+
+from flap.util.oofs import OSFileSystem
+from flap.util.path import Path, TEMP
 from io import StringIO
-from flap.path import Path, TEMP
-from flap.FileSystem import OSFileSystem
 from tests.acceptance.engine import FileBasedTestRepository, YamlCodec, TestRunner, Acceptor
 
 file_system = OSFileSystem()

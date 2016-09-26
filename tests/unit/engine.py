@@ -16,13 +16,12 @@
 #
 
 from unittest import TestCase, main
-from mock import MagicMock
 
-from flap.FileSystem import InMemoryFileSystem, File, MissingFile
 from flap.engine import Flap, Fragment, Listener
-from flap.path import ROOT
 from flap.substitutions.factory import ProcessorFactory
-
+from flap.util.oofs import InMemoryFileSystem, File, MissingFile
+from flap.util.path import ROOT
+from mock import MagicMock
 from tests.commons import FlapTest
 
 

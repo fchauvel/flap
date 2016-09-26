@@ -16,11 +16,8 @@
 #
 
 import yaml
-from enum import Enum
-from io import StringIO
 from flap.ui import Controller, Factory, UI
-from flap.path import TEMP
-
+from io import StringIO
 from tests.acceptance.latex_project import TexFile, LatexProject
 
 

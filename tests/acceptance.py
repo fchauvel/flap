@@ -17,17 +17,14 @@
 
 from unittest import TestCase, main as testmain
 
-from mock import patch
-
-from io import StringIO
-from re import search
-from os import chdir
-
 from flap.ui import main
-from flap.FileSystem import OSFileSystem
-from flap.path import TEMP
-
-from tests.commons import LatexProject, FlapTest, TEST_DIRECTORY
+from flap.util.oofs import OSFileSystem
+from flap.util.path import TEMP
+from io import StringIO
+from mock import patch
+from os import chdir
+from re import search
+from tests.commons import FlapTest
 
 
 class OSFileSystemTest(TestCase):

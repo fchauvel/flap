@@ -15,15 +15,16 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import re
 from unittest import TestCase, main
-from mock import patch, MagicMock
+
 import flap
-from io import StringIO
-from flap.path import ROOT, TEMP, Path
+import re
 from flap.engine import Fragment, Flap, GraphicNotFound, TexFileNotFound
-from flap.FileSystem import File
 from flap.ui import UI, Controller, Factory
+from flap.util.oofs import File
+from flap.util.path import ROOT, Path
+from io import StringIO
+from mock import patch, MagicMock
 
 
 class UiTest(TestCase):
