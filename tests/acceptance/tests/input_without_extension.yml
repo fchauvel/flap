@@ -15,7 +15,7 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-name: input without extension
+name: \input without extension
 description: >
    Test that FLaP does properly flatten single '\input' directives
    when '.tex' extension is given

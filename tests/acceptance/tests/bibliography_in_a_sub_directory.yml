@@ -15,10 +15,10 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-name: input without extension
+name: Bibliography in a sub-directory
 description: >
-   Test that FLaP does properly flatten single '\input' directives
-   when '.tex' extension is given
+   Test that FLaP does properly flatten a document whose bibliography
+   is a BibTeX file stored in a sub-directory
 
 # Describe the LaTeX projects, as found on the disk
 project:
@@ -27,17 +27,21 @@ project:
       \documentclass{article}
 
       \begin{document}
-      This is an example of input directive
-      \input{result}
+      This is an example with a citation \cite{BA1991}
+      \bibliography{biblio/mybib}
       \end{document}
 
-  - path: result.tex
+  - path: biblio/mybib.bib
     content: |
-      \input{sub_result}
-
-  - path: sub_result.tex
-    content: |
-      Here are the results!
+      @Article{BA1999,
+         Title                    = {Emergence of Scaling in Random Networks},
+         Author                   = {Barab\'{a}si, Albert-L\'{a}szl\'{o} and Albert, R\'{e}ka},
+         Journal                  = {Science},
+         Year                     = {1999},
+         Number                   = {5439},
+         Pages                    = {509-512},
+         Volume                   = {286},
+      }
 
 # Describe the LaTeX project, once flattened
 expected:
@@ -46,7 +50,19 @@ expected:
       \documentclass{article}
 
       \begin{document}
-      This is an example of input directive
-      Here are the results!
+      This is an example with a citation \cite{BA1991}
+      \bibliography{biblio_mybib}
       \end{document}
+
+  - path: biblio_mybib.bib
+    content: |
+      @Article{BA1999,
+         Title                    = {Emergence of Scaling in Random Networks},
+         Author                   = {Barab\'{a}si, Albert-L\'{a}szl\'{o} and Albert, R\'{e}ka},
+         Journal                  = {Science},
+         Year                     = {1999},
+         Number                   = {5439},
+         Pages                    = {509-512},
+         Volume                   = {286},
+      }
 

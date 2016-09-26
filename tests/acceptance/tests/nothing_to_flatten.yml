@@ -15,7 +15,7 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-name: nothing to flatten
+name: Nothing to flatten
 description: >
    Test that FLaP does not modify LaTeX files where nothing has
    to be flatten.

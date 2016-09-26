@@ -15,7 +15,7 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-name: includegrahics without extension
+name: \includegraphics without extension
 description: >
    Test that FLaP does properly flatten single '\includegraphics' directives
    when the image is in the same directory and the file has no extension
