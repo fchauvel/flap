@@ -22,7 +22,7 @@ from flap.util.path import Path, TEMP
 from io import StringIO
 from mock import MagicMock
 from tests.acceptance.engine import FlapTestCase, FileBasedTestRepository, YamlCodec, \
-    InvalidYamlTestCase, TestRunner, Verdict, Acceptor, FailedVerdict, ErrorVerdict, SuccessVerdict
+    InvalidYamlTestCase, TestRunner, Verdict, Acceptor, FailedVerdict, ErrorVerdict, SuccessVerdict, SkippedVerdict
 from tests.acceptance.latex_project import TexFile, LatexProject, MissingFile
 
 
@@ -33,6 +33,9 @@ class FlapTestCaseTests(TestCase):
         self.expected = LatexProject(TexFile("main.tex", "blabla"))
         self.test_case_name = "foo"
         self.test_case = FlapTestCase(self.test_case_name, self.project, self.expected)
+
+    def test_is_not_skipped(self):
+        self.assertFalse(self.test_case.is_skipped)
 
     def test_name_is_exposed(self):
         self.assertEqual(self.test_case_name, self.test_case.name)
@@ -66,10 +69,37 @@ class FlapTestCaseTests(TestCase):
         ),
         self.test_case)
 
+    def test_differs_from_an_equivalent_but_skipped_case(self):
+        self.assertNotEqual(FlapTestCase(
+            "foo",
+            LatexProject(TexFile("main.tex", "blabla")),
+            LatexProject(TexFile("main.tex", "blabla")),
+            skipped=True
+        ),
+        self.test_case)
+
     def test_run(self):
         runner = MagicMock()
         self.test_case.run_with(runner)
         runner.test.assert_called_once_with(self.test_case.name, self.test_case.project, self.test_case.expected)
+
+
+class TestSkippedFlapTestCase(TestCase):
+
+    def setUp(self):
+        self.project = LatexProject(TexFile("main.tex", "blabla"))
+        self.expected = LatexProject(TexFile("main.tex", "blabla"))
+        self.test_case_name = "foo"
+        self.test_case = FlapTestCase(self.test_case_name, self.project, self.expected, True)
+
+    def test_is_skipped(self):
+        self.assertTrue(self.test_case.is_skipped)
+
+    def test_run(self):
+        runner = MagicMock()
+        result = self.test_case.run_with(runner)
+        runner.test.assert_not_called()
+        self.assertIsInstance(result, SkippedVerdict)
 
 
 class TestYamlCodec(TestCase):
@@ -91,6 +121,18 @@ class TestYamlCodec(TestCase):
                         "test 1",
                         LatexProject(TexFile("main.tex", "\\documentclass{article}\n\\begin{document}\n  This is a simple \\LaTeX document!\n\\end{document}")),
                         LatexProject(TexFile("main.tex", "\\documentclass{article}\n\\begin{document}\n  This is a simple \\LaTeX document!\n\\end{document}")))
+
+        self.assertEqual(expected, test_case)
+
+    def test_parsing_a_skipped_yaml_code(self):
+        yaml_file = self._create_file(YamlTest.that_is_skipped("Test 1"))
+        test_case = self._read_test_case_from(yaml_file)
+
+        expected = FlapTestCase(
+                        "Test 1",
+                        LatexProject(TexFile("main.tex", "blabla")),
+                        LatexProject(TexFile("merged.tex", "blabla")),
+                        True)
 
         self.assertEqual(expected, test_case)
 
@@ -212,6 +254,10 @@ class VerdictTests(TestCase):
         self._traverse()
         self._spy.on_error.assert_called_once_with(self._test_case_name, caught_exception)
 
+    def test_skipped(self):
+        self._verdict = SkippedVerdict("test 1")
+        self._traverse()
+        self._spy.on_skip.assert_called_once_with("test 1")
 
 class TestRunningTestCase(TestCase):
 
@@ -279,7 +325,16 @@ class ControllerTest(TestCase):
         self._check_acceptance()
 
         self._verify_test_passes("Test 1")
-        self._verify_summary(total=1, passed=1, failed=0, error=0)
+        self._verify_summary(total=1, passed=1, failed=0, error=0, skipped=0)
+
+    def test_case_that_is_skipped(self):
+        self._create_file("tests/test_1.yml",
+                          YamlTest.that_is_skipped("Test 1"))
+
+        self._check_acceptance()
+
+        self._verify_test_is_skipped("Test 1")
+        self._verify_summary(total=1, passed=0, failed=0, error=0, skipped=1)
 
     def test_case_that_fails_because_of_wrong_file_content(self):
         self._create_file("tests/test_1.yml",
@@ -289,7 +344,7 @@ class ControllerTest(TestCase):
 
         self._verify_test_failed("Test 1")
         self._verify_content_mismatch_for("merged.tex")
-        self._verify_summary(total=1, passed=0, failed=1, error=0)
+        self._verify_summary(total=1, passed=0, failed=1, error=0, skipped=0)
 
     def test_case_that_fails_because_of_missing_file(self):
         self._create_file("tests/test_1.yml",
@@ -299,7 +354,7 @@ class ControllerTest(TestCase):
 
         self._verify_test_failed("Test 1")
         self._verify_missing_file("not_merged.tex")
-        self._verify_summary(total=1, passed=0, failed=1, error=0)
+        self._verify_summary(total=1, passed=0, failed=1, error=0, skipped=0)
 
     def test_case_that_fails_because_of_unexpected_file(self):
         self._create_file("tests/test_1.yml",
@@ -309,7 +364,7 @@ class ControllerTest(TestCase):
 
         self._verify_test_failed("Test 1")
         self._verify_unexpected_file("merged.tex")
-        self._verify_summary(total=1, passed=0, failed=1, error=0)
+        self._verify_summary(total=1, passed=0, failed=1, error=0, skipped=0)
 
     def test_sequence_of_two_tests(self):
         self._create_file("tests/test_1.yml", YamlTest.that_passes("Test 1"))
@@ -320,7 +375,7 @@ class ControllerTest(TestCase):
         self._verify_test_passes("Test 1")
         self._verify_test_failed("Test 2")
         self._verify_missing_file("not_merged.tex")
-        self._verify_summary(total=2, passed=1, failed=1, error=0)
+        self._verify_summary(total=2, passed=1, failed=1, error=0, skipped=0)
 
     def _create_file(self, location, content):
         self._file_system.create_file(Path.fromText(location), content)
@@ -330,6 +385,9 @@ class ControllerTest(TestCase):
 
     def _verify_test_passes(self, test_case_name):
         self.assertIn(Acceptor.TEST_CASE.format(name=test_case_name, verdict=Acceptor.TEST_PASS), self._output.getvalue())
+
+    def _verify_test_is_skipped(self, test_case_name):
+        self.assertIn(Acceptor.TEST_CASE.format(name=test_case_name, verdict=Acceptor.TEST_SKIPPED), self._output.getvalue())
 
     def _verify_test_failed(self, test_name):
         self.assertIn(Acceptor.TEST_CASE.format(name=test_name, verdict=Acceptor.TEST_FAILED), self._output.getvalue())
@@ -353,8 +411,19 @@ class ControllerTest(TestCase):
 class YamlTest:
 
     @staticmethod
-    def that_is_invalid(self):
+    def that_is_invalid():
         return "blabla bla"
+
+    @staticmethod
+    def that_is_skipped(test_name):
+        return ("name: {name}\n"
+                "skipped: true\n"
+                "project:\n"
+                " - path: main.tex\n"
+                "   content: blabla\n"
+                "expected:\n"
+                "  - path: merged.tex\n"
+                "    content: blabla\n").format(name=test_name)
 
     @staticmethod
     def with_misspelled_project_key():

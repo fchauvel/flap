@@ -30,7 +30,7 @@ project:
       \include{part.tex}
       \end{document}
 
-  - path: introduction.tex
+  - path: part.tex
     content: |
       Here is the content of the part.
 
@@ -41,6 +41,6 @@ expected:
       \documentclass{article}
       \begin{document}
       This is an example of the include directive:
-      Here is the content of the part.
+      Here is the content of the part.\clearpage
       \end{document}
 

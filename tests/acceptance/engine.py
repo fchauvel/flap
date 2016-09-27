@@ -34,6 +34,7 @@ class YamlCodec:
     PROJECT_KEY = "project"
     PATH_KEY = "path"
     CONTENT_KEY = "content"
+    SKIPPED_KEY = "skipped"
 
     def detect_test_case(self, file):
         return file.has_extension_from(self.YAML_EXTENSIONS)
@@ -42,7 +43,8 @@ class YamlCodec:
         content = yaml.load(StringIO(file.content()))
         arguments = [self._extract_name_from(content),
                      self._extract_project_from(content),
-                     self._extract_expected_from(content)]
+                     self._extract_expected_from(content),
+                     self._extract_is_skipped_from(content)]
         return FlapTestCase(*arguments)
 
     def _extract_name_from(self, content):
@@ -83,6 +85,12 @@ class YamlCodec:
             self._handle_missing_key(self.CONTENT_KEY)
         return entry[self.CONTENT_KEY].strip()
 
+    def _extract_is_skipped_from(self, content):
+        if self.SKIPPED_KEY not in content:
+            return False
+        else:
+            return content[self.SKIPPED_KEY]
+
 
 class InvalidYamlTestCase(Exception):
 
@@ -118,12 +126,13 @@ class FileBasedTestRepository:
 
 class FlapTestCase:
 
-    def __init__(self, name, project, expected):
+    def __init__(self, name, project, expected, skipped=False):
         if not len or len(name) == 0:
             raise ValueError("Invalid test case name (found '%s')" % name)
         self._name = name
         self._project = project
         self._expected = expected
+        self._is_skipped = skipped
 
     @property
     def name(self):
@@ -137,7 +146,13 @@ class FlapTestCase:
     def expected(self):
         return self._expected
 
+    @property
+    def is_skipped(self):
+        return self._is_skipped
+
     def run_with(self, runner):
+        if self.is_skipped:
+            return SkippedVerdict(self._name)
         return runner.test(self._name, self._project, self._expected)
 
     def __eq__(self, other):
@@ -145,7 +160,8 @@ class FlapTestCase:
             return False
         return self._name == other._name and \
                self._project == other._project and \
-               self._expected == other._expected
+               self._expected == other._expected and \
+               self._is_skipped == other._is_skipped
 
 
 class Verdict:
@@ -164,6 +180,15 @@ class Verdict:
     @staticmethod
     def failed(test_case, differences):
         return FailedVerdict(test_case, differences)
+
+
+class SkippedVerdict(Verdict):
+
+    def __init__(self, test_case_name):
+        super().__init__(test_case_name)
+
+    def accept(self, visitor):
+        visitor.on_skip(self._test_case)
 
 
 class SuccessVerdict(Verdict):
@@ -240,9 +265,10 @@ class Acceptor:
     TEST_PASS = "PASS"
     TEST_FAILED = "FAILED"
     TEST_ERROR = "ERROR"
+    TEST_SKIPPED = "SKIPPED"
     TEST_CASE = "{name:45}{verdict:10}\n"
     HORIZONTAL_LINE = "----------\n"
-    SUMMARY = "{total} tests ({passed} success ; {failed} failure ; {error} error ; 0 skipped)\n"
+    SUMMARY = "{total} tests ({passed} success ; {failed} failure ; {error} error ; {skipped} skipped)\n"
     NO_TEST_FOUND = "Could not find any acceptance test.\n"
     MISSING_FILE = "\t - Could not find file '{file_name}'\n"
     UNEXPECTED_FILE = "\t - Unexpected file '{file_name}'\n"
@@ -255,7 +281,8 @@ class Acceptor:
         self._counter = {
             self.TEST_PASS: 0,
             self.TEST_FAILED: 0,
-            self.TEST_ERROR: 0
+            self.TEST_ERROR: 0,
+            self.TEST_SKIPPED: 0
         }
 
     def check(self):
@@ -278,7 +305,8 @@ class Acceptor:
                        total=self._test_case_count,
                        passed=self._counter[self.TEST_PASS],
                        failed=self._counter[self.TEST_FAILED],
-                       error=self._counter[self.TEST_ERROR])
+                       error=self._counter[self.TEST_ERROR],
+                       skipped=self._counter[self.TEST_SKIPPED])
 
     @property
     def _no_test_case_found(self):
@@ -291,6 +319,10 @@ class Acceptor:
     def on_success(self, test_case_name):
         self._counter[self.TEST_PASS] += 1
         self._show(self.TEST_CASE, name=test_case_name, verdict=self.TEST_PASS)
+
+    def on_skip(self, test_case_name):
+        self._counter[self.TEST_SKIPPED] += 1
+        self._show(self.TEST_CASE, name=test_case_name, verdict=self.TEST_SKIPPED)
 
     def on_failure(self, test_case_name, differences):
         self._counter[self.TEST_FAILED] += 1
