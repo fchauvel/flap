@@ -29,7 +29,7 @@ class CommentsRemover(ProcessorDecorator):
 
     def fragments(self):
         for each_fragment in self._delegate.fragments():
-            without_comments = sub(r"(?:\s*)(?<!\\|\|)%(?:[^\n]*)\n", "", each_fragment.text())
+            without_comments = sub(r"(?: *)(?<!\\|\|)%(?:[^\n]*)\n", "", each_fragment.text())
             each_fragment._text = without_comments
             yield each_fragment
 
