@@ -30,9 +30,15 @@ project:
       This is an example of graphic inclusion:
       \includegraphics%
       [width=3cm]%
-      {figure}
+      {figure1}
+      \includegraphics %
+      [width=3cm] %
+      {figure2}
       \end{document}
-  - path: figure.pdf
+  - path: figure1.pdf
+    content: |
+      This is a PDF image!
+  - path: figure2.pdf
     content: |
       This is a PDF image!
 # Describe the LaTeX project, once flattened
@@ -43,8 +49,12 @@ expected:
       \usepackage{graphicx}
       \begin{document}
       This is an example of graphic inclusion:
-      \includegraphics[width=3cm]{figure}
+      \includegraphics[width=3cm]{figure1}
+      \includegraphics[width=3cm]{figure2}
       \end{document}
-  - path: figure.pdf
+  - path: figure1.pdf
+    content: |
+      This is a PDF image!
+  - path: figure2.pdf
     content: |
       This is a PDF image!

@@ -3,13 +3,13 @@
 :Email:     franck.chauvel@gmail.com
 
 link:https://pypi.python.org/pypi/FLaP[image:https://img.shields.io/pypi/v/FLaP.svg[]]
-image:https://img.shields.io/pypi/l/FLaP.svg[]
+link:http://www.gnu.org/licenses/gpl-3.0[image:https://img.shields.io/pypi/l/FLaP.svg[]]
 link:https://codeship.com/projects/97486[image:https://img.shields.io/codeship/ad32e1e0-27d8-0133-8e78-7af7072ae828.svg[]]
 link:https://codecov.io/gh/fchauvel/flap[image:https://img.shields.io/codecov/c/github/fchauvel/flap/master.svg[]]
 link:http://pypi-ranking.info/module/FLaP[image:https://img.shields.io/pypi/dm/FLaP.svg[]]
 
 Flap is a simple utility that flattens LaTeX projects. It takes a
-well-organised LaTeX project &mdash;one you so carefully crafted&mdash;and
+well-organised LaTeX project&mdash;one you so carefully crafted&mdash;and
 merged it into a vulgar single LaTeX file in a 'flat' directory.
 
 *Why?* Some publishers require one such flat structure when you submit
@@ -57,4 +57,6 @@ Here is a list of features, which are not yet supported:
 
 == Included in Next Release
 
-. Fix running FLaP on a LaTeX file located in the working directory
+. Bug fix for running FLaP on a LaTeX file located in the working directory
+. Bug fix regarding the extraction of subfiles directives
+. Bug fix regarding whitspaces in multiline commands
