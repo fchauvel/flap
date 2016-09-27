@@ -259,6 +259,7 @@ class VerdictTests(TestCase):
         self._traverse()
         self._spy.on_skip.assert_called_once_with("test 1")
 
+
 class TestRunningTestCase(TestCase):
 
     def setUp(self):

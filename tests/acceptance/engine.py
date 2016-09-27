@@ -270,9 +270,9 @@ class Acceptor:
     HORIZONTAL_LINE = "----------\n"
     SUMMARY = "{total} tests ({passed} success ; {failed} failure ; {error} error ; {skipped} skipped)\n"
     NO_TEST_FOUND = "Could not find any acceptance test.\n"
-    MISSING_FILE = "\t - Could not find file '{file_name}'\n"
-    UNEXPECTED_FILE = "\t - Unexpected file '{file_name}'\n"
-    CONTENT_MISMATCH = "\t - Content mismatch for file '{file_name}'\n"
+    MISSING_FILE = "   - Could not find file '{file_name}'\n"
+    UNEXPECTED_FILE = "   - Unexpected file '{file_name}'\n"
+    CONTENT_MISMATCH = "   - Content mismatch for file '{file_name}'\n"
 
     def __init__(self, repository, runner, output):
         self._test_case_repository = repository
