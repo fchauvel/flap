@@ -15,9 +15,9 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-name: subfiles from the subfiles package
+name: include directive
 description: >
-   Test that FLaP does properly flatten single '\input' directives
+   Test that FLaP does properly flatten single '\include' directives
    when '.tex' extension is given
 
 # Describe the LaTeX projects, as found on the disk
@@ -25,30 +25,22 @@ project:
   - path: main.tex
     content: |
       \documentclass{article}
-      \usepackage{subfiles}
       \begin{document}
-      This is an example of subfiles.
-      \subfile{parts/introduction}
+      This is an example of the include directive:
+      \include{part.tex}
       \end{document}
 
-  - path: parts/introduction.tex
+  - path: introduction.tex
     content: |
-      \documentclass[main.tex]{subfiles}
-
-      \begin{document}
-      Here is the content of the first part.
-      \end{document}
+      Here is the content of the part.
 
 # Describe the LaTeX project, once flattened
 expected:
   - path: merged.tex
     content: |
       \documentclass{article}
-      \usepackage{subfiles}
       \begin{document}
-      This is an example of subfiles.
-
-      Here is the content of the first part.
-
+      This is an example of the include directive:
+      Here is the content of the part.
       \end{document}
 
