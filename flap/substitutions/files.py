@@ -74,7 +74,7 @@ class SubFileExtractor(Substitution):
         super().__init__(delegate, flap)
 
     def prepare_pattern(self):
-        return compile(r"\\documentclass.*\{subfiles\}.*\\begin\{document\}(.+)\\end\{document\}", DOTALL)
+        return compile(r"\\documentclass(?:\[[^\]]+\])?\{subfiles\}.*\\begin\{document\}(.+)\\end\{document\}", DOTALL)
 
     def replacements_for(self, fragment, match):
         if match is None:
