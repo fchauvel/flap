@@ -15,25 +15,31 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-name: Nothing to flatten
+name: graphicspath
 description: >
-   Test that FLaP does not modify LaTeX files where nothing has
-   to be flatten.
+   Test that FLaP detects and accounts for '\graphicpath' directives
  
 project:
   - path: main.tex
     content: |
        \documentclass{article}
-       
+       \graphicspath{{./img}}
        \begin{document}
-       This is a sample \LaTeX document!
+       This is an example of including a graphics:
+       \includegraphics[width=\textwidth]{figure}
        \end{document}
-
+  - path: img/figure.pdf
+    content: |
+      This is PDF file!
 expected:
   - path: merged.tex
     content: |
        \documentclass{article}
        
        \begin{document}
-       This is a sample \LaTeX document!
+       This is an example of including a graphics:
+       \includegraphics[width=\textwidth]{img_figure}
        \end{document}
+  - path: img_figure.pdf
+    content: |
+      This is PDF file!
