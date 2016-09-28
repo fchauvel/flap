@@ -15,12 +15,12 @@ configuration (see file `tox.ini`) will run the test suite using Python 3.2, 3.3
 ## Acceptance Tests
 
 FLaP also includes a few "acceptance tests" that check various types of 
-LaTeX projects. Theses acceptance tests are also 
-end-to-end tests that trigger FLaP from the outset, in a separate 
-process. 
+LaTeX projects. Theses acceptance tests are end-to-end tests that trigger
+FLaP from the outset.
 
 Each acceptance test in described in a separate YAML file, as shown in 
-the example below:
+the example below, where we describe a single-file project and the content
+expected once it is flattened.
 
 ```yaml
 # Some metadata about the test
@@ -48,22 +48,38 @@ expected:
       \end{document}
 ```
 
-By convention, each LaTeX project must have a file named `main.tex` at
+By convention, such LaTeX project must have their root file named `main.tex`, at
 its top level. Similarly, FLaP will be invoked with its default options,
 and will therefore generate a file named `merged.tex`.
 
-By convention, the acceptance tests are located in `tests/acceptance/tests`. 
-To run them only, use the command:
+By convention, the acceptance tests are located in `tests/acceptance/tests`
+and we can organise them into subdirectories as need be. 
+
+All the YAML tests are automatically detected and bundled into a single Python class `YAMLAcceptanceTests` ( 
+dynamically generated&mdash;don't search for it). We can use unittest to run only these acceptance tests using:
 ````bash
-$> python -m tests.acceptance
-Test case name                               Status
-----------
-Bibliography in a sub-directory              PASS
-includegrahics without extension             PASS
-input without extension                      PASS
-nothing to flatten                           PASS
-input without extension                      PASS
-----------
-5 tests (5 success ; 0 failure ; 0 error ; 0 skipped)
+$ python -m unittest -v tests.acceptance
+test Bibliography in a sub-directory (tests.acceptance.YAMLTests) ... ok
+test Nothing to flatten (tests.acceptance.YAMLTests) ... ok
+test \includegraphics without extension (tests.acceptance.YAMLTests) ... ok
+test \input used recursively (tests.acceptance.YAMLTests) ... ok
+test \input without extension (tests.acceptance.YAMLTests) ... ok
+test conflicting \includegraphics (tests.acceptance.YAMLTests) ... ok
+test graphicspath (tests.acceptance.YAMLTests) ... ok
+test include directive (tests.acceptance.YAMLTests) ... ok
+test include only directive (tests.acceptance.YAMLTests) ... ok
+test multiline commands (tests.acceptance.YAMLTests) ... ok
+test subfiles from the subfiles package (tests.acceptance.YAMLTests) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 0.076s
+
+OK
 ````
- 
+
+> Note that these acceptance tests are first deserialised on disk in 
+the `$TEMP/flap/acceptance`, where `$TEMP` for stands the temporary 
+directory. The resulting directories are only deleted when these tests start, and looking at what was produced can help you troubleshoot.
+You can check where `$TEMP` points using:
+`$> python -c "import tempfile;print(tempfile.gettempdir())"`
+
