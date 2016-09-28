@@ -232,17 +232,13 @@ class TestRunner:
 
     def test(self, name, project, expected):
         directory = self._directory / self._escape(name)
-        try:
-            project_path = directory / "project"
-            output_path = directory / "flatten"
-            project.setup(self._file_system, project_path)
-            self._run_flap(project_path / "main.tex", output_path)
-            output = self._file_system.open(output_path)
-            actual = LatexProject.extract_from_directory(output)
-            return self._verify(name, expected, actual)
-
-        except Exception as error:
-            return Verdict.error(name, error)
+        project_path = directory / "project"
+        output_path = directory / "flatten"
+        project.setup(self._file_system, project_path)
+        self._run_flap(project_path / "main.tex", output_path)
+        output = self._file_system.open(output_path)
+        actual = LatexProject.extract_from_directory(output)
+        return self._verify(name, expected, actual)
 
     @staticmethod
     def _escape(name):
@@ -254,94 +250,6 @@ class TestRunner:
         Controller(factory).run(arguments)
 
     def _verify(self, test_case_name, expected, actual):
-        differences = expected.difference_with(actual)
-        if len(differences) == 0:
-            return Verdict.passed(test_case_name)
-        return Verdict.failed(test_case_name, differences)
-
-
-class Acceptor:
-
-    TEST_PASS = "PASS"
-    TEST_FAILED = "FAILED"
-    TEST_ERROR = "ERROR"
-    TEST_SKIPPED = "SKIPPED"
-    TEST_CASE = "{name:45}{verdict:10}\n"
-    HORIZONTAL_LINE = "----------\n"
-    SUMMARY = "{total} tests ({passed} success ; {failed} failure ; {error} error ; {skipped} skipped)\n"
-    NO_TEST_FOUND = "Could not find any acceptance test.\n"
-    MISSING_FILE = "   - Could not find file '{file_name}'\n"
-    UNEXPECTED_FILE = "   - Unexpected file '{file_name}'\n"
-    CONTENT_MISMATCH = "   - Content mismatch for file '{file_name}'\n"
-
-    def __init__(self, repository, runner, output):
-        self._test_case_repository = repository
-        self._runner = runner
-        self._output = output
-        self._counter = {
-            self.TEST_PASS: 0,
-            self.TEST_FAILED: 0,
-            self.TEST_ERROR: 0,
-            self.TEST_SKIPPED: 0
-        }
-
-    def check(self):
-        self._show_header()
-        for each_test_case in self._test_case_repository.fetch_all():
-            verdict = each_test_case.run_with(self._runner)
-            verdict.accept(self)
-        self._show_summary()
-
-    def _show_header(self):
-        self._show(self.TEST_CASE, name="Test case name", verdict="Status")
-        self._show(self.HORIZONTAL_LINE)
-
-    def _show_summary(self):
-        if self._no_test_case_found:
-            self._show(self.NO_TEST_FOUND)
-        else:
-            self._show(self.HORIZONTAL_LINE)
-            self._show(self.SUMMARY,
-                       total=self._test_case_count,
-                       passed=self._counter[self.TEST_PASS],
-                       failed=self._counter[self.TEST_FAILED],
-                       error=self._counter[self.TEST_ERROR],
-                       skipped=self._counter[self.TEST_SKIPPED])
-
-    @property
-    def _no_test_case_found(self):
-        return self._test_case_count == 0
-
-    @property
-    def _test_case_count(self):
-        return sum(self._counter.values())
-
-    def on_success(self, test_case_name):
-        self._counter[self.TEST_PASS] += 1
-        self._show(self.TEST_CASE, name=test_case_name, verdict=self.TEST_PASS)
-
-    def on_skip(self, test_case_name):
-        self._counter[self.TEST_SKIPPED] += 1
-        self._show(self.TEST_CASE, name=test_case_name, verdict=self.TEST_SKIPPED)
-
-    def on_failure(self, test_case_name, differences):
-        self._counter[self.TEST_FAILED] += 1
-        self._show(self.TEST_CASE, name=test_case_name, verdict=self.TEST_FAILED)
-        for each_difference in differences:
-            each_difference.accept(self)
-
-    def on_missing_file(self, file):
-        self._show(self.MISSING_FILE, file_name=str(file.path))
-
-    def on_extraneous_file(self, file):
-        self._show(self.UNEXPECTED_FILE, file_name=str(file.path))
-
-    def on_content_mismatch(self, file):
-        self._show(self.CONTENT_MISMATCH, file_name=str(file.path))
-
-    def on_error(self, test_case_name, caught_exception):
-        self._counter[self.TEST_ERROR] += 1
-        self._show(self.TEST_CASE, name=test_case_name, verdict=self.TEST_ERROR)
-
-    def _show(self, message, **values):
-        self._output.write(message.format(**values))
+        for each_difference in expected.difference_with(actual):
+            raise AssertionError(str(each_difference))
+        return Verdict.passed(test_case_name)

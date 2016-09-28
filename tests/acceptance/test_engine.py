@@ -19,11 +19,10 @@ from unittest import TestCase
 
 from flap.util.oofs import InMemoryFileSystem
 from flap.util.path import Path, TEMP
-from io import StringIO
 from mock import MagicMock
 from tests.acceptance.engine import FlapTestCase, FileBasedTestRepository, YamlCodec, \
-    InvalidYamlTestCase, TestRunner, Verdict, Acceptor, FailedVerdict, ErrorVerdict, SuccessVerdict, SkippedVerdict
-from tests.acceptance.latex_project import TexFile, LatexProject, MissingFile
+    InvalidYamlTestCase, TestRunner
+from tests.acceptance.latex_project import TexFile, LatexProject
 
 
 class FlapTestCaseTests(TestCase):
@@ -94,12 +93,6 @@ class TestSkippedFlapTestCase(TestCase):
 
     def test_is_skipped(self):
         self.assertTrue(self.test_case.is_skipped)
-
-    def test_run(self):
-        runner = MagicMock()
-        result = self.test_case.run_with(runner)
-        runner.test.assert_not_called()
-        self.assertIsInstance(result, SkippedVerdict)
 
 
 class TestYamlCodec(TestCase):
@@ -226,40 +219,6 @@ class TestRepositoryTest(TestCase):
         self.file_system.create_file(Path.fromText(path), content)
 
 
-class VerdictTests(TestCase):
-
-    def setUp(self):
-        self._test_case_name = "foo"
-        self._verdict = None
-        self._spy = MagicMock()
-
-    def _traverse(self):
-        assert self._verdict is not None, "The verdict has not been initialised!"
-        self._verdict.accept(self._spy)
-
-    def test_passed(self):
-        self._verdict = Verdict.passed(self._test_case_name)
-        self._traverse()
-        self._spy.on_success.assert_called_once_with(self._test_case_name)
-
-    def test_failed_expose_differences(self):
-        differences = [MissingFile("main.tex")]
-        self._verdict = Verdict.failed(self._test_case_name, differences)
-        self._traverse()
-        self._spy.on_failure.assert_called_once_with(self._test_case_name, differences)
-
-    def test_error_expose_caught_exception(self):
-        caught_exception = Exception("Unknown error")
-        self._verdict = Verdict.error(self._test_case_name, caught_exception)
-        self._traverse()
-        self._spy.on_error.assert_called_once_with(self._test_case_name, caught_exception)
-
-    def test_skipped(self):
-        self._verdict = SkippedVerdict("test 1")
-        self._traverse()
-        self._spy.on_skip.assert_called_once_with("test 1")
-
-
 class TestRunningTestCase(TestCase):
 
     def setUp(self):
@@ -280,18 +239,20 @@ class TestRunningTestCase(TestCase):
                                        LatexProject(TexFile("main.tex", "blabla")),
                                        LatexProject(TexFile("merged.tex", "blabla")))
 
-        verdict = self._run_test()
+        try:
+            self._run_test()
 
-        self.assertIsInstance(verdict, SuccessVerdict)
+        except Exception as e:
+            self.fail("Unexpected exception " + str(e))
+
 
     def test_running_a_test_case_that_fails(self):
         self._test_case = FlapTestCase("test 1",
                                        LatexProject(TexFile("main.tex", "blabla")),
                                        LatexProject(TexFile("merged.tex", "blabla blabla")))
 
-        verdict = self._run_test()
-
-        self.assertIsInstance(verdict, FailedVerdict)
+        with self.assertRaises(AssertionError):
+            self._run_test()
 
     def test_running_a_test_case_that_throws_an_exception(self):
         self._test_case = FlapTestCase("test 1",
@@ -301,112 +262,8 @@ class TestRunningTestCase(TestCase):
         self._runner._run_flap = MagicMock()
         self._runner._run_flap.side_effect = Exception()
 
-        verdict = self._run_test()
-
-        self.assertIsInstance(verdict, ErrorVerdict)
-
-
-class ControllerTest(TestCase):
-
-    def setUp(self):
-        self._file_system = InMemoryFileSystem()
-        self._output = StringIO()
-
-    def test_no_test_are_found(self):
-        self._create_file("tests/this_is_not_a_test.txt", "useless text")
-
-        self._check_acceptance()
-
-        self.assertIn(Acceptor.NO_TEST_FOUND, self._output.getvalue())
-
-    def test_case_that_passes(self):
-        self._create_file("tests/test_1.yml",
-                          YamlTest.that_passes("Test 1"))
-
-        self._check_acceptance()
-
-        self._verify_test_passes("Test 1")
-        self._verify_summary(total=1, passed=1, failed=0, error=0, skipped=0)
-
-    def test_case_that_is_skipped(self):
-        self._create_file("tests/test_1.yml",
-                          YamlTest.that_is_skipped("Test 1"))
-
-        self._check_acceptance()
-
-        self._verify_test_is_skipped("Test 1")
-        self._verify_summary(total=1, passed=0, failed=0, error=0, skipped=1)
-
-    def test_case_that_fails_because_of_wrong_file_content(self):
-        self._create_file("tests/test_1.yml",
-                          YamlTest.that_fails_because_of_content_mismatch("Test 1"))
-
-        self._check_acceptance()
-
-        self._verify_test_failed("Test 1")
-        self._verify_content_mismatch_for("merged.tex")
-        self._verify_summary(total=1, passed=0, failed=1, error=0, skipped=0)
-
-    def test_case_that_fails_because_of_missing_file(self):
-        self._create_file("tests/test_1.yml",
-                          YamlTest.that_fails_because_of_missing_file("Test 1"))
-
-        self._check_acceptance()
-
-        self._verify_test_failed("Test 1")
-        self._verify_missing_file("not_merged.tex")
-        self._verify_summary(total=1, passed=0, failed=1, error=0, skipped=0)
-
-    def test_case_that_fails_because_of_unexpected_file(self):
-        self._create_file("tests/test_1.yml",
-                          YamlTest.that_fails_because_of_unexpected_file("Test 1"))
-
-        self._check_acceptance()
-
-        self._verify_test_failed("Test 1")
-        self._verify_unexpected_file("merged.tex")
-        self._verify_summary(total=1, passed=0, failed=1, error=0, skipped=0)
-
-    def test_sequence_of_two_tests(self):
-        self._create_file("tests/test_1.yml", YamlTest.that_passes("Test 1"))
-        self._create_file("tests/test_2.yml", YamlTest.that_fails_because_of_missing_file("Test 2"))
-
-        self._check_acceptance()
-
-        self._verify_test_passes("Test 1")
-        self._verify_test_failed("Test 2")
-        self._verify_missing_file("not_merged.tex")
-        self._verify_summary(total=2, passed=1, failed=1, error=0, skipped=0)
-
-    def _create_file(self, location, content):
-        self._file_system.create_file(Path.fromText(location), content)
-
-    def _verify_summary(self, **values):
-        self.assertIn(Acceptor.SUMMARY.format(**values), self._output.getvalue())
-
-    def _verify_test_passes(self, test_case_name):
-        self.assertIn(Acceptor.TEST_CASE.format(name=test_case_name, verdict=Acceptor.TEST_PASS), self._output.getvalue())
-
-    def _verify_test_is_skipped(self, test_case_name):
-        self.assertIn(Acceptor.TEST_CASE.format(name=test_case_name, verdict=Acceptor.TEST_SKIPPED), self._output.getvalue())
-
-    def _verify_test_failed(self, test_name):
-        self.assertIn(Acceptor.TEST_CASE.format(name=test_name, verdict=Acceptor.TEST_FAILED), self._output.getvalue())
-
-    def _verify_content_mismatch_for(self, file_name):
-        self.assertIn(Acceptor.CONTENT_MISMATCH.format(file_name=file_name), self._output.getvalue())
-
-    def _verify_missing_file(self, file_name):
-        self.assertIn(Acceptor.MISSING_FILE.format(file_name=file_name), self._output.getvalue())
-
-    def _verify_unexpected_file(self, file_name):
-        self.assertIn(Acceptor.UNEXPECTED_FILE.format(file_name=file_name), self._output.getvalue())
-
-    def _check_acceptance(self):
-        repository = FileBasedTestRepository(self._file_system, Path.fromText("tests"), YamlCodec())
-        runner = TestRunner(self._file_system, TEMP / "flap" / "acceptance")
-        acceptance = Acceptor(repository, runner, self._output)
-        acceptance.check()
+        with self.assertRaises(Exception):
+            verdict = self._run_test()
 
 
 class YamlTest:
@@ -522,3 +379,5 @@ class YamlTest:
                 "expected:\n"
                 "  - path: rewritten.tex\n"
                 "    content: blabla\n").format(name=test_name)
+
+

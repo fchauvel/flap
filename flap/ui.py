@@ -147,6 +147,5 @@ class IllegalArguments(ValueError):
 def main(arguments):
     Controller().run(arguments)
 
-
 if __name__ == "__main__":
     main(sys.argv)  # For compatibility with versions prior to 0.2.3
