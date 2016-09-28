@@ -29,6 +29,7 @@ project:
       \begin{document}
       This is an example of input directive
       \input{result}
+      \input {result}
       \end{document}
 
   - path: result.tex
@@ -43,6 +44,7 @@ expected:
 
       \begin{document}
       This is an example of input directive
+      Here are the results!
       Here are the results!
       \end{document}
 

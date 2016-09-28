@@ -47,7 +47,7 @@ class Input(FileSubstitution):
         super().__init__(delegate, flap)
 
     def prepare_pattern(self):
-        return compile(r"\\input\{([^}]+)\}")
+        return compile(r"\\input\s*\{([^}]+)\}")
 
 
 class SubFile(FileSubstitution):

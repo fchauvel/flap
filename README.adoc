@@ -57,6 +57,7 @@ Here is a list of features, which are not yet supported:
 
 == Included in Next Release
 
-. Bug fix for running FLaP on a LaTeX file located in the working directory
-. Bug fix regarding the extraction of subfiles directives
-. Bug fix regarding whitspaces in multiline commands
+. Fix for running FLaP on a LaTeX file located in the working directory;
+. Fix regarding the extraction of subfiles directives;
+. Fix regarding whitspaces in multiline commands;
+. Fix extra space in the `\input` directive before the argument group (e.g., `\input {my-file}`).
