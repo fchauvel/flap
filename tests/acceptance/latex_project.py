@@ -78,63 +78,26 @@ class LatexProject:
             file_system.create_file(location, file.content)
 
     def difference_with(self, other):
-        differences = self._missing_files(other)
-        differences += self._different_files(other)
-        differences += self._extraneous_files(other)
-        return differences
+        self._verify_missing_files(other)
+        self._verify_different_files(other)
+        self._verify_extraneous_files(other)
 
-    def _different_files(self, other):
-        return [DifferentContent(other.files[path]) for (path, file) in self.files.items()
-                if path in other.files and file != other.files[path]]
+    def _verify_different_files(self, other):
+        for (path, file) in self.files.items():
+            assert path in other.files and file == other.files[path], \
+                self.CONTENT_MISMATCH.format(file=path, expected=file.content, actual=other.files[path].content)
 
-    def _missing_files(self, other):
-        return [MissingFile(file) for (path, file) in self.files.items() if path not in other.files]
+    CONTENT_MISMATCH = "Content mismatch for {file}\nExpected:\n'{expected}'\nbut found:\n'{actual}'"
 
-    def _extraneous_files(self, other):
-        return [ExtraFile(file) for (path, file) in other.files.items() if path not in self.files]
+    def _verify_missing_files(self, other):
+        for path in self.files:
+            assert path in other.files, self.MISSING_FILE.format(file=path)
 
+    MISSING_FILE = "Missing file '{file}'!"
 
-class MissingFile:
+    def _verify_extraneous_files(self, other):
+        for path in other.files:
+            assert path in self.files, self.UNEXPECTED_FILE.format(file=path)
 
-    def __init__(self, file):
-        self._file = file
+    UNEXPECTED_FILE = "Unexpected file '{file}'!"
 
-    def accept(self, visitor):
-        visitor.on_missing_file(self._file)
-
-    def __eq__(self, other):
-        if not isinstance(other, MissingFile): return False
-        return self._file == other._file
-
-    def __repr__(self):
-        return "Missing file '%s'" % self._file.path
-
-
-class ExtraFile:
-    def __init__(self, file):
-        self._file = file
-
-    def accept(self, visitor):
-        visitor.on_extraneous_file(self._file)
-
-    def __eq__(self, other):
-        if not isinstance(other, ExtraFile): return False
-        return self._file == other._file
-
-    def __repr__(self):
-        return "Extraneous file '%s'" % self._file.path
-
-
-class DifferentContent:
-    def __init__(self, file):
-        self._file = file
-
-    def accept(self, visitor):
-        visitor.on_content_mismatch(self._file)
-
-    def __eq__(self, other):
-        if not isinstance(other, DifferentContent): return False
-        return self._file == other._file
-
-    def __repr__(self):
-        return "Wrong file content for '%s'" % self._file.path

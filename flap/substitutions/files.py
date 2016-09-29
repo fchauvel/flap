@@ -61,7 +61,7 @@ class SubFile(FileSubstitution):
         super().__init__(delegate, flap)
 
     def prepare_pattern(self):
-        return compile(r"\\subfile\{([^}]+)\}")
+        return compile(r"\\subfile\s*\{([^}]+)\}")
 
 
 class SubFileExtractor(Substitution):
@@ -106,7 +106,7 @@ class Include(Input):
         super().__init__(delegate, flap)
 
     def prepare_pattern(self):
-        return compile(r"\\include\s*{([^}]+)}")
+        return compile(r"\\include\s*\{([^}]+)\}")
 
     def replacements_for(self, fragment, match):
         if self.flap.is_ignored(match.group(1)):

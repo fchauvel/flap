@@ -180,7 +180,7 @@ class TestRunner:
         self._run_flap(project_path / "main.tex", output_path)
         output = self._file_system.open(output_path)
         actual = LatexProject.extract_from_directory(output)
-        self._verify(name, expected, actual)
+        expected.difference_with(actual)
 
     @staticmethod
     def _escape(name):
@@ -190,7 +190,3 @@ class TestRunner:
         factory = Factory(self._file_system, self._ui)
         arguments = ["__main.py__", str(root_latex_file), str(output_directory)]
         Controller(factory).run(arguments)
-
-    def _verify(self, test_case_name, expected, actual):
-        for each_difference in expected.difference_with(actual):
-            raise AssertionError(str(each_difference))

@@ -29,6 +29,7 @@ project:
       \begin{document}
       This is an example of subfiles.
       \subfile{parts/introduction}
+      \subfile       {parts/introduction}
       \end{document}
 
   - path: parts/introduction.tex
@@ -47,6 +48,9 @@ expected:
       \usepackage{subfiles}
       \begin{document}
       This is an example of subfiles.
+
+      Here is the content of the first part.
+
 
       Here is the content of the first part.
 

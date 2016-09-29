@@ -19,7 +19,7 @@ from unittest import TestCase
 
 from flap.util.oofs import InMemoryFileSystem
 from flap.util.path import Path
-from tests.acceptance.latex_project import LatexProject, TexFile, MissingFile, ExtraFile, DifferentContent
+from tests.acceptance.latex_project import LatexProject, TexFile
 
 
 class TexFileTest(TestCase):
@@ -73,22 +73,36 @@ class LatexProjectTests(TestCase):
                          self.tex)
 
     def test_difference_with_itself(self):
-        differences = self.tex.difference_with(self.tex)
-        self.assertListEqual([], differences)
+        self.tex.difference_with(self.tex)
 
     def test_difference_with_a_project_with_an_missing_file(self):
-        differences = self.tex.difference_with(LatexProject())
-        self.assertListEqual([MissingFile(self.file)], differences)
+        try:
+            self.tex.difference_with(LatexProject())
+            self.fail("Exception expected")
+
+        except AssertionError as error:
+            self.assertEqual(LatexProject.MISSING_FILE.format(file="main.tex"),
+                             str(error))
 
     def test_difference_with_a_project_with_an_extra_file(self):
-        extra_file = TexFile("extra/file.tex", "Extra blabla")
-        differences = self.tex.difference_with(LatexProject(self.file, extra_file))
-        self.assertListEqual([ExtraFile(extra_file)], differences)
+        try:
+            extra_file = TexFile("extra/file.tex", "Extra blabla")
+            self.tex.difference_with(LatexProject(self.file, extra_file))
+            self.fail("Exception expected")
 
-    def test_difference_with_a_project_whose_file_content_differ(self):
-        file = TexFile("main.tex", "something different!")
-        differences = self.tex.difference_with(LatexProject(file))
-        self.assertListEqual([DifferentContent(file)], differences)
+        except AssertionError as error:
+            self.assertEqual(LatexProject.UNEXPECTED_FILE.format(file=extra_file.path),
+                             str(error))
+
+    def test_difference_with_a_project_whose_file_content_differs(self):
+        try:
+            content = "something different"
+            self.tex.difference_with(LatexProject(TexFile("main.tex", content)))
+            self.fail("Exception expected")
+
+        except AssertionError as error:
+            self.assertEqual(LatexProject.CONTENT_MISMATCH.format(file="main.tex", expected="blabla", actual=content),
+                             str(error))
 
 
 class LatexProjectGenerationTests(TestCase):
@@ -144,8 +158,7 @@ class LatexProjectExtractionTests(TestCase):
         return LatexProject.extract_from_directory(root)
 
     def _verify(self, project):
-        assert len(self._files) > 0
-        return self.assertListEqual([], self._expected().difference_with(project))
+        self._expected().difference_with(project)
 
     def _do_test_with_files(self, *files):
         self._create_files(*files)
