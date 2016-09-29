@@ -25,26 +25,26 @@ from mock import MagicMock, call, patch, ANY, mock_open
 class VersionTest(TestCase):
     
     def makeVersion(self, text):
-        return Version.fromText(text)
+        return Version.from_text(text)
 
     def verifyVersion(self, version, major, minor, micro):
-        self.assertTrue(version.hasMajor(major))
-        self.assertTrue(version.hasMinor(minor))
-        self.assertTrue(version.hasMicro(micro))
+        self.assertTrue(version.has_major(major))
+        self.assertTrue(version.has_minor(minor))
+        self.assertTrue(version.has_micro(micro))
 
     def testPrepareDevelopmentRelease(self):
         v1 = self.makeVersion("1.0.1")
-        v2 = v1.nextMicroRelease()
+        v2 = v1.next_micro_release()
         self.verifyVersion(v2, 1, 0, 2)
 
     def testPrepareMinorRelease(self):
         v1 = self.makeVersion("1.0")
-        v2 = v1.nextMinorRelease()
+        v2 = v1.next_minor_release()
         self.verifyVersion(v2, 1, 1, 0)
         
     def testPrepareMajorRelease(self):
         v1 = self.makeVersion("1.0")
-        v2 = v1.nextMajorRelease()
+        v2 = v1.next_major_release()
         self.verifyVersion(v2, 2, 0, 0)
                 
     def testEquality(self):

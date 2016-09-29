@@ -53,6 +53,7 @@ class Substitution(ProcessorDecorator):
     def __init__(self, delegate, flap):
         super().__init__(delegate)
         self.flap = flap
+        self.pattern = None
 
     def fragments(self):
         self.pattern = self.prepare_pattern()
@@ -108,7 +109,8 @@ class LinkSubstitution(Substitution):
     def find(self, fragment, reference):
         pass
 
-    def extensions_by_priority(self):
+    @staticmethod
+    def extensions_by_priority():
         return ["pdf", "eps", "png", "jpg"]
 
 

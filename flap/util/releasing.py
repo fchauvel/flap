@@ -19,7 +19,6 @@ import re
 import os
 import subprocess
 from setuptools import Command
-from setuptools.command.bdist_egg import bdist_egg
 import flap
 
 
@@ -29,7 +28,7 @@ class Version:
 
     @staticmethod
     def from_source_code():
-        return Version.fromText(flap.__version__)
+        return Version.from_text(flap.__version__)
 
     @staticmethod
     def update_source_code(version):
@@ -41,7 +40,7 @@ class Version:
             updated.flush()
 
     @staticmethod
-    def fromText(text):
+    def from_text(text):
         pattern = re.compile("(\\d+)\\.(\\d+)(?:\\.(?:dev)?(\\d+))?")
         match = re.match(pattern, text)
         return Version(int(match.group(1)), int(match.group(2)), int(match.group(3)) if match.group(3) else None)
@@ -51,22 +50,22 @@ class Version:
         self.minor = minor
         self.micro = micro
         
-    def hasMinor(self, minor):
+    def has_minor(self, minor):
         return self.minor == minor
     
-    def hasMajor(self, major):
+    def has_major(self, major):
         return self.major == major
         
-    def hasMicro(self, micro):
+    def has_micro(self, micro):
         return self.micro == micro
     
-    def nextMicroRelease(self):
+    def next_micro_release(self):
         return Version(self.major, self.minor, self.micro + 1)
             
-    def nextMinorRelease(self):
+    def next_minor_release(self):
         return Version(self.major, self.minor + 1, 0)
             
-    def nextMajorRelease(self):
+    def next_major_release(self):
         return Version(self.major + 1, 0, 0)            
             
     def __repr__(self):
@@ -81,8 +80,8 @@ class Version:
     def __eq__(self, other):
         return (other and isinstance(other, Version) and
                 other.micro == self.micro and
-                other.hasMajor(self.major) and
-                other.hasMinor(self.minor))
+                other.has_major(self.major) and
+                other.has_minor(self.minor))
 
 
 class SourceControl:
@@ -107,6 +106,7 @@ class Release(Command):
     def __init__(self, dist, scm = SourceControl()):
         super().__init__(dist)
         self.scm = scm
+        self.type = None
 
     user_options = [('type=', None, 'The type of release (micro, minor or major')]
     
@@ -141,9 +141,9 @@ class Release(Command):
         if self.type == "micro":
             return current_version
         elif self.type == "minor":
-            return current_version.nextMinorRelease()
+            return current_version.next_minor_release()
         elif self.type == "major":
-            return current_version.nextMajorRelease()
+            return current_version.next_major_release()
         else:
             raise ValueError("Unknown release kind '%s' (options are 'micro', 'minor' or 'major')" % self.type)
 
@@ -156,8 +156,8 @@ class Release(Command):
         self.run_command("upload")
 
     def prepare_next_release(self, current_version):
-        new_version = current_version.nextMicroRelease()
+        new_version = current_version.next_micro_release()
         Version.update_source_code(new_version)
         print("Preparing version " + str(new_version))
         self.scm.commit("Preparing version %s" % new_version)
-        
+

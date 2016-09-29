@@ -28,7 +28,7 @@ class UI(Listener):
     """
     Gather all the interaction the console
     """
-    
+
     def __init__(self, output=sys.stdout, is_verbose=False):
         self._output = output
         self._verbose = is_verbose
@@ -87,8 +87,8 @@ class Factory:
 
 class Controller:
     """
-    Controller, as in the Model-View-Controller pattern. Receive command, and 
-    update the view accordingly 
+    Controller, as in the Model-View-Controller pattern. Receive commands, and
+    update the view accordingly.
     """
     
     def __init__(self, factory=Factory()):

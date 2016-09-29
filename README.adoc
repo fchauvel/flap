@@ -6,7 +6,7 @@ link:https://pypi.python.org/pypi/FLaP[image:https://img.shields.io/pypi/v/FLaP.
 link:http://www.gnu.org/licenses/gpl-3.0[image:https://img.shields.io/pypi/l/FLaP.svg[]]
 link:https://codeship.com/projects/97486[image:https://img.shields.io/codeship/ad32e1e0-27d8-0133-8e78-7af7072ae828.svg[]]
 link:https://codecov.io/gh/fchauvel/flap[image:https://img.shields.io/codecov/c/github/fchauvel/flap/master.svg[]]
-link:https://www.codacy.com/app/fchauvel/flap/dashboard[image:https://img.shields.io/codacy/grade/e27821fb6289410b8f58338c7e0bc686.svg[]]
+link:https://www.codacy.com/app/fchauvel/flap/dashboard[image:https://img.shields.io/codacy/grade/df4826670c71444ca487434d612e96d7.svg[]]
 link:http://pypi-ranking.info/module/FLaP[image:https://img.shields.io/pypi/dm/FLaP.svg[]]
 
 Flap is a simple utility that flattens LaTeX projects. It takes a
