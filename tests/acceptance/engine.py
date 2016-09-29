@@ -180,7 +180,7 @@ class TestRunner:
         self._run_flap(project_path / "main.tex", output_path)
         output = self._file_system.open(output_path)
         actual = LatexProject.extract_from_directory(output)
-        expected.difference_with(actual)
+        expected.assert_is_equivalent_to(actual)
 
     @staticmethod
     def _escape(name):

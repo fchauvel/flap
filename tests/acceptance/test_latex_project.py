@@ -73,11 +73,11 @@ class LatexProjectTests(TestCase):
                          self.tex)
 
     def test_difference_with_itself(self):
-        self.tex.difference_with(self.tex)
+        self.tex.assert_is_equivalent_to(self.tex)
 
     def test_difference_with_a_project_with_an_missing_file(self):
         try:
-            self.tex.difference_with(LatexProject())
+            self.tex.assert_is_equivalent_to(LatexProject())
             self.fail("Exception expected")
 
         except AssertionError as error:
@@ -87,7 +87,7 @@ class LatexProjectTests(TestCase):
     def test_difference_with_a_project_with_an_extra_file(self):
         try:
             extra_file = TexFile("extra/file.tex", "Extra blabla")
-            self.tex.difference_with(LatexProject(self.file, extra_file))
+            self.tex.assert_is_equivalent_to(LatexProject(self.file, extra_file))
             self.fail("Exception expected")
 
         except AssertionError as error:
@@ -97,7 +97,7 @@ class LatexProjectTests(TestCase):
     def test_difference_with_a_project_whose_file_content_differs(self):
         try:
             content = "something different"
-            self.tex.difference_with(LatexProject(TexFile("main.tex", content)))
+            self.tex.assert_is_equivalent_to(LatexProject(TexFile("main.tex", content)))
             self.fail("Exception expected")
 
         except AssertionError as error:
@@ -158,7 +158,7 @@ class LatexProjectExtractionTests(TestCase):
         return LatexProject.extract_from_directory(root)
 
     def _verify(self, project):
-        self._expected().difference_with(project)
+        self._expected().assert_is_equivalent_to(project)
 
     def _do_test_with_files(self, *files):
         self._create_files(*files)

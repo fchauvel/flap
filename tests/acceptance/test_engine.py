@@ -263,7 +263,7 @@ class TestRunningTestCase(TestCase):
         self._runner._run_flap.side_effect = Exception()
 
         with self.assertRaises(Exception):
-            verdict = self._run_test()
+            self._run_test()
 
 
 class YamlTest:

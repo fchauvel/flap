@@ -55,7 +55,7 @@ class UiTest(TestCase):
         self.run_test(ui.report_missing_tex_file, mock,["main.tex", "3", "foo"])
 
     @patch("sys.stdout", new_callable=StringIO)
-    def test_ui_reports_missing_tex_file(self, mock):
+    def test_ui_reports_unexpected_error(self, mock):
         ui = self.makeUI(mock)
         ui.report_unexpected_error("foo")
         self.verify_output_contains(mock, "foo")

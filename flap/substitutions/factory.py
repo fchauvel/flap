@@ -20,7 +20,7 @@ from flap.substitutions.commons import FileWrapper
 from flap.substitutions.misc import EndInput
 from flap.substitutions.comments import CommentsRemover
 from flap.substitutions.files import Input, SubFileExtractor, SubFile, Include, IncludeOnly
-from flap.substitutions.graphics import GraphicsPath, IncludeGraphics, Overpic, IncludeSVG, Overpic
+from flap.substitutions.graphics import GraphicsPath, IncludeGraphics, IncludeSVG, Overpic
 from flap.substitutions.bibliography import Bibliography
 
 

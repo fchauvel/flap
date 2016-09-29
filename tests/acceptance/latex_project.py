@@ -77,10 +77,10 @@ class LatexProject:
             location = anchor / path
             file_system.create_file(location, file.content)
 
-    def difference_with(self, other):
+    def assert_is_equivalent_to(self, other):
         self._verify_missing_files(other)
-        self._verify_different_files(other)
         self._verify_extraneous_files(other)
+        self._verify_different_files(other)
 
     def _verify_different_files(self, other):
         for (path, file) in self.files.items():

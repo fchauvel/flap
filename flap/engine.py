@@ -133,7 +133,8 @@ class Flap:
             if self._is_resource(eachFile):
                 self._file_system.copy(eachFile, self._output)
 
-    def _is_resource(self, file):
+    @staticmethod
+    def _is_resource(file):
         return file.has_extension() and \
                file.extension() in Flap.RESOURCE_FILES
 
@@ -155,7 +156,8 @@ class Flap:
     def find_resource(self, fragment, path, extensions_by_priority):
         return self._find(path, self._root_directory(), extensions_by_priority, ResourceNotFound(fragment))
 
-    def _find(self, path, directory, extensions, error):
+    @staticmethod
+    def _find(path, directory, extensions, error):
         candidates = directory.files_that_matches(Path.fromText(path))
         for any_possible_extension in extensions:
             for any_resource in candidates:
