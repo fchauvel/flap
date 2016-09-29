@@ -21,17 +21,6 @@ from flap.util.path import TEMP, Path
 from flap.util.oofs import OSFileSystem
 from tests.acceptance.engine import FileBasedTestRepository, YamlCodec, TestRunner
 
-def create_description(text):
-    def short_description(self):
-        return text
-    return short_description
-
-def create_test(a, b, c):
-    def test(self):
-        print("a={0}, b={1}, c={2}", a, b, c)
-        self.assertEqual(a, b+c)
-    return test
-
 
 class Generator:
 
@@ -50,7 +39,7 @@ class Generator:
     def test_class(self):
         test_cases = self._repository.fetch_all()
         methods = { "test " + each_case.name: self.create_execution(each_case) for each_case in test_cases }
-        return type("YAMLAcceptanceTests", (TestCase,), methods)
+        return type("YAMLTests", (TestCase,), methods)
 
 
 def load_tests(loader, tests, pattern):

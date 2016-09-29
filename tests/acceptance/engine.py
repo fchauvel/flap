@@ -151,8 +151,6 @@ class FlapTestCase:
         return self._is_skipped
 
     def run_with(self, runner):
-        if self.is_skipped:
-            return SkippedVerdict(self._name)
         return runner.test(self._name, self._project, self._expected)
 
     def __eq__(self, other):
@@ -162,62 +160,6 @@ class FlapTestCase:
                self._project == other._project and \
                self._expected == other._expected and \
                self._is_skipped == other._is_skipped
-
-
-class Verdict:
-
-    def __init__(self, test_case_name):
-        self._test_case = test_case_name
-
-    @staticmethod
-    def passed(test_case):
-        return SuccessVerdict(test_case)
-
-    @staticmethod
-    def error(test_case, caught_exception):
-        return ErrorVerdict(test_case, caught_exception)
-
-    @staticmethod
-    def failed(test_case, differences):
-        return FailedVerdict(test_case, differences)
-
-
-class SkippedVerdict(Verdict):
-
-    def __init__(self, test_case_name):
-        super().__init__(test_case_name)
-
-    def accept(self, visitor):
-        visitor.on_skip(self._test_case)
-
-
-class SuccessVerdict(Verdict):
-
-    def __init__(self, test_case_name):
-        super().__init__(test_case_name)
-
-    def accept(self, visitor):
-        visitor.on_success(self._test_case)
-
-
-class FailedVerdict(Verdict):
-
-    def __init__(self, test_case_name, differences):
-        super().__init__(test_case_name)
-        self._differences = differences
-
-    def accept(self, visitor):
-        visitor.on_failure(self._test_case, self._differences)
-
-
-class ErrorVerdict(Verdict):
-
-    def __init__(self, test_case_name, caught_exception):
-        super().__init__(test_case_name)
-        self._caught_exception = caught_exception
-
-    def accept(self, visitor):
-        visitor.on_error(self._test_case, self._caught_exception)
 
 
 class TestRunner:
@@ -238,7 +180,7 @@ class TestRunner:
         self._run_flap(project_path / "main.tex", output_path)
         output = self._file_system.open(output_path)
         actual = LatexProject.extract_from_directory(output)
-        return self._verify(name, expected, actual)
+        self._verify(name, expected, actual)
 
     @staticmethod
     def _escape(name):
@@ -252,4 +194,3 @@ class TestRunner:
     def _verify(self, test_case_name, expected, actual):
         for each_difference in expected.difference_with(actual):
             raise AssertionError(str(each_difference))
-        return Verdict.passed(test_case_name)

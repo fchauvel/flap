@@ -28,6 +28,7 @@ project:
       \begin{document}
       This is an example of the include directive:
       \include{part.tex}
+      \include       {part.tex}
       \end{document}
 
   - path: part.tex
@@ -41,6 +42,7 @@ expected:
       \documentclass{article}
       \begin{document}
       This is an example of the include directive:
+      Here is the content of the part.\clearpage 
       Here is the content of the part.\clearpage 
       \end{document}
 
