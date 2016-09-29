@@ -4,6 +4,7 @@
 ![license](https://img.shields.io/pypi/l/FLaP.svg)
 ![build](https://img.shields.io/codeship/ad32e1e0-27d8-0133-8e78-7af7072ae828.svg)
 ![code coverage](https://img.shields.io/codecov/c/github/fchauvel/flap/master.svg)
+![code quality](https://img.shields.io/codacy/grade/df4826670c71444ca487434d612e96d7.svg)
 ![downloads](https://img.shields.io/pypi/dm/FLaP.svg)
 
 FlaP is an utility that flattens LaTeX projects. It takes a well organised LaTeX 
