@@ -15,194 +15,213 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from tests.unit.engine import FlapUnitTest
-
 from flap.engine import TexFileNotFound
+from tests.commons import FlapTest, a_project
 
 
-class InputMergerTests(FlapUnitTest):
+class InputMergerTests(FlapTest):
 
     def test_simple_merge(self):
-        self.project.root_latex_code = "blahblah \\input{foo} blah"
-        self.project.parts["foo.tex"] = "bar"
+        self._assume = a_project()\
+            .with_main_file("blahblah \\input{foo} blah")\
+            .with_file("foo.tex", "bar")
 
-        self.run_flap()
+        self._expect = a_project()\
+            .with_merged_file("blahblah bar blah")
 
-        self.verify_merge("blahblah bar blah")
+        self._do_test_and_verify()
 
     def test_simple_merge_with_extension(self):
-        self.project.root_latex_code = "blahblah \\input{foo.tex} blah"
-        self.project.parts["foo.tex"] = "bar"
+        self._assume = a_project()\
+            .with_main_file("blahblah \\input{foo.tex} blah")\
+            .with_file("foo.tex", "bar")
 
-        self.run_flap()
+        self._expect = a_project()\
+            .with_merged_file("blahblah bar blah")
 
-        self.verify_merge("blahblah bar blah")
+        self._do_test_and_verify()
 
     def test_subdirectory_merge(self):
-        self.project.root_latex_code = "blahblah \\input{partA/foo} blah"
-        self.project.parts["partA/foo.tex"] = "bar"
+        self._assume = a_project()\
+            .with_main_file("blahblah \\input{partA/foo} blah")\
+            .with_file("partA/foo.tex", "bar")
 
-        self.run_flap()
+        self._expect = a_project()\
+            .with_merged_file("blahblah bar blah")
 
-        self.verify_merge("blahblah bar blah")
+        self._do_test_and_verify()
 
     def test_recursive_merge(self):
-        self.project.root_latex_code = "A \\input{foo} Z"
-        self.project.parts["foo.tex" ] = "B \\input{bar} Y"
-        self.project.parts["bar.tex"] = "blah"
+        self._assume = a_project()\
+            .with_main_file("A \\input{foo} Z")\
+            .with_file("foo.tex", "B \\input{bar} Y")\
+            .with_file("bar.tex", "blah")
 
-        self.run_flap()
+        self._expect = a_project()\
+            .with_merged_file("A B blah Y Z")
 
-        self.verify_merge("A B blah Y Z")
+        self._do_test_and_verify()
 
     def test_path_are_considered_from_root_in_recursive_input(self):
-        self.project.root_latex_code = "A \\input{parts/foo} Z"
-        self.project.parts["parts/foo.tex" ] = "B \\input{parts/subparts/bar} Y"
-        self.project.parts["parts/subparts/bar.tex"] = "blah"
+        self._assume = a_project()\
+            .with_main_file("A \\input{parts/foo} Z")\
+            .with_file("parts/foo.tex", "B \\input{parts/subparts/bar} Y")\
+            .with_file("parts/subparts/bar.tex", "blah")
 
-        self.run_flap()
+        self._expect = a_project()\
+            .with_merged_file("A B blah Y Z")
 
-        self.verify_merge("A B blah Y Z")
+        self._do_test_and_verify()
 
-    def test_commented_lines_are_ignored(self):
-        self.project.root_latex_code = "\n" \
-                                       "blah blah blah\n" \
-                                       "% \input{foo} \n" \
-                                       "blah blah blah\n" \
-                                       ""
-        self.project.parts["foo.tex"] = "included content"
+    def test_commented_inputs_are_ignored(self):
+        self._assume = a_project()\
+            .with_main_file("blah blah blah\n"
+                            "% \input{foo} \n"
+                            "blah blah blah\n")\
+            .with_file("foo.tex", "included content")
 
-        self.run_flap()
+        self._expect = a_project()\
+            .with_merged_file("blah blah blah\n"
+                              "blah blah blah\n")
 
-        self.verify_merge("\n"
-                           "blah blah blah\n"
-                           "blah blah blah\n"
-                           "")
+        self._do_test_and_verify()
 
     def test_multi_lines_path(self):
-        self.project.root_latex_code = "A \\input{img/foo/%\n" \
-                                       "bar/%\n" \
-                                       "baz} B"
-        self.project.parts["img/foo/bar/baz.tex"] = "xyz"
+        self._assume = a_project()\
+            .with_main_file("A \\input{parts/foo/%\n"
+                            "bar/%\n"
+                            "baz} B")\
+            .with_file("parts/foo/bar/baz.tex", "xyz")
 
-        self.run_flap()
+        self._expect = a_project()\
+            .with_merged_file("A xyz B")
 
-        self.verify_merge("A xyz B")
+        self._do_test_and_verify()
 
     def test_input_directives_are_reported(self):
-        self.project.root_latex_code = "blah blabh\n" \
-                                       "\input{foo}"
+        self._assume = a_project()\
+            .with_main_file("first line\n"
+                            "\input{foo}")\
+            .with_file("foo.tex", "second line")
 
-        self.project.parts["foo.tex"] = "blah blah"
+        self._expect = a_project()\
+            .with_merged_file("first line\n"
+                              "second line")
 
-        self.run_flap()
-
-        self.verify_listener(self.listener.on_fragment, "main.tex", 2, "\input{foo}")
+        self._do_test_and_verify()
+        self._verify_ui_reports_fragment("main.tex", 2, "\input{foo}")
 
     def test_missing_tex_file_are_detected(self):
-        self.project.root_latex_code = "\n" \
-                                       "\input{foo}"
+        self._assume = a_project()\
+            .with_main_file("\input{foo}")
 
         with self.assertRaises(TexFileNotFound):
-            self.run_flap()
+            self._do_test_and_verify()
 
 
-class SubfileMergerTests(FlapUnitTest):
+class SubfileMergerTests(FlapTest):
 
     def test_simple_merge(self):
-        self.project.root_latex_code = "\\subfile{foo}"
+        self._assume = a_project()\
+            .with_main_file("\\subfile{foo}")\
+            .with_file("foo.tex", "\\documentclass[../main.tex]{subfiles}" \
+                                  "\\begin{document}" \
+                                  "Blahblah blah!\\n" \
+                                  "\\end{document}")
 
-        self.project.parts["foo.tex"] = "\\documentclass[../main.tex]{subfiles}" \
-                                        "\\begin{document}" \
-                                        "Blahblah blah!\\n" \
-                                        "\\end{document}"
+        self._expect = a_project()\
+            .with_merged_file("Blahblah blah!\\n")
 
-        self.run_flap()
-
-        self.verify_merge("Blahblah blah!\\n")
+        self._do_test_and_verify()
 
     def test_recursive_merge(self):
-        self.project.root_latex_code = "PRE\\subfile{subpart}POST"
+        self._assume = a_project()\
+            .with_main_file("PRE\\subfile{subpart}POST")\
+            .with_file("subpart.tex", "\\documentclass[../main.tex]{subfiles}" \
+                                      "\\begin{document}\\n" \
+                                      "PRE\\subfile{subsubpart}POST\\n" \
+                                      "\\end{document}")\
+            .with_file("subsubpart.tex", "\\documentclass[../main.tex]{subfiles}" \
+                                         "\\begin{document}\\n" \
+                                         "Blahblah blah!\\n" \
+                                         "\\end{document}")
 
-        self.project.parts["subpart.tex"] \
-            = "\\documentclass[../main.tex]{subfiles}" \
-              "\\begin{document}\\n" \
-              "PRE\\subfile{subsubpart}POST\\n" \
-              "\\end{document}"
+        self._expect = a_project()\
+            .with_merged_file("PRE\\n"
+                              "PRE\\n"
+                              "Blahblah blah!\\n"
+                              "POST\\n"
+                              "POST")
 
-        self.project.parts["subsubpart.tex"] \
-            = "\\documentclass[../main.tex]{subfiles}" \
-              "\\begin{document}\\n" \
-              "Blahblah blah!\\n" \
-              "\\end{document}"
-
-        self.run_flap()
-
-        self.verify_merge("PRE\\n"
-                          "PRE\\n"
-                          "Blahblah blah!\\n"
-                          "POST\\n"
-                          "POST")
+        self._do_test_and_verify()
 
     def test_does_not_break_document(self):
-        self.project.root_latex_code = \
-            "\\documentclass{article}\n" \
-            "\\usepackage{graphicx}\n" \
-            "\\begin{document}\n" \
-            "This is my document\n" \
-            "\\end{document}\n"
+        self._assume = a_project()\
+            .with_main_file("\\documentclass{article}\n"
+                            "\\usepackage{graphicx}\n"
+                            "\\begin{document}\n"
+                            "This is my document\n"
+                            "\\end{document}\n")
 
-        self.run_flap()
+        self._expect = a_project()\
+            .with_merged_file("\\documentclass{article}\n"
+                              "\\usepackage{graphicx}\n"
+                              "\\begin{document}\n"
+                              "This is my document\n"
+                              "\\end{document}\n")
 
-        self.verify_merge(self.project.root_latex_code)
+        self._do_test_and_verify()
 
 
-class IncludeMergeTest(FlapUnitTest):
+class IncludeMergeTest(FlapTest):
 
     def test_simple_merge(self):
-        self.project.root_latex_code = "blahblah \include{foo} blah"
+        self._assume = a_project()\
+            .with_main_file("blahblah \include{foo} blah")\
+            .with_file("foo.tex", "bar")
 
-        self.project.parts["foo.tex"] = "bar"
+        self._expect = a_project()\
+            .with_merged_file("blahblah bar\clearpage  blah")
 
-        self.run_flap()
-
-        self.verify_merge("blahblah bar\clearpage  blah")
+        self._do_test_and_verify()
 
     def test_subdirectory_merge(self):
-        self.project.root_latex_code = "blahblah \include{partA/foo} blah"
+        self._assume = a_project()\
+            .with_main_file("blahblah \include{partA/foo} blah")\
+            .with_file("partA/foo.tex", "bar")
 
-        self.project.parts["partA/foo.tex"] = "bar"
+        self._expect = a_project()\
+            .with_merged_file("blahblah bar\clearpage  blah")
 
-        self.run_flap()
-
-        self.verify_merge("blahblah bar\clearpage  blah")
+        self._do_test_and_verify()
 
     def test_include_only_effect(self):
-        self.project.root_latex_code = ("bla blab"
-                                        "\includeonly{foo, baz}"
-                                        "bla bla"
-                                        "\include{foo}"
-                                        "\include{bar}"
-                                        "bla bla"
-                                        "\include{baz}"
-                                        "bla")
+        self._assume = a_project()\
+            .with_main_file("bla blab"
+                            "\includeonly{foo, baz}"
+                            "bla bla"
+                            "\include{foo}"
+                            "\include{bar}"
+                            "bla bla"
+                            "\include{baz}"
+                            "bla")\
+            .with_file("foo.tex", "foo")\
+            .with_file("bar.tex", "bar")\
+            .with_file("baz.tex", "baz")
 
-        self.project.parts["foo.tex"] = "foo"
-        self.project.parts["bar.tex"] = "bar"
-        self.project.parts["baz.tex"] = "baz"
+        self._expect = a_project()\
+            .with_merged_file("bla blab"
+                              "bla bla"
+                              "foo\\clearpage "
+                              "bla bla"
+                              "baz\\clearpage "
+                              "bla")
 
-        self.run_flap()
-
-        self.verify_merge("bla blab"
-                           "bla bla"
-                           "foo\\clearpage "
-                           "bla bla"
-                           "baz\\clearpage "
-                           "bla")
+        self._do_test_and_verify()
 
     def test_missing_tex_file_are_detected(self):
-        self.project.root_latex_code = "\n" \
-                                       "\\include{foo}"
+        self._assume = a_project()\
+            .with_main_file("\include{foo}")
 
         with self.assertRaises(TexFileNotFound):
-            self.run_flap()
+            self._do_test_and_verify()

@@ -17,19 +17,20 @@
 
 from unittest import TestCase
 
+from io import StringIO
+from flap.ui import UI
 from flap.util.oofs import InMemoryFileSystem
 from flap.util.path import Path, TEMP
 from mock import MagicMock
-from tests.acceptance.engine import FlapTestCase, FileBasedTestRepository, YamlCodec, \
-    InvalidYamlTestCase, TestRunner
-from tests.acceptance.latex_project import TexFile, LatexProject
+from tests.commons import FlapTestCase, FileBasedTestRepository, YamlCodec, \
+    InvalidYamlTestCase, AcceptanceTestRunner, TexFile, LatexProject, a_project
 
 
 class FlapTestCaseTests(TestCase):
 
     def setUp(self):
-        self.project = LatexProject(TexFile("main.tex", "blabla"))
-        self.expected = LatexProject(TexFile("main.tex", "blabla"))
+        self.project = a_project().with_main_file("blabla").build()
+        self.expected = a_project().with_merged_file("blabla").build()
         self.test_case_name = "foo"
         self.test_case = FlapTestCase(self.test_case_name, self.project, self.expected)
 
@@ -53,41 +54,41 @@ class FlapTestCaseTests(TestCase):
         self.assertEquals(self.test_case, self.test_case)
 
     def test_equals_a_similar_test_case(self):
-        self.assertEqual(FlapTestCase(
-            "foo",
-            LatexProject(TexFile("main.tex", "blabla")),
-            LatexProject(TexFile("main.tex", "blabla"))
-        ),
-        self.test_case)
+        self.assertEqual(
+            FlapTestCase(
+                "foo",
+                a_project().with_main_file("blabla").build(),
+                a_project().with_merged_file("blabla").build()),
+            self.test_case)
 
     def test_differs_from_a_project_with_another_expectation(self):
-        self.assertNotEqual(FlapTestCase(
-            "foo",
-            LatexProject(TexFile("main.tex", "blabla")),
-            LatexProject(TexFile("main.tex", "something different"))
-        ),
-        self.test_case)
+        self.assertNotEqual(
+            FlapTestCase(
+                "foo",
+                a_project().with_main_file("blabla").build(),
+                a_project().with_merged_file("something different").build()),
+            self.test_case)
 
     def test_differs_from_an_equivalent_but_skipped_case(self):
-        self.assertNotEqual(FlapTestCase(
-            "foo",
-            LatexProject(TexFile("main.tex", "blabla")),
-            LatexProject(TexFile("main.tex", "blabla")),
-            skipped=True
-        ),
-        self.test_case)
+        self.assertNotEqual(
+            FlapTestCase(
+                "foo",
+                a_project().with_main_file("blabla").build(),
+                a_project().with_merged_file("blabla").build(),
+                skipped=True),
+            self.test_case)
 
-    def test_run(self):
+    def test_test_with(self):
         runner = MagicMock()
         self.test_case.run_with(runner)
-        runner.test.assert_called_once_with(self.test_case.name, self.test_case.project, self.test_case.expected)
+        runner.test.assert_called_once_with(self.test_case.name, self.test_case._project, self.test_case._expected)
 
 
 class TestSkippedFlapTestCase(TestCase):
 
     def setUp(self):
-        self.project = LatexProject(TexFile("main.tex", "blabla"))
-        self.expected = LatexProject(TexFile("main.tex", "blabla"))
+        self.project = a_project().with_main_file("blabla").build()
+        self.expected = a_project().with_merged_file("blabla").build()
         self.test_case_name = "foo"
         self.test_case = FlapTestCase(self.test_case_name, self.project, self.expected, True)
 
@@ -112,8 +113,8 @@ class TestYamlCodec(TestCase):
 
         expected = FlapTestCase(
                         "test 1",
-                        LatexProject(TexFile("main.tex", "\\documentclass{article}\n\\begin{document}\n  This is a simple \\LaTeX document!\n\\end{document}")),
-                        LatexProject(TexFile("main.tex", "\\documentclass{article}\n\\begin{document}\n  This is a simple \\LaTeX document!\n\\end{document}")))
+                        a_project().with_main_file("\\documentclass{article}\n\\begin{document}\n  This is a simple \\LaTeX document!\n\\end{document}").build(),
+                        a_project().with_merged_file("\\documentclass{article}\n\\begin{document}\n  This is a simple \\LaTeX document!\n\\end{document}").build())
 
         self.assertEqual(expected, test_case)
 
@@ -123,8 +124,8 @@ class TestYamlCodec(TestCase):
 
         expected = FlapTestCase(
                         "Test 1",
-                        LatexProject(TexFile("main.tex", "blabla")),
-                        LatexProject(TexFile("merged.tex", "blabla")),
+                        a_project().with_main_file("blabla").build(),
+                        a_project().with_merged_file("blabla").build(),
                         True)
 
         self.assertEqual(expected, test_case)
@@ -136,7 +137,6 @@ class TestYamlCodec(TestCase):
 
     def test_wrong_project_key(self):
         yaml_file = self._create_file(YamlTest.with_misspelled_project_key())
-
         with self.assertRaises(InvalidYamlTestCase):
             self._read_test_case_from(yaml_file)
 
@@ -201,16 +201,14 @@ class TestRepositoryTest(TestCase):
         self.assertEqual(1, len(test_cases))
         expected = FlapTestCase(
             "test 1",
-            LatexProject(TexFile("main.tex", ("\\documentclass{article}\n"
-                                               "\\begin{document}\n"
-                                               "  This is a simple \\LaTeX document!\n"
-                                               "\\end{document}"))),
-            LatexProject(TexFile("main.tex", ("\\documentclass{article}\n"
-                                               "\\begin{document}\n"
-                                               "  This is a simple \\LaTeX document!\n"
-                                               "\\end{document}")))
-        )
+            a_project().with_main_file(self.LATEX_CODE).build(),
+            a_project().with_merged_file(self.LATEX_CODE).build())
         self.assertEqual(expected, test_cases[0])
+
+    LATEX_CODE = ("\\documentclass{article}\n"
+                  "\\begin{document}\n"
+                  "  This is a simple \\LaTeX document!\n"
+                  "\\end{document}")
 
     def _fetch_all_tests(self):
         return self.repository.fetch_all()
@@ -228,11 +226,12 @@ class TestRunningTestCase(TestCase):
         self._output_path = self._directory / "test_1" / "flatten"
         self._file_system = InMemoryFileSystem()
         self._test_case = None
-        self._runner = TestRunner(self._file_system, self._directory)
+        self._display = StringIO()
+        self._runner = AcceptanceTestRunner(self._file_system, self._directory, UI(self._display))
 
     def _run_test(self):
         assert self._test_case is not None
-        return self._test_case.run_with(self._runner)
+        self._test_case.run_with(self._runner)
 
     def test_running_a_test_case_that_passes(self):
         self._test_case = FlapTestCase("test 1",
@@ -244,7 +243,6 @@ class TestRunningTestCase(TestCase):
 
         except Exception as e:
             self.fail("Unexpected exception " + str(e))
-
 
     def test_running_a_test_case_that_fails(self):
         self._test_case = FlapTestCase("test 1",
@@ -333,7 +331,7 @@ class YamlTest:
                  "        This is a simple \\LaTeX document!\n"
                  "      \\end{document}\n"
                  "expected:\n"
-                 "  - path: main.tex\n"
+                 "  - path: merged.tex\n"
                  "    content: |\n"
                  "      \\documentclass{article}\n"
                  "      \\begin{document}\n"

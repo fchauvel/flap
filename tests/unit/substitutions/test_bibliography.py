@@ -16,41 +16,44 @@
 #
 
 from unittest import main
-from tests.unit.engine import FlapUnitTest
+from tests.commons import FlapTest, a_project
 
 
-class BibliographyTests(FlapUnitTest):
+class BibliographyTests(FlapTest):
 
     def test_fetching_bibliography(self):
-        self.project.root_latex_code = "\\bibliography{biblio}"
+        self._assume = a_project()\
+            .with_main_file("\\bibliography{biblio}")\
+            .with_file("biblio.bib", "some refereneces")
 
-        self.project.images = ["biblio.bib"]
+        self._expect = a_project()\
+            .with_merged_file("\\bibliography{biblio}")\
+            .with_file("biblio.bib", "some refereneces")
 
-        self.run_flap()
-
-        self.verify_merge("\\bibliography{biblio}")
-        self.verify_image("biblio.bib")
+        self._do_test_and_verify()
 
     def test_fetching_bibliography_stored_in_sub_directories(self):
-        self.project.root_latex_code = "\\bibliography{parts/biblio}"
+        self._assume = a_project()\
+            .with_main_file("\\bibliography{etc/biblio}")\
+            .with_file("etc/biblio.bib", "some refereneces")
 
-        self.project.images = ["parts/biblio.bib"]
+        self._expect = a_project()\
+            .with_merged_file("\\bibliography{etc_biblio}")\
+            .with_file("etc_biblio.bib", "some refereneces")
 
-        self.run_flap()
-
-        self.verify_merge("\\bibliography{parts_biblio}")
-        self.verify_image("parts_biblio.bib")
+        self._do_test_and_verify()
 
     def test_interaction_with_graphicpath(self):
-        self.project.root_latex_code = "\\graphicspath{img}" \
-                                       "\\bibliography{parts/biblio}"
+        self._assume = a_project()\
+            .with_main_file("\\graphicspath{img}"
+                            "\\bibliography{parts/biblio}")\
+            .with_file("parts/biblio.bib", "some refereneces")
 
-        self.project.images = ["parts/biblio.bib"]
+        self._expect = a_project()\
+            .with_merged_file("\\bibliography{parts_biblio}")\
+            .with_file("parts_biblio.bib", "some refereneces")
 
-        self.run_flap()
-
-        self.verify_merge("\\bibliography{parts_biblio}")
-        self.verify_image("parts_biblio.bib")
+        self._do_test_and_verify()
 
 
 if __name__ == '__main__':

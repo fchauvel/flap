@@ -17,68 +17,39 @@
 
 from unittest import TestCase, main
 
-from flap.engine import Flap, Fragment, Listener
-from flap.substitutions.factory import ProcessorFactory
-from flap.util.oofs import InMemoryFileSystem, File, MissingFile
+from flap.engine import Fragment
+from flap.util.oofs import File, MissingFile
 from flap.util.path import ROOT
-from mock import MagicMock
-from tests.commons import FlapTest
 
 
 class FragmentTest(TestCase):
-    """
-    Specification of the Fragment class 
-    """
 
     def setUp(self):
         self.file = File(None, ROOT / "main.tex", "xxx")
         self.fragment = Fragment(self.file, 13, "blah blah")
 
-    def testShouldExposeLineNumber(self):
+    def test_expose_line_number(self):
         self.assertEqual(self.fragment.line_number(), 13)
 
-    def testShouldRejectNegativeOrZeroLineNumber(self):
+    def test_reject_negative_or_zero_line_number(self):
         with self.assertRaises(ValueError):
             Fragment(self.file, 0, "blah blah")
 
-    def testShouldExposeFile(self):
+    def test_expose_file(self):
         self.assertEqual(self.fragment.file().fullname(), "main.tex")
 
-    def testShouldRejectMissingFile(self):
+    def test_reject_missing_file(self):
         with self.assertRaises(ValueError):
             Fragment(MissingFile(ROOT / "main.tex"), 13, "blah blah")
 
-    def testShouldExposeFragmentText(self):
+    def test_expose_fragment_text(self):
         self.assertEqual(self.fragment.text(), "blah blah")
 
-    def testShouldDetectComments(self):
+    def test_detect_comments(self):
         self.assertFalse(self.fragment.is_commented_out())
 
-    def testShouldBeSliceable(self):
+    def test_should_be_sliceable(self):
         self.assertEqual(self.fragment[0:4].text(), "blah")
-
-
-class FlapUnitTest(FlapTest):
-    """
-    Provide some helper methods for create file in an in memory file system
-    """
-
-    def setUp(self):
-        super().setUp()
-        self.file_system = InMemoryFileSystem()
-        self.listener = MagicMock(Listener())
-        self.flap = Flap(self.file_system, ProcessorFactory(), self.listener)
-
-    def run_flap(self, output=Flap.DEFAULT_OUTPUT_FILE):
-        super().run_flap(output)
-        self.project.create_on(self.file_system)
-        self.flap.flatten(self.project.root_latex_file, self.output_directory / self.merged_file)
-
-    def verify_listener(self, handler, fileName, lineNumber, text):
-        fragment = handler.call_args[0][0]
-        self.assertEqual(fragment.file().fullname(), fileName)
-        self.assertEqual(fragment.line_number(), lineNumber)
-        self.assertEqual(fragment.text().strip(), text)
 
 
 if __name__ == "__main__":

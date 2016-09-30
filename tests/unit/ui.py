@@ -97,10 +97,8 @@ class ControllerTest(TestCase):
         factory.flap.return_value = self.flap_mock
         self.controller = Controller(factory)
 
-
     def set_flap_behaviour(self, exception):
         self.flap_mock.flatten.side_effect = exception
-
 
     def test_missing_images_are_reported_to_the_ui(self):
         fragment = MagicMock(Fragment)

@@ -17,14 +17,13 @@
 
 from unittest import TestCase, main as testmain
 
-from flap.ui import main
+from flap.ui import UI
 from flap.util.oofs import OSFileSystem
-from flap.util.path import TEMP
+from flap.util.path import Path, TEMP
 from io import StringIO
-from mock import patch
-from os import chdir
+
 from re import search
-from tests.commons import FlapTest
+from tests.commons import FlapTest, a_project, AcceptanceTestRunner
 
 
 class OSFileSystemTest(TestCase):
@@ -59,110 +58,55 @@ class OSFileSystemTest(TestCase):
     def test_copyAndRename(self):
         file = self.createAndOpenTestFile()
 
-        copyPath = TEMP / "dir" / "copy.txt"
-        self.fileSystem.copy(file, copyPath)
-        
+        copy_path = TEMP / "dir" / "copy.txt"
+        self.fileSystem.copy(file, copy_path)
 
-        copy = self.fileSystem.open(copyPath)
+        copy = self.fileSystem.open(copy_path)
         self.assertEqual(copy.content(), self.content)
 
 
-class AcceptanceTest(FlapTest):
+class MoreAcceptanceTests(FlapTest):
 
     def setUp(self):
         super().setUp()
-        self.file_system = OSFileSystem()
-        self.prepareLatexProject()
+        self._display = StringIO()
+        self._runner = AcceptanceTestRunner(self._file_system, TEMP / "flap" , UI(self._display))
+        self._assume = a_project()\
+            .with_main_file(r"\documentclass{article}"
+                            r"\begin{document}"
+                            r"   This is a \LaTeX document!"
+                            r"\end{document}")
+        self._expect = a_project()\
+            .with_merged_file(r"\documentclass{article}"
+                              r"\begin{document}"
+                              r"   This is a \LaTeX document!"
+                              r"\end{document}")
 
-    def prepareLatexProject(self):
-        self.project.root_latex_code = \
-            "\\documentclass{article}\n" \
-            "\\includeonly{partB/main}\n" \
-            "\\begin{document}\n" \
-            "   \\subfile{partA}\n" \
-            "   \\include{partB/main}\n" \
-            "   \\input{partC}\n" \
-            "\\end{document}"
-
-        self.project.parts["partA.tex"] = \
-            "\\documentclass[../main.tex]{subfiles}\n" \
-            "\\begin{document}\n" \
-            "   \\input{result}\n" \
-            "\\end{document}\n"
-
-        self.project.parts["result.tex"] = \
-            "\\includegraphics% This is a multi-lines command\n" \
-            "[width=\\textwidth]%\n" \
-            "{plot}"
-
-        self.project.parts["partB/main.tex"] = "blablah"
-
-        self.project.parts["partC.tex"] = "PART C"
-
-        self.project.images = ["plot.pdf"]
-
-        self.project.resources = ["style.sty", "test.cls" ]
-
-    def run_flap(self, arguments):
-        chdir(self.file_system.forOS(self.working_directory))
-        print("python -m flap ", *arguments)
-
-        mock = StringIO()
-        def patched_show(message):
-            mock.write(message)
-        with patch("flap.ui.UI._show", side_effect=patched_show):
-            main(arguments)
-        return mock.getvalue()
-
-    def tearDown(self):
-        #self.file_system.deleteDirectory(TEST_DIRECTORY)
-        pass
-
-    def run_test(self, arguments):
-        self.project.create_on(self.file_system)
-
-        output = self.run_flap(arguments)
-
-        self.verify_merge("\\documentclass{article}\n"
-                          "\n"
-                          "\\begin{document}\n"
-                          "   \n"
-                          "   \\includegraphics[width=\\textwidth]{plot}\n"
-                          "\n"
-                          "\n"
-                          "   blablah\\clearpage \n"
-                          "   PART C\n"
-                          "\\end{document}")
-
-        self.verify_images()
-        self.verify_resources()
-        return output
-
-    def test_flatten_latex_project(self):
-        arguments = ["-v",
-                     self.file_system.forOS(self.project.root_latex_file),
-                     self.file_system.forOS(self.output_directory)]
-        output = self.run_test(arguments)
-        self.verify_no_error_in(output)
-
-    def test_flatten_latex_project_locally(self):
-        self.working_directory = self.project.directory
-        output = self.run_test(["-v", "main.tex", "output"])
-        self.verify_no_error_in(output)
-
-    def verify_no_error_in(self, output):
+    def _verify_no_error_in_output(self):
+        output = self._display.getvalue()
         self.assertFalse(search(r"Error:", output), output)
 
+    def test_basic_case(self):
+        self._do_test_and_verify()
+        self._verify_no_error_in_output()
+
+    def test_invoking_locally(self):
+        self._runner._root_file = lambda name: Path.fromText("main.tex")
+
+        self._do_test_and_verify()
+        self._verify_no_error_in_output()
+
     def test_usage_is_shown(self):
-        mock = StringIO()
-        def patched_show(message):
-            mock.write(message)
-        with patch("flap.ui.UI._show", side_effect=patched_show):
-            main([])
-        output = mock.getvalue()
+        self._runner._arguments = lambda name: []
+
+        self._runner._run_flap("whatever")
+
+        output = self._display.getvalue()
         self.assertNotEqual("", output, "No output detected")
         self.assertTrue(search(r"Usage\:", output), output)
         self.assertTrue(search(r"python -m flap <path/to/tex_file> <output/directory>", output), output)
+
+
 
 
 if __name__ == "__main__":

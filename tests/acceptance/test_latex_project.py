@@ -19,7 +19,7 @@ from unittest import TestCase
 
 from flap.util.oofs import InMemoryFileSystem
 from flap.util.path import Path
-from tests.acceptance.latex_project import LatexProject, TexFile
+from tests.commons import LatexProject, TexFile, a_project, LatexProjectBuilder
 
 
 class TexFileTest(TestCase):
@@ -194,3 +194,37 @@ class LatexProjectExtractionTests(TestCase):
             ("images/sources/results.svg", "SVG CODE"),
             ("article.bib", "The bibliography"))
 
+
+class BuilderTests(TestCase):
+
+    def test_build_empty_project(self):
+        project = a_project().build()
+
+        self.assertEqual(LatexProject(), project)
+
+    def test_build_single_file_projects(self):
+        project = a_project()\
+            .with_file("main.tex", "foo")\
+            .build()
+        self.assertEqual(LatexProject(TexFile("main.tex", "foo")), project)
+
+    def test_build_a_main_file_project(self):
+        project = a_project()\
+            .with_main_file("foo")\
+            .build()
+        self.assertEqual(LatexProject(TexFile(LatexProjectBuilder.MAIN_FILE, "foo")), project)
+
+    def test_build_a_merged_file_project(self):
+        project = a_project()\
+            .with_merged_file("foo")\
+            .build()
+        self.assertEqual(LatexProject(TexFile(LatexProjectBuilder.MERGED_FILE, "foo")), project)
+
+
+    def test_build_project_with_image(self):
+        project = a_project()\
+            .with_image("img/result.pdf")\
+            .build()
+        self.assertEqual(
+            LatexProject(TexFile("img/result.pdf", LatexProjectBuilder.IMAGE_CONTENT.format(key="img_result.pdf"))),
+            project)

@@ -16,226 +16,211 @@
 #
 
 from unittest import main
-from mock import MagicMock
-from tests.unit.engine import FlapUnitTest
+
 from flap.engine import GraphicNotFound
+from flap.util.path import Path
+from tests.commons import FlapTest, a_project
 
 
-class GraphicPathTest(FlapUnitTest):
-    """
-    Specification of the graphic path processing
-    """
+class GraphicPathTest(FlapTest):
 
     def test_graphic_are_adjusted_accordingly(self):
-        self.project.root_latex_code = "\\graphicspath{img/}" \
-                                        "blabla" \
-                                        "\\includegraphics[witdh=5cm]{plot}" \
-                                        "blabla"
+        self._assume = a_project()\
+            .with_main_file("\\graphicspath{img/}"
+                            "blabla"
+                            "\\includegraphics[witdh=5cm]{plot}"
+                            "blabla")\
+            .with_image("img/plot.pdf")
 
-        self.project.images = ["img/plot.pdf"]
+        self._expect = a_project()\
+            .with_merged_file("blabla"
+                              "\\includegraphics[witdh=5cm]{img_plot}"
+                              "blabla")\
+            .with_image("img_plot.pdf")
 
-        self.run_flap()
-
-        self.verify_merge("blabla"
-                           "\\includegraphics[witdh=5cm]{img_plot}"
-                           "blabla")
+        self._do_test_and_verify()
 
     def test_escaped_graphicpath(self):
-        self.project.root_latex_code = "\\graphicspath{{./img/}}" \
-                                        "blabla" \
-                                        "\\includegraphics[witdh=5cm]{plot}" \
-                                        "blabla"
+        self._assume = a_project()\
+            .with_main_file("\\graphicspath{{./img/}}" \
+                            "blabla" \
+                            "\\includegraphics[witdh=5cm]{plot}" \
+                            "blabla")\
+            .with_image("img/plot.pdf")
 
-        self.project.images = ["img/plot.pdf"]
+        self._expect = a_project()\
+            .with_merged_file("blabla" \
+                              "\\includegraphics[witdh=5cm]{img_plot}" \
+                              "blabla")\
+            .with_image("img_plot.pdf")
 
-        self.run_flap()
-
-        self.verify_merge("blabla"
-                           "\\includegraphics[witdh=5cm]{img_plot}"
-                           "blabla")
+        self._do_test_and_verify()
 
 
-class IncludeGraphicsProcessorTest(FlapUnitTest):
-    """
-    Tests the processing of \includegraphics directive
-    """
+class IncludeGraphicsProcessorTest(FlapTest):
 
     def test_links_to_graphics_are_adjusted(self):
-        self.project.root_latex_code = "A \\includegraphics[width=3cm]{img/foo} Z"
+        self._assume = a_project()\
+            .with_main_file("A \\includegraphics[width=3cm]{img/foo} Z")\
+            .with_image("img/foo.pdf")
 
-        self.project.images = ["img/foo.pdf"]
+        self._expect = a_project()\
+            .with_merged_file(r"A \includegraphics[width=3cm]{img_foo} Z")\
+            .with_image("img_foo.pdf")
 
-        self.run_flap()
-
-        self.verify_merge(r"A \includegraphics[width=3cm]{img_foo} Z")
-        self.verify_image("img_foo.pdf")
+        self._do_test_and_verify()
 
     def test_paths_with_extension(self):
-        self.project.root_latex_code = "A \\includegraphics[width=3cm]{img/foo.pdf} Z"
+        self._assume = a_project()\
+            .with_main_file("A \\includegraphics[width=3cm]{img/foo.pdf} Z")\
+            .with_image("img/foo.pdf")
 
-        self.project.images = ["img/foo.pdf"]
+        self._expect = a_project()\
+            .with_merged_file(r"A \includegraphics[width=3cm]{img_foo} Z")\
+            .with_image("img_foo.pdf")
 
-        self.run_flap()
-
-        self.verify_merge(r"A \includegraphics[width=3cm]{img_foo} Z")
-        self.verify_image("img_foo.pdf")
+        self._do_test_and_verify()
 
     def test_path_with_extension_in_a_different_case(self):
-        self.project.root_latex_code = "A \\includegraphics[width=3cm]{img/foo} Z"
+        self._assume = a_project()\
+            .with_main_file("A \\includegraphics[width=3cm]{img/foo} Z")\
+            .with_image("img/foo.PDF")
 
-        self.project.images = ["img/foo.PDF"]
+        self._expect = a_project()\
+            .with_merged_file(r"A \includegraphics[width=3cm]{img_foo} Z")\
+            .with_image("img_foo.PDF")
 
-        self.run_flap()
-
-        self.verify_merge(r"A \includegraphics[width=3cm]{img_foo} Z")
-        self.verify_image("img_foo.PDF")
-
-    def test_local_paths(self):
-        self.project.root_latex_code = "A \\includegraphics[width=3cm]{foo} Z"
-
-        self.project.images_directory = None
-        self.project.images = ["foo.pdf"]
-
-        self.project.create_on(self.file_system)
-
-        self.file_system.move_to_directory(self.project.directory)
-        self.flap.flatten(self.project.root_latex_file, self.output_directory)
-
-        self.verify_merge(r"A \includegraphics[width=3cm]{foo} Z")
-        self.verify_image("foo.pdf")
+        self._do_test_and_verify()
 
     def test_path_to_local_images_are_not_adjusted(self):
-        self.project.root_latex_code = ("\\includegraphics[interpolate,width=11.445cm]{%\n"
-                                        "startingPlace}")
+        self._assume = a_project()\
+            .with_main_file("A \\includegraphics[width=3cm]{foo} Z")\
+            .with_image("foo.pdf")
 
-        self.project.images_directory = None
-        self.project.images = ["startingPlace.pdf"]
+        self._expect = a_project()\
+            .with_merged_file(r"A \includegraphics[width=3cm]{foo} Z")\
+            .with_image("foo.pdf")
 
-        self.run_flap()
-
-        self.verify_merge("\\includegraphics[interpolate,width=11.445cm]{startingPlace}")
-        self.verify_image("startingPlace.pdf")
+        self._do_test_and_verify()
 
     def test_link_to_graphic_in_a_separate_file(self):
-        self.project.root_latex_code = ("aaa\n"
-                                        "\\input{slides/foo}\n"
-                                        "bbb")
-        self.project.parts["slides/foo.tex"] = ("ccc\n"
-                                                "\\includegraphics{foo}\n"
-                                                "ddd")
-        self.project.images_directory = None
-        self.project.images = ["foo.pdf"]
+        self._assume = a_project()\
+            .with_main_file("AAA \\input{slides/foo} BBB")\
+            .with_file("slides/foo.tex", "\\includegraphics{foo}")\
+            .with_image("foo.pdf")
 
-        self.run_flap()
+        self._expect = a_project()\
+            .with_merged_file("AAA \\includegraphics{foo} BBB")\
+            .with_image("foo.pdf")
 
-        self.verify_merge("aaa\n"
-                           "ccc\n"
-                           "\\includegraphics{foo}\n"
-                           "ddd\n"
-                           "bbb")
-        self.verify_image("foo.pdf")
-
-    def test_paths_are_recursively_adjusted(self):
-        self.project.root_latex_code = "AA \\input{foo} AA"
-        self.project.parts["foo.tex"] = "BB \\includegraphics[width=3cm]{img/foo} BB"
-
-        self.project.images = ["img/foo.pdf"]
-
-        self.run_flap()
-
-        self.verify_merge(r"AA BB \includegraphics[width=3cm]{img_foo} BB AA")
-        self.verify_image("img_foo.pdf")
+        self._do_test_and_verify()
 
     def test_multi_lines_directives(self):
-        self.project.root_latex_code = ("A"
-                                        "\includegraphics[width=8cm]{%\n"
-                                        "img/foo%\n"
-                                        "}\n"
-                                        "B")
-        self.project.images = ["img/foo.pdf"]
+        self._assume = a_project()\
+            .with_main_file("\includegraphics[width=8cm]{%\n"
+                            "img/foo%\n"
+                            "}\n")\
+            .with_image("img/foo.pdf")
 
-        self.run_flap()
+        self._expect = a_project()\
+            .with_merged_file("\\includegraphics[width=8cm]{img_foo}\n")\
+            .with_image("img_foo.pdf")
 
-        self.verify_merge("A\\includegraphics[width=8cm]{img_foo}\nB")
-        self.verify_image("img_foo.pdf")
-
-    def test_includegraphics_are_reported(self):
-        self.project.root_latex_code = ("\n"
-                                        "\\includegraphics{foo}")
-
-        self.project.images_directory = None
-        self.project.images = ["foo.pdf"]
-
-        self.run_flap()
-
-        self.verify_listener(self.listener.on_fragment, "main.tex", 2, "\\includegraphics{foo}")
+        self._do_test_and_verify()
 
     def test_missing_graphics_are_detected(self):
-        self.project.root_latex_code = "\\includegraphics{foo}"
+        self._assume = a_project()\
+            .with_main_file("\\includegraphics{foo}")
 
         with self.assertRaises(GraphicNotFound):
-            self.run_flap()
+            self._do_test_and_verify()
 
-class SVGIncludeTest(FlapUnitTest):
+    def test_includegraphics_are_reported(self):
+        self._assume = a_project()\
+            .with_main_file("\n\\includegraphics{foo}")\
+            .with_image("foo.pdf")
+
+        self._expect = a_project()\
+            .with_merged_file("\n\\includegraphics{foo}")\
+            .with_image("foo.pdf")
+
+        self._do_test_and_verify()
+
+        self._verify_ui_reports_fragment("main.tex", 2, "\\includegraphics{foo}")
+
+    def test_local_paths(self):
+        self._assume = a_project()\
+            .with_main_file("A \\includegraphics{foo} Z")\
+            .with_image("foo.pdf")
+
+        self._expect = a_project()\
+            .with_merged_file("A \\includegraphics{foo} Z")\
+            .with_image("foo.pdf")
+
+        self._runner._root_file = lambda name: Path.fromText("main.tex")
+
+        self._do_test_and_verify()
+
+
+class SVGIncludeTest(FlapTest):
 
     def testLinksToSVGAreAdjusted(self):
-        self.project.root_latex_code = "A \\includesvg{img/foo} Z"
+        self._assume = a_project()\
+            .with_main_file("A \\includesvg{img/foo} Z")\
+            .with_image("img/foo.svg")
 
-        self.project.images = ["img/foo.svg"]
+        self._expect = a_project()\
+            .with_merged_file("A \\includesvg{img_foo} Z")\
+            .with_image("img_foo.svg")
 
-        self.run_flap()
-
-        self.verify_merge(r"A \includesvg{img_foo} Z")
-        self.verify_image("img_foo.svg")
+        self._do_test_and_verify()
 
     def test_includesvg_in_separated_file(self):
         # TODO check if this example would actually compile in latex
-        self.project.root_latex_code =  "A \\input{parts/foo} A"
-        self.project.parts["parts/foo.tex"] = "B \\includesvg{img/sources/test} B"
+        self._assume = a_project()\
+            .with_main_file("A \\input{parts/foo} A")\
+            .with_file("parts/foo.tex", "B \\includesvg{img/sources/test} B")\
+            .with_image("img/sources/test.svg")
 
-        self.project.images = ["img/sources/test.svg"]
+        self._expect = a_project()\
+            .with_merged_file("A B \\includesvg{img_sources_test} B A")\
+            .with_image("img_sources_test.svg")
 
-        self.run_flap()
-
-        self.verify_merge("A B \\includesvg{img_sources_test} B A")
-        self.verify_image("img_sources_test.svg")
+        self._do_test_and_verify()
 
     def testSVGFilesAreCopiedEvenWhenJPGAreAvailable(self):
-        self.project.root_latex_code =  "A \\includesvg{img/foo} Z"
+        self._assume = a_project()\
+            .with_main_file("A \\includesvg{img/foo} Z")\
+            .with_image("img/foo.eps")\
+            .with_image("img/foo.svg")
 
-        self.project.images = ["img/foo.eps", "img/foo.svg"]
+        self._expect = a_project()\
+            .with_merged_file(r"A \includesvg{img_foo} Z")\
+            .with_image("img_foo.svg")
 
-        self.project.create_on(self.file_system)
-
-        self.file_system.filesIn = MagicMock()
-        self.file_system.filesIn.return_value = [ self.file_system.open(self.project.directory / eachImage) for eachImage in self.project.images ]
-
-        self.run_flap()
-
-        self.verify_merge(r"A \includesvg{img_foo} Z")
-        self.verify_image("img_foo.svg")
+        self._do_test_and_verify()
 
 
-class OverpicAdjuster(FlapUnitTest):
+class OverpicAdjuster(FlapTest):
     """
     Specification of the processor for 'overpic' environment
     """
 
     def test_overpic_environment_are_adjusted(self):
-        self.project.root_latex_code = ("\\begin{overpic}[scale=0.25,unit=1mm,grid,tics=10]{%\n"
-                                        "img/picture}\n"
-                                        "blablabla\n"
-                                        "\\end{overpic}\n"
-                                        "")
-        self.project.images = ["img/picture.pdf"]
+        self._assume = a_project()\
+            .with_main_file("\\begin{overpic}[scale=0.25,unit=1mm,grid,tics=10]{%\n"
+                            "img/picture}\n"
+                            "blablabla\n"
+                            "\\end{overpic}\n")\
+            .with_image("img/picture.pdf")
 
-        self.run_flap()
+        self._expect = a_project()\
+            .with_merged_file("\\begin{overpic}[scale=0.25,unit=1mm,grid,tics=10]{img_picture}\n"
+                              "blablabla\n"
+                              "\\end{overpic}\n")\
+            .with_image("img_picture.pdf")
 
-        self.verify_merge("\\begin{overpic}[scale=0.25,unit=1mm,grid,tics=10]{img_picture}\n"
-                           "blablabla\n"
-                           "\\end{overpic}\n"
-                           "")
-        self.verify_image("img_picture.pdf")
+        self._do_test_and_verify()
 
 
 if __name__ == "__main__":

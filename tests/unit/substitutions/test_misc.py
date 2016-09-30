@@ -16,91 +16,100 @@
 #
 
 from unittest import main
-from tests.unit.engine import FlapUnitTest
+from tests.commons import FlapTest, a_project
 
 
-class TestEndinputRemover(FlapUnitTest):
+class TestEndinputRemover(FlapTest):
     """
-    Specify the behaviour of the Endinput remover
+    Specify the behaviour of the \endinput remover
     """
 
     def test_endinput_mask_subsequent_content(self):
-        self.project.root_latex_code = "aaa\n" \
-                                       "\\endinput\n" \
-                                       "ccc"
-        self.run_flap()
-        self.verify_merge("aaa\n")
+        self._assume = a_project()\
+            .with_main_file("aaa\n"
+                            "\\endinput\n"
+                            "ccc")
+
+        self._expect = a_project().with_merged_file("aaa\n")
+
+        self._do_test_and_verify()
 
     def test_endinput_in_a_separate_tex_file(self):
-        self.project.root_latex_code = "aaa\n" \
-                                       "\\input{foo}\n" \
-                                       "ccc"
+        self._assume = a_project()\
+            .with_main_file("aaa\n"
+                            "\\input{foo}\n"
+                            "ccc")\
+            .with_file("foo.tex", ("bbb\n"
+                                   "\\endinput\n"
+                                   "zzz"))
 
-        self.project.parts["foo.tex"] = ("bbb\n"
-                                         "bbb\n"
-                                         "\\endinput\n"
-                                         "zzz")
-        self.run_flap()
+        self._expect = a_project()\
+            .with_merged_file("aaa\n"
+                              "bbb\n\n"
+                              "ccc")
 
-        self.verify_merge("aaa\n"
-                           "bbb\n"
-                           "bbb\n\n"
-                           "ccc")
+        self._do_test_and_verify()
 
 
-class MiscellaneousTests(FlapUnitTest):
+class MiscellaneousTests(FlapTest):
 
     def test_indentation_is_preserved(self):
-        self.project.root_latex_code = "\t\\input{part}"
-        self.project.parts["part.tex"] = ("\n"
-                                          "\\begin{center}\n"
-                                          "\t\\includegraphics[width=4cm]{img/foo}\n"
-                                          "  \\includegraphics[width=5cm]{img/foo}\n"
-                                          "\\end{center}")
-        self.project.images = ["img/foo.pdf"]
+        self._assume = a_project()\
+            .with_main_file("\t\\input{part}")\
+            .with_file("part.tex", ("\n"
+                                    "\\begin{center}\n"
+                                    "\t\\includegraphics[width=4cm]{img/foo}\n"
+                                    "  \\includegraphics[width=5cm]{img/foo}\n"
+                                    "\\end{center}"))\
+            .with_image("img/foo.pdf")
 
-        self.run_flap()
+        self._expect = a_project()\
+            .with_merged_file("\t\n"
+                              "\\begin{center}\n"
+                              "\t\\includegraphics[width=4cm]{img_foo}\n"
+                              "  \\includegraphics[width=5cm]{img_foo}\n"
+                              "\\end{center}")\
+            .with_image("img_foo.pdf")
 
-        self.verify_merge("\t\n"
-                          "\\begin{center}\n"
-                          "\t\\includegraphics[width=4cm]{img_foo}\n"
-                          "  \\includegraphics[width=5cm]{img_foo}\n"
-                          "\\end{center}")
-        self.verify_image("img_foo.pdf")
+        self._do_test_and_verify()
 
     def test_conflicting_images_names(self):
-        self.project.root_latex_code = \
-            "\\includegraphics[width=\\textwidth]{partA/result}\\n" \
-            "\\includegraphics[width=\\textwidth]{partB/result}\\n"
+        self._assume = a_project()\
+            .with_main_file("\\includegraphics[width=\\textwidth]{partA/result}\\n"
+                            "\\includegraphics[width=\\textwidth]{partB/result}\\n")\
+            .with_image("partA/result.pdf")\
+            .with_image("partB/result.pdf")
 
-        self.project.images = [
-            "partA/result.pdf",
-            "partB/result.pdf"]
+        self._expect = a_project()\
+            .with_merged_file("\\includegraphics[width=\\textwidth]{partA_result}\\n"
+                              "\\includegraphics[width=\\textwidth]{partB_result}\\n")\
+            .with_image("partA_result.pdf")\
+            .with_image("partB_result.pdf")
 
-        self.run_flap()
-
-        self.verify_merge(
-            "\\includegraphics[width=\\textwidth]{partA_result}\\n"
-            "\\includegraphics[width=\\textwidth]{partB_result}\\n")
-
-        self.verify_image("partA_result.pdf")
-        self.verify_image("partB_result.pdf")
+        self._do_test_and_verify()
 
     def test_flattening_in_a_file(self):
-        self.project.root_latex_code = "blablabla"
+        self._assume = a_project()\
+            .with_main_file("blablabla")
 
-        self.run_flap(output="output/root.tex")
+        self._expect = a_project()\
+            .with_merged_file("blablabla")
 
-        self.verify_merge("blablabla")
+        self._runner._destination = \
+            lambda name: self._runner._output_path(name) / "merged.tex"
+
+        self._do_test_and_verify()
 
     def test_resources_are_copied(self):
-        self.project.root_latex_code = "xxx"
-        self.project.resources = ["style.cls"]
+        self._assume = a_project()\
+            .with_main_file("blablabla")\
+            .with_file("style.cls", "class content")
 
-        self.run_flap()
+        self._expect = a_project()\
+            .with_merged_file("blablabla")\
+            .with_file("style.cls", "class content")
 
-        self.verify_resources()
-
+        self._do_test_and_verify()
 
 if __name__ == '__main__':
     main()

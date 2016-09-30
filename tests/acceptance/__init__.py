@@ -19,7 +19,7 @@ from unittest import TestCase, TestSuite, main
 
 from flap.util.path import TEMP, Path
 from flap.util.oofs import OSFileSystem
-from tests.acceptance.engine import FileBasedTestRepository, YamlCodec, TestRunner
+from tests.commons import FileBasedTestRepository, YamlCodec, TestRunner
 
 
 class Generator:

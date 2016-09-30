@@ -15,64 +15,63 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from unittest import TestCase, main
-
-from flap.engine import Fragment, Processor
-from flap.substitutions.comments import CommentsRemover
-from flap.util.oofs import File
-from flap.util.path import TEMP
-from mock import MagicMock
+from unittest import main
+from tests.commons import FlapTest, a_project
 
 
-class CommentRemoverTest(TestCase):
+class CommentRemoverTest(FlapTest):
 
     def test_remove_commented_lines(self):
-        self.runTest("\nfoo\n% this is a comment\nbar",
-                     "\nfoo\nbar")
+        self._assume = a_project()\
+            .with_main_file("\nfoo\n"
+                            "% this is a comment\n"
+                            "bar")
+
+        self._expect = a_project()\
+            .with_merged_file("\nfoo\nbar")
+
+        self._do_test_and_verify()
 
     def test_remove_end_line_comments(self):
-        text = ("A"
-                "\\includegraphics% This is a comment \n"
-                "[width=8cm]{%\n"
-                "foo%\n"
-                "}\n"
-                "B")
-        expected = "A\\includegraphics[width=8cm]{foo}\nB"
-        self.runTest(text, expected)
+        self._assume = a_project()\
+            .with_main_file("A"
+                            "\\includegraphics% This is a comment \n"
+                            "[width=8cm]{%\n"
+                            "foo%\n"
+                            "}\n"
+                            "B")\
+            .with_image("foo.pdf")
+
+        self._expect = a_project()\
+            .with_merged_file("A\\includegraphics[width=8cm]{foo}\n"
+                              "B")\
+            .with_image("foo.pdf")
+
+        self._do_test_and_verify()
 
     def test_does_not_takes_percent_as_comments(self):
-        input = ("25 \\% of that \n"
-                 "% this is a comment \n"
-                 "blah bla")
-        expected_output = ("25 \\% of that \n"
-                           "blah bla")
-        self.runTest(input,
-                     expected_output)
+        self._assume = a_project()\
+            .with_main_file("25 \\% of that \n"
+                            "% this is a comment \n"
+                            "blah bla")
+
+        self._expect = a_project()\
+            .with_merged_file("25 \\% of that \n"
+                              "blah bla")
+
+        self._do_test_and_verify()
 
     def test_does_not_takes_verbatim_comments_as_comments(self):
-        input = ("25 \\verb|%| of that \n"
-                 "% this is a comment \n"
-                 "blah bla")
-        expected_output = ("25 \\verb|%| of that \n"
-                           "blah bla")
-        self.runTest(input,
-                     expected_output)
+        self._assume = a_project()\
+            .with_main_file("25 \\verb|%| of that \n"
+                            "% this is a comment \n"
+                            "blah bla")
 
-    def runTest(self, text, expectation):
-        source = File(None, TEMP / "test", None)
-        source.isMissing = MagicMock()
-        source.isMissing.return_value = False
+        self._expect = a_project()\
+            .with_merged_file("25 \\verb|%| of that \n"
+                              "blah bla")
 
-        delegate = Processor()
-        delegate.fragments = MagicMock()
-        delegate.fragments.return_value = iter([Fragment(source, 1, text)])
-
-        sut = CommentsRemover(delegate)
-
-        result = list(sut.fragments())
-
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0].text(), expectation)
+        self._do_test_and_verify()
 
 
 if __name__ == "__main__":
