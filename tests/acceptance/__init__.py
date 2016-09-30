@@ -17,9 +17,11 @@
 
 from unittest import TestCase, TestSuite, main
 
+from io import StringIO
+from flap.ui import UI
 from flap.util.path import TEMP, Path
 from flap.util.oofs import OSFileSystem
-from tests.commons import FileBasedTestRepository, YamlCodec, TestRunner
+from tests.commons import FileBasedTestRepository, YamlCodec, AcceptanceTestRunner
 
 
 class Generator:
@@ -45,7 +47,7 @@ class Generator:
 def load_tests(loader, tests, pattern):
     file_system = OSFileSystem()
     repository = FileBasedTestRepository(file_system, Path.fromText("tests/acceptance/tests"), YamlCodec())
-    runner = TestRunner(file_system, TEMP / "flap" / "acceptance")
+    runner = AcceptanceTestRunner(file_system, TEMP / "flap" / "acceptance", UI(StringIO()))
     generate = Generator(repository, runner)
     suite = TestSuite()
     tests = loader.loadTestsFromTestCase(generate.test_class())
