@@ -22,8 +22,9 @@ from flap.ui import UI
 from flap.util.oofs import InMemoryFileSystem
 from flap.util.path import Path, TEMP
 from mock import MagicMock
-from tests.commons import FlapTestCase, FileBasedTestRepository, YamlCodec, \
-    InvalidYamlTestCase, AcceptanceTestRunner, TexFile, LatexProject, a_project
+from tests.commons import AcceptanceTestRunner
+from tests.latex_project import LatexProject, TexFile, a_project, FlapTestCase
+from tests.acceptance.yaml import FileBasedTestRepository, YamlCodec, InvalidYamlTestCase
 
 
 class FlapTestCaseTests(TestCase):

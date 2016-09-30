@@ -19,7 +19,8 @@ from unittest import main
 
 from flap.engine import GraphicNotFound
 from flap.util.path import Path
-from tests.commons import FlapTest, a_project
+from tests.commons import FlapTest
+from tests.latex_project import a_project
 
 
 class GraphicPathTest(FlapTest):

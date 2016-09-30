@@ -19,7 +19,7 @@ from unittest import TestCase
 
 from flap.util.oofs import InMemoryFileSystem
 from flap.util.path import Path
-from tests.commons import LatexProject, TexFile, a_project, LatexProjectBuilder
+from tests.latex_project import LatexProject, LatexProjectBuilder, TexFile, a_project
 
 
 class TexFileTest(TestCase):

@@ -16,7 +16,8 @@
 #
 
 from unittest import main
-from tests.commons import FlapTest, a_project
+from tests.commons import FlapTest
+from tests.latex_project import a_project
 
 
 class TestEndinputRemover(FlapTest):

@@ -21,7 +21,8 @@ from io import StringIO
 from flap.ui import UI
 from flap.util.path import TEMP, Path
 from flap.util.oofs import OSFileSystem
-from tests.commons import FileBasedTestRepository, YamlCodec, AcceptanceTestRunner
+from tests.commons import AcceptanceTestRunner
+from tests.acceptance.yaml import FileBasedTestRepository, YamlCodec
 
 
 class Generator:
