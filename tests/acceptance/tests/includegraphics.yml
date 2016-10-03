@@ -27,13 +27,11 @@ project:
       \documentclass{article}
       \usepackage{graphicx}
       \begin{document}
-      This is an example of graphic inclusion:
-      \begin{figure}
-        \begin{center}
-          \includegraphics[width=3cm]{img/figure}
-        \end{center}
-        \caption{A sample graphic}
-      \end{figure}
+      These are examples of graphic inclusion:
+         \includegraphics{img/figure}
+         \includegraphics     {img/figure}
+         \includegraphics[width=3cm]{img/figure}
+         \includegraphics   [width=3cm]   {img/figure}
       \end{document}
   - path: img/figure.pdf
     content: |
@@ -45,13 +43,11 @@ expected:
       \documentclass{article}
       \usepackage{graphicx}
       \begin{document}
-      This is an example of graphic inclusion:
-      \begin{figure}
-        \begin{center}
-          \includegraphics[width=3cm]{img_figure}
-        \end{center}
-        \caption{A sample graphic}
-      \end{figure}
+      These are examples of graphic inclusion:
+         \includegraphics{img_figure}
+         \includegraphics     {img_figure}
+         \includegraphics[width=3cm]{img_figure}
+         \includegraphics   [width=3cm]   {img_figure}
       \end{document}
   - path: img_figure.pdf
     content: |

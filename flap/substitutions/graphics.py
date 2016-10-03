@@ -49,7 +49,7 @@ class IncludeGraphics(LinkSubstitution):
         super().__init__(delegate, flap)
 
     def prepare_pattern(self):
-        pattern = r"\\includegraphics\s*(?:\[(?:[^\]]+)\])*\{([^\}]+)\}"
+        pattern = r"\\includegraphics(?:\s*\[[^\]]+\])?\s*\{([^\}]+)\}"
         return compile(pattern)
 
     def find(self, fragment, reference):

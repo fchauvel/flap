@@ -151,7 +151,7 @@ class IncludeGraphicsProcessorTest(FlapTest):
 
     def test_local_paths(self):
         self._assume = a_project()\
-            .with_main_file("A \\includegraphics{foo} Z")\
+            .with_main_file(r"A \includegraphics{foo} Z")\
             .with_image("foo.pdf")
 
         self._expect = a_project()\

@@ -15,7 +15,7 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from re import compile
+import re
 from flap.substitutions.commons import LinkSubstitution
 
 
@@ -29,7 +29,7 @@ class Bibliography(LinkSubstitution):
         super().__init__(delegate, flap)
 
     def prepare_pattern(self):
-        return compile(r"\\bibliography\s*(?:\[(?:[^\]]+)\])*\{([^\}]+)\}")
+        return re.compile(r"\\bibliography\s*(?:\[(?:[^\]]+)\])*\{([^\}]+)\}")
 
     def find(self, fragment, reference):
         return self.flap.find_resource(fragment, reference, self.extensions_by_priority())

@@ -54,5 +54,5 @@ mailto:franck.chauvel@gmail.com[me]
 . Fix for running FLaP on a LaTeX file located in the working directory;
 . Fix regarding the extraction of subfiles directives;
 . Fix regarding whitspaces in multiline commands;
-. Fix extra space in the `\input` directive before the argument (e.g., `\input {my-file}`);
-. Fix extra space in the `\include` directive before the argument.
+. Fix extra space before the argument (including `\input`, `\include`, `\includegraphics`, `\subfile`)
+
