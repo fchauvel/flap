@@ -16,7 +16,7 @@
 #
 
 from unittest import TestCase
-from unittest.mock import MagicMock
+from mock import MagicMock
 
 from flap.engine import Flap
 from flap.substitutions.factory import ProcessorFactory
