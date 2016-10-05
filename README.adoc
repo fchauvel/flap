@@ -41,18 +41,32 @@ $> python3 -m flap project/main.tex output/directory
 
 See also the link:https://pythonhosted.org/FLaP/[online FLaP documentation].
 
-== Contact
+== Contact Us
 
-If you get the change to give it a try, please report any bugs,
-issues or feature request using the
+If you give FLaP a try, please report any bugs, issues or feature request using the
 link:https://github.com/fchauvel/flap/issues[issue tracker].
-Should you need any further information, feel free to email
-mailto:franck.chauvel@gmail.com[me]
 
-== Included in Next Release
+Feel free to share any question or comment on our mailto:flap-general@freelists.org[FLaP mailing list]. Note that you must
+subscribe first by filling the form below:
 
-. Fix for running FLaP on a LaTeX file located in the working directory;
-. Fix regarding the extraction of subfiles directives;
-. Fix regarding whitspaces in multiline commands;
-. Fix extra space before the argument (including `\input`, `\include`, `\includegraphics`, `\subfile`)
+++++
+<!-- BEGIN FreeLists WEB FORM -->
+<form action="http://www.freelists.org/cgi-bin/subscription.cgi" method="post">
+Your Email: <input type="text" name="email">
+<input type=hidden name="list" value="flap-general">
+<input type=hidden name="url_or_message" value="">
+<select name="action">
+<option value="subscribe">Subscribe</option>
+<option value="unsubscribe">Unsubscribe</option>
+<option value="set digest">Turn Digest mode on</option>
+<option value="unset digest">Turn Digest mode off</option>
+<option value="set vacation">Turn Vacation mode on</option>
+<option value="unset vacation">Turn Vacation mode off</option>
+<option value="help">Get Help</option>
+</select>
+<input type=submit value="Go!">
+</form>
+<!-- END FreeLists WEB FORM -->
+++++
+
 
