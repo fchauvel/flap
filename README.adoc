@@ -47,26 +47,7 @@ If you give FLaP a try, please report any bugs, issues or feature request using 
 link:https://github.com/fchauvel/flap/issues[issue tracker].
 
 Feel free to share any question or comment on our mailto:flap-general@freelists.org[FLaP mailing list]. Note that you must
-subscribe first by filling the form below:
-
-++++
-<!-- BEGIN FreeLists WEB FORM -->
-<form action="http://www.freelists.org/cgi-bin/subscription.cgi" method="post">
-Your Email: <input type="text" name="email">
-<input type=hidden name="list" value="flap-general">
-<input type=hidden name="url_or_message" value="">
-<select name="action">
-<option value="subscribe">Subscribe</option>
-<option value="unsubscribe">Unsubscribe</option>
-<option value="set digest">Turn Digest mode on</option>
-<option value="unset digest">Turn Digest mode off</option>
-<option value="set vacation">Turn Vacation mode on</option>
-<option value="unset vacation">Turn Vacation mode off</option>
-<option value="help">Get Help</option>
-</select>
-<input type=submit value="Go!">
-</form>
-<!-- END FreeLists WEB FORM -->
-++++
+subscribe first by sending an email to 'flap-general-request@freelists.org' with 'subscribe' in the Subject field OR by
+visiting link:http://www.freelists.org/list/flap-general[our subscription page].
 
 

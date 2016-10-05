@@ -34,8 +34,11 @@ in a flat directory. Images, bibliography and others resources are moved around 
 
 	$> python3 -m flap my/project/main.tex my/output
 	
-## Doesn't work?
+## Contact Us
 
-If you  give it a try, please report any bugs, issues, feature request or missing documentation using 
-the [issue tracker](https://github.com/fchauvel/flap/issues).
-Should you need any further information, feel free to email [me](mailto:franck.chauvel@gmail.com)
+If you give FLaP a try, please report any bugs, issues or feature request using the
+[issue tracker](https://github.com/fchauvel/flap/issues).
+
+Feel free to share any question or comment on our [FLaP mailing list](mailto:flap-general@freelists.org). Note that you must
+subscribe first by sending an email to 'flap-general-request@freelists.org' with 'subscribe' in the Subject field OR by
+visiting [our subscription page](http://www.freelists.org/list/flap-general).
