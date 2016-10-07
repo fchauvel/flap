@@ -40,7 +40,7 @@ class TokenTests(TestCase):
         self.assertNotEquals("foo", self._token)
 
     def test_print_properly(self):
-        self.assertEqual(Token.DISPLAY.format(text="a", category="character"), str(self._token))
+        self.assertEqual(Token.DISPLAY.format(text="a", category="character"), repr(self._token))
 
 
 if __name__ == '__main__':
