@@ -25,7 +25,7 @@ http://www.ctan.org/pkg/texdirflatten[texdirflatten], which seems to be
 an alternative, but I haven't tried it.
 
 == Installation
-FLaP *requires* Python 3 (3.2, 3.3 and 3.4 are tested). The easiest way
+FLaP *requires* Python 3 (3.2, 3.3, 3.4 and 3.5 are tested). The easiest way
 to install FLaP is to use pip using `pip install flap`.
 
 Alternatively, you may download the sources distribution and use `python
