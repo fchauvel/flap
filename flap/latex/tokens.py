@@ -50,48 +50,57 @@ class Token:
         return Token(text, TokenCategory.COMMAND)
 
     @staticmethod
-    def white_space():
-        return Token(None, TokenCategory.WHITE_SPACE)
+    def white_space(text=" "):
+        return Token(text, TokenCategory.WHITE_SPACE)
 
     @staticmethod
     def comment(text):
         return Token(text, TokenCategory.COMMENT)
 
     @staticmethod
-    def new_line():
-        return Token(None, TokenCategory.NEW_LINE)
+    def new_line(text="\n"):
+        return Token(text, TokenCategory.NEW_LINE)
 
     @staticmethod
-    def begin_group():
-        return Token(None, TokenCategory.BEGIN_GROUP)
+    def begin_group(text="{"):
+        return Token(text, TokenCategory.BEGIN_GROUP)
 
     @staticmethod
-    def end_group():
-        return Token(None, TokenCategory.END_GROUP)
+    def end_group(text="}"):
+        return Token(text, TokenCategory.END_GROUP)
 
     @staticmethod
     def parameter(key):
         return Token(key, TokenCategory.PARAMETER)
 
     @staticmethod
-    def math():
-        return Token(None, TokenCategory.MATH)
+    def math(text="$"):
+        return Token(text, TokenCategory.MATH)
 
     @staticmethod
-    def superscript():
-        return Token(None, TokenCategory.SUPERSCRIPT)
+    def superscript(text="^"):
+        return Token(text, TokenCategory.SUPERSCRIPT)
 
     @staticmethod
-    def subscript():
-        return Token(None, TokenCategory.SUBSCRIPT)
+    def subscript(text="_"):
+        return Token(text, TokenCategory.SUBSCRIPT)
 
     @staticmethod
-    def non_breaking_space():
-        return Token(None, TokenCategory.NON_BREAKING_SPACE)
+    def non_breaking_space(text="~"):
+        return Token(text, TokenCategory.NON_BREAKING_SPACE)
 
     def __init__(self, text, category):
         self._text = text
         self._category = category
+
+    def accept(self, parser):
+        if self._category == TokenCategory.COMMAND:
+            parser.invoke_command(self._text)
+        else:
+            parser.dump(self._text)
+
+    def is_a(self, category):
+        return self._category == category
 
     def __eq__(self, other_token):
         if not isinstance(other_token, Token):
@@ -101,3 +110,6 @@ class Token:
 
     def __repr__(self):
         return self.DISPLAY.format(text=self._text, category=self._category.name.lower())
+
+    def __str__(self):
+        return self._text

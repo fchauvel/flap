@@ -23,29 +23,27 @@ from flap.latex.tokens import Token
 
 
 class Stream:
-    """A stream of characters that, on which we can peek"""
+    """A stream of characters, on which we can peek"""
 
-    def __init__(self, characters):
-        self._characters = iter(characters)
+    def __init__(self, iterable, end_marker):
+        self._characters = iterable
+        self._end_marker = end_marker
 
-    def peek(self):
-        head = self._take()
-        self._characters = chain(head, self._characters)
+    def look_ahead(self):
+        head = self.take()
+        self._characters = chain([head], self._characters)
         return head
 
-    def _take(self):
+    def take(self):
         try:
             return next(self._characters)
         except StopIteration:
-            return "\0"
-
-    def take_one(self):
-        return self._take()
+            return self._end_marker
 
     def take_while(self, match):
         buffer = ""
-        while match(self.peek()):
-            buffer += self.take_one()
+        while match(self.look_ahead()):
+            buffer += str(self.take())
         return buffer
 
 
@@ -67,17 +65,18 @@ class Symbols:
 
 class Lexer:
 
-    def __init__(self, source):
-        self._input = Stream(source)
+    def __init__(self):
+        self._input = None
 
-    def next(self):
-        head = self._input.peek()
+    def tokens_from(self, source):
+        self._input = Stream(iter(source), "\0")
+        head = self._input.look_ahead()
         while head not in Symbols.END_OF_STRING:
             yield self._one_token()
-            head = self._input.peek()
+            head = self._input.look_ahead()
 
     def _one_token(self):
-        head = self._input.peek()
+        head = self._input.look_ahead()
         if head in Symbols.CONTROL:
             return self._read_macro_name()
         elif head in Symbols.COMMENT:
@@ -101,54 +100,63 @@ class Lexer:
         elif head in Symbols.NON_BREAKING_SPACE:
             return self._read_non_breaking_space()
         else:
-            return Token.character(self._input.take_one())
+            return Token.character(self._input.take())
 
     def _read_macro_name(self):
-        assert self._input.take_one() in Symbols.CONTROL
-        if not self._input.peek().isalpha():
-            name = self._input.take_one()
+        marker = self._input.take()
+        assert marker in Symbols.CONTROL
+        if not self._input.look_ahead().isalpha():
+            name = self._input.take()
         else:
             name = self._input.take_while(lambda c: c.isalpha())
-        return Token.command(name)
+        return Token.command(marker + name)
 
     def _read_comment(self):
-        assert self._input.take_one() in Symbols.COMMENT
+        marker = self._input.take()
+        assert marker in Symbols.COMMENT
         text = self._input.take_while(lambda c: c not in Symbols.NEW_LINE + Symbols.END_OF_STRING)
-        return Token.comment(text)
+        return Token.comment(marker + text)
 
     def _read_white_spaces(self):
-        self._input.take_while(lambda c: c in Symbols.WHITE_SPACES)
-        return Token.white_space()
+        spaces = self._input.take_while(lambda c: c in Symbols.WHITE_SPACES)
+        return Token.white_space(spaces)
 
     def _read_new_line(self):
-        assert self._input.take_one() in Symbols.NEW_LINE
-        return Token.new_line()
+        marker = self._input.take()
+        assert marker in Symbols.NEW_LINE
+        return Token.new_line(marker)
 
     def _read_begin_group(self):
-        self._input.take_one()
-        return Token.begin_group()
+        marker = self._input.take()
+        assert marker in Symbols.BEGIN_GROUP
+        return Token.begin_group(marker)
 
     def _read_end_group(self):
-        self._input.take_one()
-        return Token.end_group()
+        marker = self._input.take()
+        assert marker in Symbols.END_GROUP
+        return Token.end_group(marker)
 
     def _read_parameter(self):
-        assert self._input.take_one() in Symbols.PARAMETER
-        key = self._input.take_while(lambda c: c.isdigit())
+        marker = self._input.take()
+        assert marker in Symbols.PARAMETER
+        key = marker + self._input.take_while(lambda c: c.isdigit())
         return Token.parameter(key)
 
     def _read_math(self):
-        assert self._input.take_one() in Symbols.MATH
+        assert self._input.take() in Symbols.MATH
         return Token.math()
 
     def _read_superscript(self):
-        assert self._input.take_one() in Symbols.SUPERSCRIPT
-        return Token.superscript()
+        marker = self._input.take()
+        assert marker in Symbols.SUPERSCRIPT
+        return Token.superscript(marker)
 
     def _read_subscript(self):
-        assert self._input.take_one() in Symbols.SUBSCRIPT
-        return Token.subscript()
+        marker = self._input.take()
+        assert marker in Symbols.SUBSCRIPT
+        return Token.subscript(marker)
 
     def _read_non_breaking_space(self):
-        assert self._input.take_one() in Symbols.NON_BREAKING_SPACE
-        return Token.non_breaking_space()
+        marker = self._input.take()
+        assert marker in Symbols.NON_BREAKING_SPACE
+        return Token.non_breaking_space(marker)
