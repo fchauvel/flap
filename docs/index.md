@@ -36,7 +36,7 @@ in a flat directory. Images, bibliography and others resources are moved around 
 	
 ## Contact Us
 
-If you give FLaP a try, please report any bugs, issues or feature request using the
+If you give FLaP a try, please [report any bugs, issues or feature request](reporting_issues.md) using the
 [issue tracker](https://github.com/fchauvel/flap/issues).
 
 Feel free to share any question or comment on our [FLaP mailing list](mailto:flap-general@freelists.org). Note that you must

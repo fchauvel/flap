@@ -1,4 +1,17 @@
-# Getting Ready to Develop
+# Evolving FLaP
+
+FLaP is an open source application and any contribution is more than welcome. 
+Contribution are not necessarily code, and may include:
+ 
+* Add [acceptance tests](testing);
+* Translation in other language;
+* Clean the code;
+* Fix bugs;
+* Implement new features;
+* Port to Python 2;
+* ...
+
+## Getting Ready to Develop
 
 FLaP does not require any specific package to run, but its tests do requires some. These dependencies
 are listed in `requirements.txt` and you can use pip to install them in one go, as follows:
