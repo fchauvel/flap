@@ -63,17 +63,20 @@ class Lexer:
         if not self._input.look_ahead().isalpha():
             name = self._input.take()
         else:
-            name = self._input.take_while(lambda c: c.isalpha())
+            name = self._take_while(lambda c: c.isalpha())
         return self._tokens.command(marker + name)
+
+    def _take_while(self, predicate):
+        return "".join(self._input.take_while(predicate))
 
     def _read_comment(self):
         marker = self._input.take()
         assert marker in self._symbols.COMMENT
-        text = self._input.take_while(lambda c: c not in self._symbols.NEW_LINE + self._symbols.END_OF_TEXT)
+        text = self._take_while(lambda c: c not in self._symbols.NEW_LINE + self._symbols.END_OF_TEXT)
         return self._tokens.comment(marker + text)
 
     def _read_white_spaces(self):
-        spaces = self._input.take_while(lambda c: c in self._symbols.WHITE_SPACES)
+        spaces = self._take_while(lambda c: c in self._symbols.WHITE_SPACES)
         return self._tokens.white_space(spaces)
 
     def _read_new_line(self):
@@ -94,7 +97,7 @@ class Lexer:
     def _read_parameter(self):
         marker = self._input.take()
         assert marker in self._symbols.PARAMETER
-        key = marker + self._input.take_while(lambda c: c.isdigit())
+        key = marker + self._take_while(lambda c: c.isdigit())
         return self._tokens.parameter(key)
 
     def _read_math(self):

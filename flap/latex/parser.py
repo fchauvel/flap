@@ -18,7 +18,7 @@
 #
 
 from flap.latex.commons import Stream
-from flap.latex.tokens import TokenFactory
+from flap.latex.tokens import Token, TokenFactory
 
 
 class Macro:
@@ -34,6 +34,17 @@ class Macro:
 
     def parse_with(self, parser):
         parser.parse_call(self._name, self._signature, self._replacement)
+
+    def __eq__(self, other):
+        if not isinstance(other, Macro):
+            return False
+        return self._name == other._name and \
+               self._signature == other._signature and \
+               self._replacement == other._replacement
+
+    def __repr__(self):
+        signature = "".join([str(t) for t in self._signature])
+        return r"\def" + self._name + signature + "{" + self._replacement + "}"
 
 
 class Parser:
@@ -114,12 +125,20 @@ class Parser:
             body = body.replace(argument, value)
         return body
 
-    def dump(self, text):
-        self._output.write(text)
+    def dump(self, *texts):
+        for each_text in texts:
+            if isinstance(each_text, str):
+                self._output.write(each_text)
+            elif isinstance(each_text, Token):
+                self._output.write(str(each_text))
+            elif isinstance(each_text, list):
+                self.dump(*each_text)
 
     def invoke_command(self, command):
         if command == "\input":
             self._process_input()
+        elif command == r"\def":
+            self._process_definition()
         else:
             if command in self._environment:
                 macro = self._environment[command]
@@ -132,7 +151,15 @@ class Parser:
         self._tokens.take_while(lambda c: c.is_a_whitespace)
         next_token = self._tokens.look_ahead()
         if next_token.is_a_character:
-            file_name = self._tokens.take_while(lambda c: c.is_a_character)
+            file_name = "".join(str(t) for t in self._tokens.take_while(lambda c: c.is_a_character))
             content = self._engine.content_of(file_name)
             self.dump(content)
+
+    def _process_definition(self):
+        define = self._tokens.take()
+        name = self._tokens.take()
+        signature = self._tokens.take_while(lambda t: not t.begins_a_group)
+        body = self._parse_group()
+        self.dump(define, name, signature, self._symbols.begin_group(), body, self._symbols.end_group())
+        self._environment[str(name)] = Macro(str(name), signature, ''.join(str(t) for t in body))
 

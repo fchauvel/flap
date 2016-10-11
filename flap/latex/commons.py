@@ -39,7 +39,7 @@ class Stream:
             return self._end_marker
 
     def take_while(self, match):
-        buffer = ""
+        buffer = []
         while match(self.look_ahead()):
-            buffer += str(self.take())
+            buffer.append(self.take())
         return buffer

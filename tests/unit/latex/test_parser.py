@@ -24,7 +24,7 @@ from mock import MagicMock
 from flap.latex.symbols import SymbolTable
 from flap.latex.tokens import TokenFactory
 from flap.latex.lexer import Lexer
-from flap.latex.parser import Parser
+from flap.latex.parser import Parser, Macro
 
 
 class ParserTests(TestCase):
@@ -46,8 +46,8 @@ class ParserTests(TestCase):
         self._do_test_with(r"this is a \macro", r"this is a \macro")
 
     def test_parsing_a_macro_definition(self):
-        self._do_test_with(r"\def\myMacro#1{my #1} \myMacro{some text here}",
-                           r"\def\myMacro#1{my #1} \myMacro{some text here}")
+        self._do_test_with(r"\def\myMacro#1{my #1}",
+                           r"\def\myMacro#1{my #1}")
 
     def test_parsing_input(self):
         self._engine.content_of.return_value = "File content"
@@ -60,15 +60,15 @@ class ParserTests(TestCase):
                            r"% \input my-file")
         self._engine.content_of.assert_not_called()
 
-    def test_define_a_macro_with_one_parameter(self):
+    def test_invoking_a_macro_with_one_parameter(self):
         self._parser.define_macro(r"\foo", [self._tokens.character("("), self._tokens.parameter("#1"), self._tokens.character(")")], "bar #1")
         self._do_test_with(r"\foo(1)", "bar 1")
 
-    def test_parsing_a_macro_where_one_argument_is_a_group(self):
+    def test_invoking_a_macro_where_one_argument_is_a_group(self):
         self._parser.define_macro(r"\foo", [self._tokens.character("("), self._tokens.parameter("#1"), self._tokens.character(")")], "bar #1")
         self._do_test_with(r"\foo({This is a long text!})", "bar This is a long text!")
 
-    def test_define_a_macro_with_two_parameters(self):
+    def test_invoking_a_macro_with_two_parameters(self):
         self._parser.define_macro(
             r"\point",
             [self._tokens.character("("),
@@ -78,6 +78,30 @@ class ParserTests(TestCase):
              self._tokens.character(")")],
             "X=#1 and Y=#2")
         self._do_test_with(r"\point(12,{3 point 5})", "X=12 and Y=3 point 5")
+
+    def test_defining_a_macro_without_parameter(self):
+        self._do_test_with(r"\def\foo{X}",
+                           r"\def\foo{X}")
+        self.assertEqual(Macro(r"\foo", [], "X"), self._parser._environment[r"\foo"])
+
+    def test_defining_a_macro_with_one_parameter(self):
+        self._do_test_with(r"\def\foo#1{X}",
+                           r"\def\foo#1{X}")
+        self.assertEqual(Macro(r"\foo", [self._tokens.parameter("#1")], "X"), self._parser._environment[r"\foo"])
+
+    def test_defining_a_macro_with_multiple_parameters(self):
+        self._do_test_with(r"\def\point(#1,#2,#3){X}",
+                           r"\def\point(#1,#2,#3){X}")
+        self.assertEqual(Macro(r"\point",
+                               [   self._tokens.character("("),
+                                   self._tokens.parameter("#1"),
+                                   self._tokens.character(","),
+                                   self._tokens.parameter("#2"),
+                                   self._tokens.character(","),
+                                   self._tokens.parameter("#3"),
+                                   self._tokens.character(")")],
+                               "X"),
+                         self._parser._environment[r"\point"])
 
     def _do_test_with(self, input, output):
         self._parser.parse(input)
