@@ -37,31 +37,32 @@ class Macro:
         parser.parse_call(self._name, self._signature, self._replacement)
 
 
-END_OF_STRING = Token.white_space("\0")
-
-
 class Parser:
 
     def __init__(self, lexer, output, engine):
         self._lexer = lexer
         self._tokens = None
+        self._symbols = self._lexer.symbols
         self._output = output
         self._engine = engine
         self._environment = dict()
 
     def parse(self, text):
-        self._tokens = Stream(self._lexer.tokens_from(text), END_OF_STRING)
+        self._tokens = Stream(self._lexer.tokens_from(text), self._symbols.end_of_text())
         next_token = self._tokens.look_ahead()
-        while next_token != Token.white_space("\0"):
+        while next_token != self._end_of_text():
             next_token.accept(self)
             self._tokens.take()
             next_token = self._tokens.look_ahead()
+
+    def _end_of_text(self):
+        return self._symbols.end_of_text()
 
     def define_macro(self, name, signature, replacement):
         self._environment[name] = Macro(name, signature, replacement)
 
     def parse_call(self, macro, signature, body):
-        self._accept(Token.command(macro))
+        self._accept(self._symbols.command(macro))
         arguments = self._parse_arguments(signature)
         replacement = self._substitute(arguments, body)
         self.dump(replacement)
@@ -78,43 +79,36 @@ class Parser:
         for (index, any_token) in enumerate(signature):
             if any_token.is_a(TokenCategory.PARAMETER):
                 if index == len(signature)-1:
-                    arguments[str(any_token)] = self._read_argument_until(Token.begin_group("{"))
+                    arguments[str(any_token)] = self._read_until(self._symbols.begin_group())
                 else:
                     next_token = signature[index + 1]
-                    arguments[str(any_token)] = self._read_argument_until(next_token)
+                    arguments[str(any_token)] = self._read_until(next_token)
             else:
                 self._accept(any_token)
         return arguments
 
-    def _read_argument_until(self, end_marker):
+    def _parse_group(self):
+        self._accept(self._symbols.begin_group())
+        result = self._read_until(self._symbols.end_group())
+        self._accept(self._symbols.end_group())
+        return result
+
+    def _read_until(self, end_marker):
         result = []
         next_token = self._tokens.look_ahead()
         while next_token != end_marker:
+            self._abort_on_end_of_text(next_token)
             if next_token.is_a(TokenCategory.BEGIN_GROUP):
                 result += self._parse_group()
-            elif next_token == END_OF_STRING:
-                raise ValueError("Unexpected end of string!")
             else:
                 result.append(next_token)
                 self._tokens.take()
             next_token = self._tokens.look_ahead()
         return result
 
-    def _parse_group(self):
-        result = []
-        self._accept(Token.begin_group("{"))
-        next_token = self._tokens.look_ahead()
-        while not next_token.is_a(TokenCategory.END_GROUP):
-            if next_token.is_a(TokenCategory.END_GROUP):
-                result += self._parse_group()
-            elif next_token == END_OF_STRING:
-                raise ValueError("Unexpected end of string!")
-            else:
-                result.append(next_token)
-            self._tokens.take()
-            next_token = self._tokens.look_ahead()
-        self._accept(Token.end_group("}"))
-        return result
+    def _abort_on_end_of_text(self, token):
+        if token == self._end_of_text():
+            raise ValueError("Unexpected end of string!")
 
     @staticmethod
     def _substitute(arguments, body):

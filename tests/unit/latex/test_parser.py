@@ -21,7 +21,8 @@ from io import StringIO
 from unittest import TestCase, main
 from mock import MagicMock
 
-from flap.latex.lexer import Lexer, Token
+from flap.latex.tokens import Token
+from flap.latex.lexer import Lexer, SymbolTable
 from flap.latex.parser import Parser
 
 
@@ -30,7 +31,8 @@ class ParserTests(TestCase):
     def setUp(self):
         self._output = StringIO()
         self._engine = MagicMock()
-        self._parser = Parser(Lexer(), self._output, self._engine)
+        self._symbols = SymbolTable.default()
+        self._parser = Parser(Lexer(self._symbols), self._output, self._engine)
 
     def test_parsing_a_regular_word(self):
         self._do_test_with("hello", "hello")
@@ -57,21 +59,21 @@ class ParserTests(TestCase):
         self._engine.content_of.assert_not_called()
 
     def test_define_a_macro_with_one_parameter(self):
-        self._parser.define_macro(r"\foo", [Token.character("("), Token.parameter("#1"), Token.character(")")], "bar #1")
+        self._parser.define_macro(r"\foo", [self._symbols.character("("), self._symbols.parameter("#1"), self._symbols.character(")")], "bar #1")
         self._do_test_with(r"\foo(1)", "bar 1")
 
     def test_parsing_a_macro_where_one_argument_is_a_group(self):
-        self._parser.define_macro(r"\foo", [Token.character("("), Token.parameter("#1"), Token.character(")")], "bar #1")
+        self._parser.define_macro(r"\foo", [self._symbols.character("("), self._symbols.parameter("#1"), self._symbols.character(")")], "bar #1")
         self._do_test_with(r"\foo({This is a long text!})", "bar This is a long text!")
 
     def test_define_a_macro_with_two_parameters(self):
         self._parser.define_macro(
             r"\point",
-            [Token.character("("),
-             Token.parameter("#1"),
-             Token.character(","),
-             Token.parameter("#2"),
-             Token.character(")")],
+            [self._symbols.character("("),
+             self._symbols.parameter("#1"),
+             self._symbols.character(","),
+             self._symbols.parameter("#2"),
+             self._symbols.character(")")],
             "X=#1 and Y=#2")
         self._do_test_with(r"\point(12,{3 point 5})", "X=12 and Y=3 point 5")
 

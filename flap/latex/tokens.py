@@ -27,67 +27,20 @@ class TokenCategory(Enum):
     COMMAND = 3
     COMMENT = 4
     END_GROUP = 5
-    MATH = 6
-    NEW_LINE = 7
-    NON_BREAKING_SPACE = 8
-    PARAMETER = 9
-    SUBSCRIPT = 10
-    SUPERSCRIPT = 11
-    WHITE_SPACE = 12
+    END_OF_TEXT = 6
+    MATH = 7
+    NEW_LINE = 8
+    NON_BREAKING_SPACE = 9
+    PARAMETER = 10
+    SUBSCRIPT = 11
+    SUPERSCRIPT = 12
+    WHITE_SPACE = 13
 
 
 class Token:
     """All the possible tokens recognised by a TeX engine"""
 
     DISPLAY = "{category}({text})"
-
-    @staticmethod
-    def character(text):
-        return Token(text, TokenCategory.CHARACTER)
-
-    @staticmethod
-    def command(text):
-        return Token(text, TokenCategory.COMMAND)
-
-    @staticmethod
-    def white_space(text=" "):
-        return Token(text, TokenCategory.WHITE_SPACE)
-
-    @staticmethod
-    def comment(text):
-        return Token(text, TokenCategory.COMMENT)
-
-    @staticmethod
-    def new_line(text="\n"):
-        return Token(text, TokenCategory.NEW_LINE)
-
-    @staticmethod
-    def begin_group(text="{"):
-        return Token(text, TokenCategory.BEGIN_GROUP)
-
-    @staticmethod
-    def end_group(text="}"):
-        return Token(text, TokenCategory.END_GROUP)
-
-    @staticmethod
-    def parameter(key):
-        return Token(key, TokenCategory.PARAMETER)
-
-    @staticmethod
-    def math(text="$"):
-        return Token(text, TokenCategory.MATH)
-
-    @staticmethod
-    def superscript(text="^"):
-        return Token(text, TokenCategory.SUPERSCRIPT)
-
-    @staticmethod
-    def subscript(text="_"):
-        return Token(text, TokenCategory.SUBSCRIPT)
-
-    @staticmethod
-    def non_breaking_space(text="~"):
-        return Token(text, TokenCategory.NON_BREAKING_SPACE)
 
     def __init__(self, text, category):
         self._text = text

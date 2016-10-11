@@ -20,94 +20,95 @@
 
 from unittest import TestCase, main
 
-from flap.latex.lexer import Lexer
+from flap.latex.lexer import Lexer, SymbolTable
 from flap.latex.tokens import Token
 
 
 class LexerTests(TestCase):
 
     def setUp(self):
-        self._lexer = Lexer()
+        self._symbols = SymbolTable.default()
+        self._lexer = Lexer(self._symbols)
         self._text = None
 
     def test_recognises_a_single_character(self):
         self._text = "b"
-        self._verify_tokens(Token.character("b"))
+        self._verify_tokens(self._symbols.character("b"))
 
     def test_recognises_a_single_command(self):
         self._text = r"\myMacro"
-        self._verify_tokens(Token.command(r"\myMacro"))
+        self._verify_tokens(self._symbols.command(r"\myMacro"))
 
     def test_recognises_a_single_special_character_command(self):
         self._text = r"\%"
-        self._verify_tokens(Token.command(r"\%"))
+        self._verify_tokens(self._symbols.command(r"\%"))
 
     def test_recognises_sequences_of_single_character_command(self):
         self._text = r"\%\$\\"
-        self._verify_tokens(Token.command(r"\%"),
-                            Token.command(r"\$"),
-                            Token.command(r"\\"))
+        self._verify_tokens(self._symbols.command(r"\%"),
+                            self._symbols.command(r"\$"),
+                            self._symbols.command(r"\\"))
 
     def test_recognises_two_commands(self):
         self._text = r"\def\foo"
-        self._verify_tokens(Token.command(r"\def"),
-                            Token.command(r"\foo"))
+        self._verify_tokens(self._symbols.command(r"\def"),
+                            self._symbols.command(r"\foo"))
 
     def test_recognises_two_commands_separated_by_white_spaces(self):
         self._text = "\\def  \t  \\foo"
-        self._verify_tokens(Token.command(r"\def"),
-                            Token.white_space("  \t  "),
-                            Token.command(r"\foo"))
+        self._verify_tokens(self._symbols.command(r"\def"),
+                            self._symbols.white_space("  \t  "),
+                            self._symbols.command(r"\foo"))
 
     def test_recognises_a_comment(self):
         self._text = "%This is a comment\n\\def\\foo"
-        self._verify_tokens(Token.comment("%This is a comment"),
-                            Token.new_line("\n"),
-                            Token.command(r"\def"),
-                            Token.command(r"\foo"))
+        self._verify_tokens(self._symbols.comment("%This is a comment"),
+                            self._symbols.new_line(),
+                            self._symbols.command(r"\def"),
+                            self._symbols.command(r"\foo"))
 
     def test_recognises_an_opening_group(self):
         self._text = "{"
-        self._verify_tokens(Token.begin_group())
+        self._verify_tokens(self._symbols.begin_group())
 
     def test_recognises_an_ending_group(self):
         self._text = "}"
-        self._verify_tokens(Token.end_group())
+        self._verify_tokens(self._symbols.end_group())
 
     def test_recognises_an_parameter(self):
         self._text = "\def#1"
-        self._verify_tokens(Token.command(r"\def"),
-                            Token.parameter("#1"))
+        self._verify_tokens(self._symbols.command(r"\def"),
+                            self._symbols.parameter("#1"))
 
     def test_recognises_a_complete_macro_definition(self):
         self._text = "\\def\\point#1#2{(#2,#1)}"
-        self._verify_tokens(Token.command(r"\def"),
-                            Token.command(r"\point"),
-                            Token.parameter("#1"),
-                            Token.parameter("#2"),
-                            Token.begin_group("{"),
-                            Token.character("("),
-                            Token.parameter("#2"),
-                            Token.character(","),
-                            Token.parameter("#1"),
-                            Token.character(")"),
-                            Token.end_group("}"))
+        self._verify_tokens(self._symbols.command(r"\def"),
+                            self._symbols.command(r"\point"),
+                            self._symbols.parameter("#1"),
+                            self._symbols.parameter("#2"),
+                            self._symbols.begin_group(),
+                            self._symbols.character("("),
+                            self._symbols.parameter("#2"),
+                            self._symbols.character(","),
+                            self._symbols.parameter("#1"),
+                            self._symbols.character(")"),
+                            self._symbols.end_group())
 
     def test_recognises_math_mode(self):
         self._text = "$"
-        self._verify_tokens(Token.math())
+        self._verify_tokens(self._symbols.math())
 
     def test_recognises_superscript(self):
         self._text = "^"
-        self._verify_tokens(Token.superscript())
+        self._verify_tokens(self._symbols.superscript())
 
     def test_recognises_subscript(self):
         self._text = "_"
-        self._verify_tokens(Token.subscript())
+        self._verify_tokens(self._symbols.subscript())
 
     def test_recognises_non_breaking_space(self):
         self._text = "~"
-        self._verify_tokens(Token.non_breaking_space())
+        self._verify_tokens(self._symbols.non_breaking_space())
 
     def _verify_tokens(self, *expected_tokens):
         assert self._lexer, "The lexer should be defined first!"

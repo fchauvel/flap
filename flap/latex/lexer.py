@@ -18,8 +18,8 @@
 #
 
 from itertools import chain
-
-from flap.latex.tokens import Token
+from enum import Enum
+from flap.latex.tokens import Token, TokenCategory
 
 
 class Stream:
@@ -47,116 +47,214 @@ class Stream:
         return buffer
 
 
-class Symbols:
-    """Define all the characters recognised by the TeX engine"""
-    BEGIN_GROUP = ["{"]
-    COMMENT = ["%"]
-    CONTROL = ["\\"]
-    END_GROUP = ["}"]
-    END_OF_STRING = ["\0"]
-    MATH = ["$"]
-    NEW_LINE = ["\n"]
-    NON_BREAKING_SPACE = ["~"]
-    PARAMETER = ["#"]
-    SUBSCRIPT = ["_"]
-    SUPERSCRIPT = ["^"]
-    WHITE_SPACES = [" ", "\t"]
+class Symbol(Enum):
+    CHARACTER = 0
+    BEGIN_GROUP = 1
+    COMMENT = 2
+    CONTROL = 3
+    END_GROUP = 4
+    END_OF_TEXT = 5
+    MATH = 6
+    NEW_LINE = 7
+    NON_BREAKING_SPACE = 8
+    PARAMETER = 9
+    SUBSCRIPT = 10
+    SUPERSCRIPT = 11
+    WHITE_SPACES = 12
+
+
+class SymbolTable:
+    """
+    Characters recognised by (La)TeX, augmented with some relevant for parsing such new lines.
+    """
+
+    @staticmethod
+    def default():
+        return SymbolTable({
+            Symbol.BEGIN_GROUP: ["{"],
+            Symbol.COMMENT: ["%"],
+            Symbol.CONTROL: ["\\"],
+            Symbol.END_GROUP: ["}"],
+            Symbol.END_OF_TEXT: ["\0"],
+            Symbol.MATH: ["$"],
+            Symbol.NEW_LINE: ["\n"],
+            Symbol.NON_BREAKING_SPACE: ["~"],
+            Symbol.PARAMETER: ["#"],
+            Symbol.SUBSCRIPT: ["_"],
+            Symbol.SUPERSCRIPT: ["^"],
+            Symbol.WHITE_SPACES: [" ", "\t"]
+        })
+
+    def __init__(self, symbols):
+        self._symbols = symbols
+
+    def __getitem__(self, key):
+        assert key in list(Symbol), "Symbol table only maps symbol categories to symbol lists"
+        return self._symbols[key]
+
+    def __setitem__(self, key, value):
+        assert key in list(Symbol), "Symbol table only maps symbol categories to symbol lists"
+        self._symbols[key] = value
+
+    def match(self, character, category):
+        return character in self._symbols[category]
+
+    def category_of(self, character):
+        for category, markers in self._symbols.items():
+            if character in markers:
+                return category
+        return Symbol.CHARACTER
+
+    def get(self, category):
+        return self._symbols[category][0]
+
+    @staticmethod
+    def character(text):
+        return Token(text, TokenCategory.CHARACTER)
+
+    @staticmethod
+    def command(text):
+        return Token(text, TokenCategory.COMMAND)
+
+    @staticmethod
+    def white_space(text):
+        return Token(text, TokenCategory.WHITE_SPACE)
+
+    @staticmethod
+    def comment(text):
+        return Token(text, TokenCategory.COMMENT)
+
+    def new_line(self, text=None):
+        text = text if text else self.get(Symbol.NEW_LINE)
+        return Token(text, TokenCategory.NEW_LINE)
+
+    def begin_group(self, text=None):
+        text = text if text else self.get(Symbol.BEGIN_GROUP)
+        return Token(text, TokenCategory.BEGIN_GROUP)
+
+    def end_group(self, text=None):
+        text = text if text else self.get(Symbol.END_GROUP)
+        return Token(text, TokenCategory.END_GROUP)
+
+    def end_of_text(self):
+        text = self.get(Symbol.END_OF_TEXT)
+        return Token(text, TokenCategory.END_OF_TEXT)
+
+    @staticmethod
+    def parameter(key):
+        return Token(key, TokenCategory.PARAMETER)
+
+    def math(self):
+        text = self.get(Symbol.MATH)
+        return Token(text, TokenCategory.MATH)
+
+    def superscript(self, text=None):
+        text = text if text else self.get(Symbol.SUPERSCRIPT)
+        return Token(text, TokenCategory.SUPERSCRIPT)
+
+    def subscript(self, text=None):
+        text = text if text else self.get(Symbol.SUBSCRIPT)
+        return Token(text, TokenCategory.SUBSCRIPT)
+
+    def non_breaking_space(self, text=None):
+        text = text if text else self.get(Symbol.NON_BREAKING_SPACE)
+        return Token(text, TokenCategory.NON_BREAKING_SPACE)
 
 
 class Lexer:
+    """
+    Scan a stream of character and yields a stream of token. The lexer shall define handler for each category of symbols.
+    These handlers are automatically selected using reflection: each handler shall be named "_read_category".
+    """
 
-    def __init__(self):
+    def __init__(self, symbols):
         self._input = None
+        self._symbols = symbols
+
+    @property
+    def symbols(self):
+        return self._symbols
 
     def tokens_from(self, source):
-        self._input = Stream(iter(source), "\0")
+        self._input = Stream(iter(source), self._symbols.get(Symbol.END_OF_TEXT))
         head = self._input.look_ahead()
-        while head not in Symbols.END_OF_STRING:
+        while not self._match(head, Symbol.END_OF_TEXT):
             yield self._one_token()
             head = self._input.look_ahead()
 
+    def _match(self, character, *categories):
+        return any((self._symbols.match(character, any_category) for any_category in categories))
+
     def _one_token(self):
         head = self._input.look_ahead()
-        if head in Symbols.CONTROL:
-            return self._read_macro_name()
-        elif head in Symbols.COMMENT:
-            return self._read_comment()
-        elif head in Symbols.WHITE_SPACES:
-            return self._read_white_spaces()
-        elif head in Symbols.NEW_LINE:
-            return self._read_new_line()
-        elif head in Symbols.BEGIN_GROUP:
-            return self._read_begin_group()
-        elif head in Symbols.END_GROUP:
-            return self._read_end_group()
-        elif head in Symbols.PARAMETER:
-            return self._read_parameter()
-        elif head in Symbols.MATH:
-            return self._read_math()
-        elif head in Symbols.SUPERSCRIPT:
-            return self._read_superscript()
-        elif head in Symbols.SUBSCRIPT:
-            return self._read_subscript()
-        elif head in Symbols.NON_BREAKING_SPACE:
-            return self._read_non_breaking_space()
-        else:
-            return Token.character(self._input.take())
+        handler = self._handler_for(self._symbols.category_of(head))
+        return handler()
 
-    def _read_macro_name(self):
+    def _handler_for(self, category):
+        handler_name = "_read_" + category.name.lower()
+        handler = getattr(self, handler_name)
+        assert handler, "Lexer has no handler for '%s' symbols" % category.name
+        return handler
+
+    def _read_character(self):
+        return self._symbols.character(self._input.take())
+
+    def _read_control(self):
         marker = self._input.take()
-        assert marker in Symbols.CONTROL
+        assert self._match(marker, Symbol.CONTROL)
         if not self._input.look_ahead().isalpha():
             name = self._input.take()
         else:
             name = self._input.take_while(lambda c: c.isalpha())
-        return Token.command(marker + name)
+        return self._symbols.command(marker + name)
 
     def _read_comment(self):
         marker = self._input.take()
-        assert marker in Symbols.COMMENT
-        text = self._input.take_while(lambda c: c not in Symbols.NEW_LINE + Symbols.END_OF_STRING)
-        return Token.comment(marker + text)
+        assert self._match(marker, Symbol.COMMENT)
+        text = self._input.take_while(lambda c: not self._match(c, Symbol.NEW_LINE, Symbol.END_OF_TEXT))
+        return self._symbols.comment(marker + text)
 
     def _read_white_spaces(self):
-        spaces = self._input.take_while(lambda c: c in Symbols.WHITE_SPACES)
-        return Token.white_space(spaces)
+        spaces = self._input.take_while(lambda c: self._match(c, Symbol.WHITE_SPACES))
+        return self._symbols.white_space(spaces)
 
     def _read_new_line(self):
         marker = self._input.take()
-        assert marker in Symbols.NEW_LINE
-        return Token.new_line(marker)
+        assert self._match(marker, Symbol.NEW_LINE)
+        return self._symbols.new_line(marker)
 
     def _read_begin_group(self):
         marker = self._input.take()
-        assert marker in Symbols.BEGIN_GROUP
-        return Token.begin_group(marker)
+        assert self._match(marker, Symbol.BEGIN_GROUP)
+        return self._symbols.begin_group(marker)
 
     def _read_end_group(self):
         marker = self._input.take()
-        assert marker in Symbols.END_GROUP
-        return Token.end_group(marker)
+        assert self._match(marker, Symbol.END_GROUP)
+        return self._symbols.end_group(marker)
 
     def _read_parameter(self):
         marker = self._input.take()
-        assert marker in Symbols.PARAMETER
+        assert self._match(marker, Symbol.PARAMETER)
         key = marker + self._input.take_while(lambda c: c.isdigit())
-        return Token.parameter(key)
+        return self._symbols.parameter(key)
 
     def _read_math(self):
-        assert self._input.take() in Symbols.MATH
-        return Token.math()
+        marker = self._input.take()
+        assert self._match(marker, Symbol.MATH)
+        return self._symbols.math()
 
     def _read_superscript(self):
         marker = self._input.take()
-        assert marker in Symbols.SUPERSCRIPT
-        return Token.superscript(marker)
+        assert self._match(marker, Symbol.SUPERSCRIPT)
+        return self._symbols.superscript(marker)
 
     def _read_subscript(self):
         marker = self._input.take()
-        assert marker in Symbols.SUBSCRIPT
-        return Token.subscript(marker)
+        assert self._match(marker, Symbol.SUBSCRIPT)
+        return self._symbols.subscript(marker)
 
     def _read_non_breaking_space(self):
         marker = self._input.take()
-        assert marker in Symbols.NON_BREAKING_SPACE
-        return Token.non_breaking_space(marker)
+        assert self._match(marker, Symbol.NON_BREAKING_SPACE)
+        return self._symbols.non_breaking_space(marker)

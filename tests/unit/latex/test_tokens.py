@@ -20,21 +20,23 @@
 from unittest import TestCase, main
 
 from flap.latex.tokens import Token
+from flap.latex.lexer import SymbolTable
 
 
 class TokenTests(TestCase):
 
     def setUp(self):
-        self._token = Token.character("a")
+        self._symbols = SymbolTable.default()
+        self._token = self._symbols.character("a")
 
     def test_equals_itself(self):
         self.assertEqual(self._token, self._token)
 
     def test_equals_a_similar_tokens(self):
-        self.assertEqual(Token.character("a"), self._token)
+        self.assertEqual(self._symbols.character("a"), self._token)
 
     def test_differs_from_a_different_character(self):
-        self.assertNotEqual(Token.character("b"), self._token)
+        self.assertNotEqual(self._symbols.character("b"), self._token)
 
     def test_differs_from_an_object_of_another_type(self):
         self.assertNotEquals("foo", self._token)
