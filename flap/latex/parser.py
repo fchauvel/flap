@@ -17,9 +17,8 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-
-from flap.latex.tokens import Token, TokenCategory
-from flap.latex.lexer import Stream
+from flap.latex.commons import Stream
+from flap.latex.tokens import TokenFactory
 
 
 class Macro:
@@ -42,7 +41,7 @@ class Parser:
     def __init__(self, lexer, output, engine):
         self._lexer = lexer
         self._tokens = None
-        self._symbols = self._lexer.symbols
+        self._symbols = TokenFactory(self._lexer.symbols)
         self._output = output
         self._engine = engine
         self._environment = dict()
@@ -50,13 +49,10 @@ class Parser:
     def parse(self, text):
         self._tokens = Stream(self._lexer.tokens_from(text), self._symbols.end_of_text())
         next_token = self._tokens.look_ahead()
-        while next_token != self._end_of_text():
+        while not next_token.ends_the_text:
             next_token.accept(self)
             self._tokens.take()
             next_token = self._tokens.look_ahead()
-
-    def _end_of_text(self):
-        return self._symbols.end_of_text()
 
     def define_macro(self, name, signature, replacement):
         self._environment[name] = Macro(name, signature, replacement)
@@ -76,8 +72,8 @@ class Parser:
 
     def _parse_arguments(self, signature):
         arguments = dict()
-        for (index, any_token) in enumerate(signature):
-            if any_token.is_a(TokenCategory.PARAMETER):
+        for index, any_token in enumerate(signature):
+            if any_token.is_a_parameter:
                 if index == len(signature)-1:
                     arguments[str(any_token)] = self._read_until(self._symbols.begin_group())
                 else:
@@ -98,7 +94,7 @@ class Parser:
         next_token = self._tokens.look_ahead()
         while next_token != end_marker:
             self._abort_on_end_of_text(next_token)
-            if next_token.is_a(TokenCategory.BEGIN_GROUP):
+            if next_token.begins_a_group:
                 result += self._parse_group()
             else:
                 result.append(next_token)
@@ -106,8 +102,9 @@ class Parser:
             next_token = self._tokens.look_ahead()
         return result
 
-    def _abort_on_end_of_text(self, token):
-        if token == self._end_of_text():
+    @staticmethod
+    def _abort_on_end_of_text(token):
+        if token.ends_the_text:
             raise ValueError("Unexpected end of string!")
 
     @staticmethod
@@ -132,12 +129,10 @@ class Parser:
 
     def _process_input(self):
         self._tokens.take()  # the command name
-        self._take_zero_or_more(TokenCategory.WHITE_SPACE)
+        self._tokens.take_while(lambda c: c.is_a_whitespace)
         next_token = self._tokens.look_ahead()
-        if next_token.is_a(TokenCategory.CHARACTER):
-            file_name = self._take_zero_or_more(TokenCategory.CHARACTER)
+        if next_token.is_a_character:
+            file_name = self._tokens.take_while(lambda c: c.is_a_character)
             content = self._engine.content_of(file_name)
             self.dump(content)
 
-    def _take_zero_or_more(self, category):
-        return self._tokens.take_while(lambda token: token.is_a(category))

@@ -17,24 +17,8 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from enum import Enum
 
-
-class TokenCategory(Enum):
-    """The 12 categories of tokens recognised by a TeX engine"""
-    BEGIN_GROUP = 1
-    CHARACTER = 2
-    COMMAND = 3
-    COMMENT = 4
-    END_GROUP = 5
-    END_OF_TEXT = 6
-    MATH = 7
-    NEW_LINE = 8
-    NON_BREAKING_SPACE = 9
-    PARAMETER = 10
-    SUBSCRIPT = 11
-    SUPERSCRIPT = 12
-    WHITE_SPACE = 13
+from flap.latex.symbols import Symbol, SymbolTable
 
 
 class Token:
@@ -47,13 +31,33 @@ class Token:
         self._category = category
 
     def accept(self, parser):
-        if self._category == TokenCategory.COMMAND:
+        if self._category == Symbol.CONTROL:
             parser.invoke_command(self._text)
         else:
             parser.dump(self._text)
 
     def is_a(self, category):
         return self._category == category
+
+    @property
+    def ends_the_text(self):
+        return self._category == Symbol.END_OF_TEXT
+
+    @property
+    def is_a_character(self):
+        return self._category == Symbol.CHARACTER
+
+    @property
+    def is_a_parameter(self):
+        return self._category == Symbol.PARAMETER
+
+    @property
+    def begins_a_group(self):
+        return self._category == Symbol.BEGIN_GROUP
+
+    @property
+    def is_a_whitespace(self):
+        return self._category == Symbol.WHITE_SPACES
 
     def __eq__(self, other_token):
         if not isinstance(other_token, Token):
@@ -66,3 +70,62 @@ class Token:
 
     def __str__(self):
         return self._text
+
+
+class TokenFactory:
+
+    def __init__(self, symbol_table):
+        assert isinstance(symbol_table, SymbolTable)
+        self._symbols = symbol_table
+
+    @staticmethod
+    def character(text):
+        return Token(text, Symbol.CHARACTER)
+
+    @staticmethod
+    def command(text):
+        return Token(text, Symbol.CONTROL)
+
+    @staticmethod
+    def white_space(text):
+        return Token(text, Symbol.WHITE_SPACES)
+
+    @staticmethod
+    def comment(text):
+        return Token(text, Symbol.COMMENT)
+
+    def new_line(self, text=None):
+        text = text if text else self._symbols.get(Symbol.NEW_LINE)
+        return Token(text, Symbol.NEW_LINE)
+
+    def begin_group(self, text=None):
+        text = text if text else self._symbols.get(Symbol.BEGIN_GROUP)
+        return Token(text, Symbol.BEGIN_GROUP)
+
+    def end_group(self, text=None):
+        text = text if text else self._symbols.get(Symbol.END_GROUP)
+        return Token(text, Symbol.END_GROUP)
+
+    def end_of_text(self):
+        text = self._symbols.get(Symbol.END_OF_TEXT)
+        return Token(text, Symbol.END_OF_TEXT)
+
+    @staticmethod
+    def parameter(key):
+        return Token(key, Symbol.PARAMETER)
+
+    def math(self):
+        text = self._symbols.get(Symbol.MATH)
+        return Token(text, Symbol.MATH)
+
+    def superscript(self, text=None):
+        text = text if text else self._symbols.get(Symbol.SUPERSCRIPT)
+        return Token(text, Symbol.SUPERSCRIPT)
+
+    def subscript(self, text=None):
+        text = text if text else self._symbols.get(Symbol.SUBSCRIPT)
+        return Token(text, Symbol.SUBSCRIPT)
+
+    def non_breaking_space(self, text=None):
+        text = text if text else self._symbols.get(Symbol.NON_BREAKING_SPACE)
+        return Token(text, Symbol.NON_BREAKING_SPACE)
