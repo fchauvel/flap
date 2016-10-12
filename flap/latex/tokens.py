@@ -32,12 +32,18 @@ class Token:
 
     def accept(self, parser):
         if self._category == Symbol.CONTROL:
-            parser.invoke_command(self._text)
+            return parser.evaluate_command(self._text)
+        elif self.is_a_parameter:
+            return parser.evaluate_parameter(self._text)
         else:
-            parser.dump(self._text)
+            return parser.default(self._text)
 
     def is_a(self, category):
         return self._category == category
+
+    @property
+    def is_a_command(self):
+        return self._category == Symbol.CONTROL
 
     @property
     def ends_the_text(self):
@@ -54,6 +60,10 @@ class Token:
     @property
     def begins_a_group(self):
         return self._category == Symbol.BEGIN_GROUP
+
+    @property
+    def ends_a_group(self):
+        return self._category == Symbol.END_GROUP
 
     @property
     def is_a_whitespace(self):

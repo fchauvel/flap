@@ -30,69 +30,118 @@ class Macro:
     def __init__(self, name, signature, replacement):
         self._name = name
         self._signature = signature
-        self._replacement = replacement
+        self._body = replacement
+
+    @property
+    def name(self):
+        return self._name
 
     def parse_with(self, parser):
-        parser.parse_call(self._name, self._signature, self._replacement)
+        return parser.parse_call(self._name, self._signature, self._body)
 
     def __eq__(self, other):
         if not isinstance(other, Macro):
             return False
         return self._name == other._name and \
                self._signature == other._signature and \
-               self._replacement == other._replacement
+               self._body == other._body
 
     def __repr__(self):
-        signature = "".join([str(t) for t in self._signature])
-        return r"\def" + self._name + signature + "{" + self._replacement + "}"
+        signature = "".join(str(each_token) for each_token in self._signature)
+        body = "".join(str(each_token) for each_token in self._body)
+        return r"\def" + self._name + signature + body
+
+
+class Environment:
+
+    def __init__(self):
+        self._definitions = dict()
+
+    def __setitem__(self, key, value):
+        self._definitions[key] = value
+
+    def __getitem__(self, macro_name):
+        return self._definitions.get(macro_name)
+
+    def __contains__(self, macro_name):
+        assert isinstance(macro_name, str), \
+            "Invalid macro name. Expected string, but found '{0}' object instead.".format(type(macro_name))
+        return macro_name in self._definitions
 
 
 class Parser:
 
-    def __init__(self, lexer, output, engine):
+    def __init__(self, lexer, engine, environment):
         self._lexer = lexer
         self._tokens = None
         self._symbols = TokenFactory(self._lexer.symbols)
-        self._output = output
         self._engine = engine
-        self._environment = dict()
+        self._definitions = environment
 
-    def parse(self, text):
-        self._tokens = Stream(self._lexer.tokens_from(text), self._symbols.end_of_text())
-        next_token = self._tokens.look_ahead()
-        while not next_token.ends_the_text:
-            next_token.accept(self)
-            self._tokens.take()
-            next_token = self._tokens.look_ahead()
+    def _spawn(self):
+        return Parser(self._lexer, self._engine, self._definitions)
+
+    def parse(self, tokens):
+        result = []
+        self._tokens = Stream(iter(tokens), self._symbols.end_of_text())
+        while not self._next_token.ends_the_text:
+            result += self._next_token.accept(self)
+        return result
+
+    @property
+    def _next_token(self):
+        return self._tokens.look_ahead()
+
+    def evaluate_parameter(self, parameter):
+        self._tokens.take()
+        return self._definitions[parameter]
+
+    def default(self, text):
+        return [self._tokens.take()]
 
     def define_macro(self, name, signature, replacement):
-        self._environment[name] = Macro(name, signature, replacement)
+        self._definitions[name] = Macro(name, signature, replacement)
+        return []
 
     def parse_call(self, macro, signature, body):
         self._accept(self._symbols.command(macro))
-        arguments = self._parse_arguments(signature)
-        replacement = self._substitute(arguments, body)
-        self.dump(replacement)
+        self._parse_arguments(signature)
+        return self._spawn().parse(body[1:-1])
 
     def _accept(self, expected_token):
         next_token = self._tokens.look_ahead()
         if next_token != expected_token:
             raise ValueError("Expecting %s but found %s" % (expected_token, next_token))
         else:
-            self._tokens.take()
+            return self._tokens.take()
 
     def _parse_arguments(self, signature):
-        arguments = dict()
         for index, any_token in enumerate(signature):
             if any_token.is_a_parameter:
+                parameter = str(any_token)
                 if index == len(signature)-1:
-                    arguments[str(any_token)] = self._read_until(self._symbols.begin_group())
+                    self._definitions[parameter] = self._read_one()
                 else:
                     next_token = signature[index + 1]
-                    arguments[str(any_token)] = self._read_until(next_token)
+                    self._definitions[parameter] = self._read_until(next_token)
             else:
                 self._accept(any_token)
-        return arguments
+
+    def _read_one(self):
+        result = []
+        next_token = self._tokens.look_ahead()
+        self._abort_on_end_of_text(next_token)
+        if next_token.begins_a_group:
+            result += self._parse_group()
+        elif next_token.is_a_command:
+            self.invoke_command(str(next_token))
+        elif next_token.is_a_parameter:
+            result += self._definitions[str(next_token)]
+            self._tokens.take()
+        else:
+            result.append(next_token)
+            self._tokens.take()
+        return result
 
     def _parse_group(self):
         self._accept(self._symbols.begin_group())
@@ -104,12 +153,7 @@ class Parser:
         result = []
         next_token = self._tokens.look_ahead()
         while next_token != end_marker:
-            self._abort_on_end_of_text(next_token)
-            if next_token.begins_a_group:
-                result += self._parse_group()
-            else:
-                result.append(next_token)
-                self._tokens.take()
+            result += self._read_one()
             next_token = self._tokens.look_ahead()
         return result
 
@@ -118,33 +162,17 @@ class Parser:
         if token.ends_the_text:
             raise ValueError("Unexpected end of string!")
 
-    @staticmethod
-    def _substitute(arguments, body):
-        for argument, tokens in arguments.items():
-            value = ''.join([str(each_token) for each_token in tokens])
-            body = body.replace(argument, value)
-        return body
-
-    def dump(self, *texts):
-        for each_text in texts:
-            if isinstance(each_text, str):
-                self._output.write(each_text)
-            elif isinstance(each_text, Token):
-                self._output.write(str(each_text))
-            elif isinstance(each_text, list):
-                self.dump(*each_text)
-
-    def invoke_command(self, command):
-        if command == "\input":
-            self._process_input()
+    def evaluate_command(self, command):
+        if command == r"\input":
+            return self._process_input()
         elif command == r"\def":
-            self._process_definition()
+            return self._process_definition()
         else:
-            if command in self._environment:
-                macro = self._environment[command]
-                macro.parse_with(self)
+            if command in self._definitions:
+                macro = self._definitions[command]
+                return macro.parse_with(self)
             else:
-                self.dump(command)
+                return self.default(command)
 
     def _process_input(self):
         self._tokens.take()  # the command name
@@ -153,13 +181,30 @@ class Parser:
         if next_token.is_a_character:
             file_name = "".join(str(t) for t in self._tokens.take_while(lambda c: c.is_a_character))
             content = self._engine.content_of(file_name)
-            self.dump(content)
+            return [self._symbols.character(content)]
 
     def _process_definition(self):
-        define = self._tokens.take()
+        self._tokens.take()
         name = self._tokens.take()
         signature = self._tokens.take_while(lambda t: not t.begins_a_group)
-        body = self._parse_group()
-        self.dump(define, name, signature, self._symbols.begin_group(), body, self._symbols.end_group())
-        self._environment[str(name)] = Macro(str(name), signature, ''.join(str(t) for t in body))
+        body = self._capture_group()
+        return self.define_macro(str(name), signature, body)
 
+    def _capture_group(self):
+        tokens = []
+        tokens.append(self._accept(self._symbols.begin_group()))
+        while not self._tokens.look_ahead().ends_a_group:
+            tokens += self._capture_one()
+        tokens.append(self._accept(self._symbols.end_group()))
+        return tokens
+
+    def _capture_one(self):
+        tokens = []
+        next_token = self._tokens.look_ahead()
+        self._abort_on_end_of_text(next_token)
+        if next_token.begins_a_group:
+            tokens += self._capture_group()
+        else:
+            tokens.append(next_token)
+            self._tokens.take()
+        return tokens
