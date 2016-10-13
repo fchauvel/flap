@@ -49,7 +49,6 @@ class SymbolTable:
             Symbol.COMMENT: ["%"],
             Symbol.CONTROL: ["\\"],
             Symbol.END_GROUP: ["}"],
-            Symbol.END_OF_TEXT: ["\0"],
             Symbol.MATH: ["$"],
             Symbol.NEW_LINE: ["\n"],
             Symbol.NON_BREAKING_SPACE: ["~"],

@@ -23,9 +23,8 @@ from itertools import chain
 class Stream:
     """A stream of characters, on which we can peek"""
 
-    def __init__(self, iterable, end_marker):
+    def __init__(self, iterable):
         self._characters = iterable
-        self._end_marker = end_marker
 
     def look_ahead(self):
         head = self.take()
@@ -36,10 +35,10 @@ class Stream:
         try:
             return next(self._characters)
         except StopIteration:
-            return self._end_marker
+            return None
 
     def take_while(self, match):
         buffer = []
-        while match(self.look_ahead()):
+        while self.look_ahead() and match(self.look_ahead()):
             buffer.append(self.take())
         return buffer

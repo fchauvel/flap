@@ -30,14 +30,6 @@ class Token:
         self._text = text
         self._category = category
 
-    def accept(self, parser):
-        if self._category == Symbol.CONTROL:
-            return parser.evaluate_command(self._text)
-        elif self.is_a_parameter:
-            return parser.evaluate_parameter(self._text)
-        else:
-            return parser.default(self._text)
-
     def is_a(self, category):
         return self._category == category
 
@@ -115,10 +107,6 @@ class TokenFactory:
     def end_group(self, text=None):
         text = text if text else self._symbols.get(Symbol.END_GROUP)
         return Token(text, Symbol.END_GROUP)
-
-    def end_of_text(self):
-        text = self._symbols.get(Symbol.END_OF_TEXT)
-        return Token(text, Symbol.END_OF_TEXT)
 
     @staticmethod
     def parameter(key):

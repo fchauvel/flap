@@ -37,7 +37,7 @@ class Macro:
         return self._name
 
     def parse_with(self, parser):
-        return parser.parse_call(self._name, self._signature, self._body)
+        return parser.evaluate_macro(self._name, self._signature, self._body)
 
     def __eq__(self, other):
         if not isinstance(other, Macro):
@@ -77,24 +77,34 @@ class Parser:
         self._symbols = TokenFactory(self._lexer.symbols)
         self._engine = engine
         self._definitions = environment
+        self._filters = {r"\input": self._process_input,
+                         r"\def": self._process_definition}
 
-    def _spawn(self):
-        return Parser(self._lexer, self._engine, self._definitions)
+    def _spawn(self, tokens=None):
+        parser = Parser(self._lexer, self._engine, self._definitions)
+        if tokens:
+            parser._tokens = Stream(iter(tokens))
+        return parser
 
-    def parse(self, tokens):
+    def rewrite(self, tokens):
         result = []
-        self._tokens = Stream(iter(tokens), self._symbols.end_of_text())
-        while not self._next_token.ends_the_text:
-            result += self._next_token.accept(self)
+        self._tokens = Stream(iter(tokens))
+        while self._next_token is not None:
+            result += self._rewrite_one()
         return result
+
+    def _rewrite_one(self):
+        self._abort_on_end_of_text()
+        if self._next_token.begins_a_group:
+            return self._capture_group()
+        elif self._next_token.is_a_command:
+            return self._evaluate_one()
+        else:
+            return [self._tokens.take()]
 
     @property
     def _next_token(self):
         return self._tokens.look_ahead()
-
-    def evaluate_parameter(self, parameter):
-        self._tokens.take()
-        return self._definitions[parameter]
 
     def default(self, text):
         return [self._tokens.take()]
@@ -103,85 +113,80 @@ class Parser:
         self._definitions[name] = Macro(name, signature, replacement)
         return []
 
-    def parse_call(self, macro, signature, body):
+    def evaluate_macro(self, macro, signature, body):
         self._accept(self._symbols.command(macro))
-        self._parse_arguments(signature)
-        return self._spawn().parse(body[1:-1])
+        self._evaluate_arguments(signature)
+        return self._spawn(body)._evaluate_group()
 
     def _accept(self, expected_token):
-        next_token = self._tokens.look_ahead()
-        if next_token != expected_token:
-            raise ValueError("Expecting %s but found %s" % (expected_token, next_token))
+        if self._next_token != expected_token:
+            raise ValueError("Expecting %s but found %s" % (expected_token, self._next_token))
         else:
             return self._tokens.take()
 
-    def _parse_arguments(self, signature):
+    def evaluate_parameter(self, parameter):
+        self._tokens.take()
+        return self._definitions[parameter]
+
+    def _evaluate_arguments(self, signature):
         for index, any_token in enumerate(signature):
             if any_token.is_a_parameter:
                 parameter = str(any_token)
                 if index == len(signature)-1:
-                    self._definitions[parameter] = self._read_one()
+                    self._definitions[parameter] = self._evaluate_one()
                 else:
                     next_token = signature[index + 1]
-                    self._definitions[parameter] = self._read_until(next_token)
+                    self._definitions[parameter] = self._evaluate_until(next_token)
             else:
                 self._accept(any_token)
 
-    def _read_one(self):
-        result = []
-        next_token = self._tokens.look_ahead()
-        self._abort_on_end_of_text(next_token)
-        if next_token.begins_a_group:
-            result += self._parse_group()
-        elif next_token.is_a_command:
-            self.invoke_command(str(next_token))
-        elif next_token.is_a_parameter:
-            result += self._definitions[str(next_token)]
-            self._tokens.take()
+    def _evaluate_one(self):
+        self._abort_on_end_of_text()
+        if self._next_token.begins_a_group:
+            return self._evaluate_group()
+        elif self._next_token.is_a_command:
+            return self.evaluate_command(str(self._next_token))
+        elif self._next_token.is_a_parameter:
+            return self._definitions[str(self._tokens.take())]
         else:
-            result.append(next_token)
-            self._tokens.take()
-        return result
+            return [self._tokens.take()]
 
-    def _parse_group(self):
+    def _evaluate_group(self):
         self._accept(self._symbols.begin_group())
-        result = self._read_until(self._symbols.end_group())
+        tokens = self._evaluate_until(self._symbols.end_group())
         self._accept(self._symbols.end_group())
-        return result
+        return tokens
 
-    def _read_until(self, end_marker):
+    def _evaluate_until(self, end_marker):
         result = []
-        next_token = self._tokens.look_ahead()
-        while next_token != end_marker:
-            result += self._read_one()
-            next_token = self._tokens.look_ahead()
+        while self._next_token != end_marker:
+            result += self._evaluate_one()
         return result
 
-    @staticmethod
-    def _abort_on_end_of_text(token):
-        if token.ends_the_text:
-            raise ValueError("Unexpected end of string!")
+    def _abort_on_end_of_text(self):
+        if not self._next_token:
+            raise ValueError("Unexpected end of text!")
 
     def evaluate_command(self, command):
-        if command == r"\input":
-            return self._process_input()
-        elif command == r"\def":
-            return self._process_definition()
+        if command in self._definitions:
+            macro = self._definitions[command]
+            return macro.parse_with(self)
+        elif command in self._filters:
+            return self._filters[command]()
         else:
-            if command in self._definitions:
-                macro = self._definitions[command]
-                return macro.parse_with(self)
-            else:
-                return self.default(command)
+            return self.default(command)
 
     def _process_input(self):
         self._tokens.take()  # the command name
         self._tokens.take_while(lambda c: c.is_a_whitespace)
-        next_token = self._tokens.look_ahead()
-        if next_token.is_a_character:
-            file_name = "".join(str(t) for t in self._tokens.take_while(lambda c: c.is_a_character))
-            content = self._engine.content_of(file_name)
-            return [self._symbols.character(content)]
+        argument = self._evaluate_one()
+        file_name = self._as_text(argument)
+        content = self._engine.content_of(file_name)
+        return [self._symbols.character(content)]
+
+    @staticmethod
+    def _as_text(tokens):
+        return "".join(str(each) for each in tokens)
 
     def _process_definition(self):
         self._tokens.take()
@@ -191,20 +196,15 @@ class Parser:
         return self.define_macro(str(name), signature, body)
 
     def _capture_group(self):
-        tokens = []
-        tokens.append(self._accept(self._symbols.begin_group()))
+        tokens = [self._accept(self._symbols.begin_group())]
         while not self._tokens.look_ahead().ends_a_group:
             tokens += self._capture_one()
         tokens.append(self._accept(self._symbols.end_group()))
         return tokens
 
     def _capture_one(self):
-        tokens = []
-        next_token = self._tokens.look_ahead()
-        self._abort_on_end_of_text(next_token)
-        if next_token.begins_a_group:
-            tokens += self._capture_group()
+        self._abort_on_end_of_text()
+        if self._next_token.begins_a_group:
+            return self._capture_group()
         else:
-            tokens.append(next_token)
-            self._tokens.take()
-        return tokens
+            return [self._tokens.take()]

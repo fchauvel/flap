@@ -37,9 +37,9 @@ class Lexer:
         return self._symbols
 
     def tokens_from(self, source):
-        self._input = Stream(iter(source), self._symbols.end_of_text)
+        self._input = Stream(iter(source))
         head = self._input.look_ahead()
-        while head not in self._symbols.END_OF_TEXT:
+        while head is not None:
             yield self._one_token()
             head = self._input.look_ahead()
 
@@ -72,7 +72,7 @@ class Lexer:
     def _read_comment(self):
         marker = self._input.take()
         assert marker in self._symbols.COMMENT
-        text = self._take_while(lambda c: c not in self._symbols.NEW_LINE + self._symbols.END_OF_TEXT)
+        text = self._take_while(lambda c: c not in self._symbols.NEW_LINE)
         return self._tokens.comment(marker + text)
 
     def _read_white_spaces(self):

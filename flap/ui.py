@@ -139,7 +139,7 @@ class Controller:
 
 class IllegalArguments(ValueError):
     """
-    Raised when FLaP cannot parse the the arguments received from the command line
+    Raised when FLaP cannot rewrite the the arguments received from the command line
     """
     pass
 
