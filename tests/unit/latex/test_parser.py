@@ -26,6 +26,42 @@ from flap.latex.lexer import Lexer
 from flap.latex.parser import Parser, Macro, Environment
 
 
+class EnvironmentTest(TestCase):
+
+    def setUp(self):
+        self._data = {"Z": 1}
+        self._environment = Environment()
+        for key, value in self._data.items():
+            self._environment[key] = value
+
+    def test_look_up_a_key_that_was_never_defined(self):
+        self.assertIsNone(self._environment["never defined"])
+        self.assertNotIn("never defined", self._environment)
+
+    def test_definition(self):
+        (key, value) = ("X", 234)
+        self.assertNotIn("X", self._environment)
+        self._environment[key] = value
+        self.assertEqual(value, self._environment[key])
+
+    def test_containment(self):
+        for key, value in self._data.items():
+            self.assertTrue(key in self._environment)
+            self.assertEqual(value, self._environment[key])
+
+    def test_fork_and_look_up_key_defined_in_the_parent(self):
+        fork = self._environment.fork()
+        for key, value in self._data.items():
+            self.assertTrue(key in fork)
+            self.assertEqual(value, fork[key])
+
+    def test_fork_and_redefine_key(self):
+        fork = self._environment.fork()
+        fork["Z"] = 2
+        self.assertEqual(2, fork["Z"])
+        self.assertEqual(1, self._environment["Z"])
+
+
 class ParserTests(TestCase):
 
     def setUp(self):
@@ -132,6 +168,14 @@ class ParserTests(TestCase):
     def test_macro_with_inner_macro(self):
         self._do_test_with(r"\def\foo#1{\def\bar#1{X #1} \bar{#1}} \foo{Y}",
                            r"  X Y")
+
+    def test_macro_with_parameter_scope(self):
+        self._do_test_with(r"\def\foo(#1,#2){"
+                           r"\def\bar#1{Bar=#1}"
+                           r"\bar{#2} ; #1"
+                           r"}"
+                           r"\foo(2,3)",
+                           r"Bar=3 ; 2")
 
     def test_parsing_input(self):
         self._engine.content_of.return_value = "File content"

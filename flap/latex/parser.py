@@ -54,19 +54,24 @@ class Macro:
 
 class Environment:
 
-    def __init__(self):
+    def __init__(self, parent=None):
         self._definitions = dict()
+        self._parent = parent
+
+    def fork(self):
+        return Environment(self)
 
     def __setitem__(self, key, value):
         self._definitions[key] = value
 
-    def __getitem__(self, macro_name):
-        return self._definitions.get(macro_name)
+    def __getitem__(self, key):
+        if self._parent and key not in self._definitions:
+            return self._parent[key]
+        else:
+            return self._definitions.get(key)
 
-    def __contains__(self, macro_name):
-        assert isinstance(macro_name, str), \
-            "Invalid macro name. Expected string, but found '{0}' object instead.".format(type(macro_name))
-        return macro_name in self._definitions
+    def __contains__(self, key):
+        return key in self._definitions or (self._parent and key in self._parent)
 
 
 class Parser:
@@ -81,16 +86,18 @@ class Parser:
                          r"\def": self._process_definition,
                          r"\begin": self._process_environment}
 
-    def _spawn(self, tokens=None):
-        parser = Parser(self._lexer, self._engine, self._definitions)
+    def _spawn(self, tokens=None, environment=None):
+        parser = Parser(self._lexer, self._engine, self._definitions.fork())
         if tokens:
             parser._tokens = Stream(iter(tokens))
+        if environment:
+            parser._definitions = environment
         return parser
 
     def rewrite(self, tokens):
         result = []
         self._tokens = Stream(iter(tokens))
-        while self._next_token is not None:
+        while not self._tokens.is_empty:
             result += self._rewrite_one()
         return result
 
@@ -116,8 +123,8 @@ class Parser:
 
     def evaluate_macro(self, macro, signature, body):
         self._accept(self._symbols.command(macro))
-        self._evaluate_arguments(signature)
-        return self._spawn(body)._evaluate_group()
+        environment = self._evaluate_arguments(signature)
+        return self._spawn(body, environment)._evaluate_group()
 
     def _accept(self, expected_token):
         if self._next_token != expected_token:
@@ -130,16 +137,18 @@ class Parser:
         return self._definitions[parameter]
 
     def _evaluate_arguments(self, signature):
+        environment = self._definitions.fork()
         for index, any_token in enumerate(signature):
             if any_token.is_a_parameter:
                 parameter = str(any_token)
                 if index == len(signature)-1:
-                    self._definitions[parameter] = self._evaluate_one()
+                    environment[parameter] = self._evaluate_one()
                 else:
                     next_token = signature[index + 1]
-                    self._definitions[parameter] = self._evaluate_until(next_token)
+                    environment[parameter] = self._evaluate_until(next_token)
             else:
                 self._accept(any_token)
+        return environment
 
     def _evaluate_one(self):
         self._abort_on_end_of_text()
@@ -165,7 +174,7 @@ class Parser:
         return result
 
     def _abort_on_end_of_text(self):
-        if not self._next_token:
+        if self._tokens.is_empty:
             raise ValueError("Unexpected end of text!")
 
     def evaluate_command(self, command):

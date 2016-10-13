@@ -31,6 +31,10 @@ class Stream:
         self._characters = chain([head], self._characters)
         return head
 
+    @property
+    def is_empty(self):
+        return self.look_ahead() is None
+
     def take(self):
         try:
             return next(self._characters)
