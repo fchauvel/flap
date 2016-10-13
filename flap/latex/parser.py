@@ -78,7 +78,8 @@ class Parser:
         self._engine = engine
         self._definitions = environment
         self._filters = {r"\input": self._process_input,
-                         r"\def": self._process_definition}
+                         r"\def": self._process_definition,
+                         r"\begin": self._process_environment}
 
     def _spawn(self, tokens=None):
         parser = Parser(self._lexer, self._engine, self._definitions)
@@ -194,6 +195,28 @@ class Parser:
         signature = self._tokens.take_while(lambda t: not t.begins_a_group)
         body = self._capture_group()
         return self.define_macro(str(name), signature, body)
+
+    def _process_environment(self):
+        begin = self._tokens.take()
+        environment = self._capture_group()
+        if self._as_text(environment) == "{verbatim}":
+            return [begin] + environment + self._capture_until(self._tokenise("\end{verbatim}"))
+        else:
+            return [begin] + environment
+
+    def _tokenise(self, text):
+        return \
+            [self._symbols.command("\end"), self._symbols.begin_group()] + \
+            [self._symbols.character(each) for each in "verbatim"] + \
+            [self._symbols.end_group()]
+
+    def _capture_until(self, expected_tokens):
+        read = []
+        while self._next_token:
+            read.append(self._tokens.take())
+            if read[-len(expected_tokens):] == expected_tokens:
+                break
+        return read
 
     def _capture_group(self):
         tokens = [self._accept(self._symbols.begin_group())]

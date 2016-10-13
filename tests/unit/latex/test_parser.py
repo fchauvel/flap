@@ -59,6 +59,20 @@ class ParserTests(TestCase):
         self._do_test_with(r"{\macro[option=23cm]{some text} more text}",
                            r"{\macro[option=23cm]{some text} more text}")
 
+    def test_rewriting_a_command_in_a_verbatim_environment(self):
+        self._do_test_with(r"\begin{verbatim}\foo{bar}\end{verbatim}",
+                           r"\begin{verbatim}\foo{bar}\end{verbatim}")
+
+    def test_rewriting_a_input_in_a_verbatim_environment(self):
+        self._engine.content_of.return_value = "blabla"
+        self._do_test_with(r"\begin{verbatim}\input{bar}\end{verbatim}",
+                           r"\begin{verbatim}\input{bar}\end{verbatim}")
+        self._engine.content_of.assert_not_called()
+
+    def test_rewriting_a_unknown_environment(self):
+        self._do_test_with(r"\begin{center}blabla\end{center}",
+                           r"\begin{center}blabla\end{center}")
+
     def test_parsing_a_macro_definition(self):
         self._do_test_with(r"\def\myMacro#1{my #1}",
                            r"")
