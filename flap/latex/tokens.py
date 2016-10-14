@@ -24,11 +24,16 @@ from flap.latex.symbols import Symbol, SymbolTable
 class Token:
     """All the possible tokens recognised by a TeX engine"""
 
-    DISPLAY = "{category}({text})"
+    DISPLAY = "{category}({text}){location}"
 
-    def __init__(self, text, category):
+    def __init__(self, text, category, location):
         self._text = text
         self._category = category
+        self._location = location
+
+    @property
+    def location(self):
+        return self._location
 
     def is_a(self, category):
         return self._category == category
@@ -36,6 +41,9 @@ class Token:
     @property
     def is_a_command(self):
         return self._category == Symbol.CONTROL
+
+    def has_text(self, text):
+        return self._text == text
 
     @property
     def ends_the_text(self):
@@ -68,7 +76,10 @@ class Token:
                and self._category == other_token._category
 
     def __repr__(self):
-        return self.DISPLAY.format(text=self._text, category=self._category.name.lower())
+        return self.DISPLAY.format(
+            location=self._location,
+            text=self._text,
+            category=self._category.name.lower())
 
     def __str__(self):
         return self._text
@@ -81,49 +92,49 @@ class TokenFactory:
         self._symbols = symbol_table
 
     @staticmethod
-    def character(text):
-        return Token(text, Symbol.CHARACTER)
+    def character(location, text):
+        return Token(text, Symbol.CHARACTER, location)
 
     @staticmethod
-    def command(text):
-        return Token(text, Symbol.CONTROL)
+    def command(location, text):
+        return Token(text, Symbol.CONTROL, location)
 
     @staticmethod
-    def white_space(text):
-        return Token(text, Symbol.WHITE_SPACES)
+    def white_space(location, text):
+        return Token(text, Symbol.WHITE_SPACES, location)
 
     @staticmethod
-    def comment(text):
-        return Token(text, Symbol.COMMENT)
+    def comment(location, text):
+        return Token(text, Symbol.COMMENT, location)
 
-    def new_line(self, text=None):
+    def new_line(self, location, text=None):
         text = text if text else self._symbols.get(Symbol.NEW_LINE)
-        return Token(text, Symbol.NEW_LINE)
+        return Token(text, Symbol.NEW_LINE, location)
 
-    def begin_group(self, text=None):
+    def begin_group(self, location, text=None):
         text = text if text else self._symbols.get(Symbol.BEGIN_GROUP)
-        return Token(text, Symbol.BEGIN_GROUP)
+        return Token(text, Symbol.BEGIN_GROUP, location)
 
-    def end_group(self, text=None):
+    def end_group(self, location, text=None):
         text = text if text else self._symbols.get(Symbol.END_GROUP)
-        return Token(text, Symbol.END_GROUP)
+        return Token(text, Symbol.END_GROUP, location)
 
     @staticmethod
-    def parameter(key):
-        return Token(key, Symbol.PARAMETER)
+    def parameter(location, key):
+        return Token(key, Symbol.PARAMETER, location)
 
-    def math(self):
+    def math(self, location):
         text = self._symbols.get(Symbol.MATH)
-        return Token(text, Symbol.MATH)
+        return Token(text, Symbol.MATH, location)
 
-    def superscript(self, text=None):
+    def superscript(self, location, text=None):
         text = text if text else self._symbols.get(Symbol.SUPERSCRIPT)
-        return Token(text, Symbol.SUPERSCRIPT)
+        return Token(text, Symbol.SUPERSCRIPT, location)
 
-    def subscript(self, text=None):
+    def subscript(self, location, text=None):
         text = text if text else self._symbols.get(Symbol.SUBSCRIPT)
-        return Token(text, Symbol.SUBSCRIPT)
+        return Token(text, Symbol.SUBSCRIPT, location)
 
-    def non_breaking_space(self, text=None):
+    def non_breaking_space(self, location, text=None):
         text = text if text else self._symbols.get(Symbol.NON_BREAKING_SPACE)
-        return Token(text, Symbol.NON_BREAKING_SPACE)
+        return Token(text, Symbol.NON_BREAKING_SPACE, location)

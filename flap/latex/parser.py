@@ -17,8 +17,8 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from flap.latex.commons import Stream
-from flap.latex.tokens import Token, TokenFactory
+from flap.latex.commons import Stream, Position
+from flap.latex.tokens import TokenFactory
 
 
 class Macro:
@@ -121,14 +121,14 @@ class Parser:
         self._definitions[name] = Macro(name, signature, replacement)
         return []
 
-    def evaluate_macro(self, macro, signature, body):
-        self._accept(self._symbols.command(macro))
+    def evaluate_macro(self, name, signature, body):
+        self._accept(lambda token: token.is_a_command and token.has_text(name))
         environment = self._evaluate_arguments(signature)
         return self._spawn(body, environment)._evaluate_group()
 
-    def _accept(self, expected_token):
-        if self._next_token != expected_token:
-            raise ValueError("Expecting %s but found %s" % (expected_token, self._next_token))
+    def _accept(self, as_expected):
+        if not as_expected(self._next_token):
+            raise ValueError("Unexpected token %s!" % self._next_token)
         else:
             return self._tokens.take()
 
@@ -145,9 +145,9 @@ class Parser:
                     environment[parameter] = self._evaluate_one()
                 else:
                     next_token = signature[index + 1]
-                    environment[parameter] = self._evaluate_until(next_token)
+                    environment[parameter] = self._evaluate_until(lambda token: token.has_text(next_token._text))
             else:
-                self._accept(any_token)
+                self._accept(lambda token: True)
         return environment
 
     def _evaluate_one(self):
@@ -162,14 +162,14 @@ class Parser:
             return [self._tokens.take()]
 
     def _evaluate_group(self):
-        self._accept(self._symbols.begin_group())
-        tokens = self._evaluate_until(self._symbols.end_group())
-        self._accept(self._symbols.end_group())
+        self._accept(lambda token: token.begins_a_group)
+        tokens = self._evaluate_until(lambda token: token.ends_a_group)
+        self._accept(lambda token: token.ends_a_group)
         return tokens
 
-    def _evaluate_until(self, end_marker):
+    def _evaluate_until(self, is_excluded):
         result = []
-        while self._next_token != end_marker:
+        while not is_excluded(self._next_token):
             result += self._evaluate_one()
         return result
 
@@ -192,7 +192,7 @@ class Parser:
         argument = self._evaluate_one()
         file_name = self._as_text(argument)
         content = self._engine.content_of(file_name)
-        return [self._symbols.character(content)]
+        return [self._symbols.character(Position(0,0), content)]
 
     @staticmethod
     def _as_text(tokens):
@@ -209,29 +209,24 @@ class Parser:
         begin = self._tokens.take()
         environment = self._capture_group()
         if self._as_text(environment) == "{verbatim}":
-            return [begin] + environment + self._capture_until(self._tokenise("\end{verbatim}"))
+            return [begin] + environment + self._capture_until(r"\end{verbatim}")
         else:
             return [begin] + environment
 
-    def _tokenise(self, text):
-        return \
-            [self._symbols.command("\end"), self._symbols.begin_group()] + \
-            [self._symbols.character(each) for each in "verbatim"] + \
-            [self._symbols.end_group()]
-
-    def _capture_until(self, expected_tokens):
+    def _capture_until(self, expected_text):
         read = []
         while self._next_token:
             read.append(self._tokens.take())
-            if read[-len(expected_tokens):] == expected_tokens:
+            text_read = "".join(str(token) for token in read)
+            if text_read.endswith(expected_text):
                 break
         return read
 
     def _capture_group(self):
-        tokens = [self._accept(self._symbols.begin_group())]
-        while not self._tokens.look_ahead().ends_a_group:
+        tokens = [self._accept(lambda token: token.begins_a_group)]
+        while not self._next_token.ends_a_group:
             tokens += self._capture_one()
-        tokens.append(self._accept(self._symbols.end_group()))
+        tokens.append(self._accept(lambda token: token.ends_a_group))
         return tokens
 
     def _capture_one(self):
