@@ -20,7 +20,7 @@
 
 from unittest import TestCase, main
 
-from flap.latex.commons import Position
+from flap.latex.commons import Position, Stream
 from flap.latex.symbols import SymbolTable
 from flap.latex.tokens import TokenFactory
 from flap.latex.lexer import Lexer
@@ -31,7 +31,6 @@ class LexerTests(TestCase):
     def setUp(self):
         self._symbols = SymbolTable.default()
         self._tokens = TokenFactory(self._symbols)
-        self._lexer = Lexer(self._symbols)
         self._text = None
 
     def _on_take(self, character):
@@ -43,6 +42,14 @@ class LexerTests(TestCase):
     def test_recognises_a_single_character(self):
         self._text = "b"
         self._verify_tokens(self._tokens.character(Position(1, 1), "b"))
+
+    def test_recognises_a_word(self):
+        self._text = "hello"
+        self._verify_tokens(self._tokens.character(Position(1, 1), "h"),
+                            self._tokens.character(Position(1, 2), "e"),
+                            self._tokens.character(Position(1, 3), "l"),
+                            self._tokens.character(Position(1, 4), "l"),
+                            self._tokens.character(Position(1, 5), "o"))
 
     def test_recognises_a_single_command(self):
         self._text = r"\myMacro"
@@ -120,12 +127,7 @@ class LexerTests(TestCase):
         self._verify_tokens(self._tokens.non_breaking_space(Position(1,1)))
 
     def _verify_tokens(self, *expected_tokens):
-        self.assertListEqual(list(expected_tokens), self._all_tokens)
-
-    @property
-    def _all_tokens(self):
-        assert self._lexer, "The lexer should be defined first!"
-        return list(self._lexer.tokens_from(self._text))
+        self.assertListEqual(list(expected_tokens), list(Lexer(self._symbols, self._text)))
 
 
 if __name__ == "__main__":

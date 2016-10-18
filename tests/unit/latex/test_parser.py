@@ -22,8 +22,7 @@ from mock import MagicMock
 
 from flap.latex.symbols import SymbolTable
 from flap.latex.tokens import TokenFactory
-from flap.latex.lexer import Lexer
-from flap.latex.parser import Parser, Macro, Environment
+from flap.latex.parser import Parser, Macro, Environment, Factory
 
 
 class EnvironmentTest(TestCase):
@@ -68,15 +67,17 @@ class ParserTests(TestCase):
         self._engine = MagicMock()
         self._symbols = SymbolTable.default()
         self._tokens = TokenFactory(self._symbols)
+        self._factory = Factory(self._symbols)
         self._environment = Environment()
-        self._lexer = Lexer(self._symbols)
-        self._parser = Parser(self._lexer, self._engine, self._environment)
+        self._lexer = None
+        self._parser = None
 
     def test_parsing_a_regular_word(self):
         self._do_test_with("hello", "hello")
 
     def _do_test_with(self, input, output):
-        tokens = self._parser.rewrite(self._lexer.tokens_from(input))
+        parser = Parser(self._factory.as_tokens(input), self._factory, self._engine, self._environment)
+        tokens = parser.rewrite()
         self._verify_output_is(output, tokens)
 
     def _verify_output_is(self, expected_text, actual_tokens):
@@ -127,10 +128,7 @@ class ParserTests(TestCase):
         self._environment[name] = macro
 
     def _macro(self, name, parameters, body):
-        return Macro(name, self._tokenize(parameters), self._tokenize(body))
-
-    def _tokenize(self, text):
-        return list(self._lexer.tokens_from(text))
+        return Macro(name, self._factory.as_list(parameters), self._factory.as_list(body))
 
     def test_invoking_a_macro_where_one_argument_is_a_group(self):
         self._define_macro(r"\foo", "(#1)", "{Text: #1}")

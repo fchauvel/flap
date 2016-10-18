@@ -17,8 +17,8 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from flap.latex.commons import Stream, Position
-from flap.latex.tokens import TokenFactory
+from flap.latex.commons import Stream
+from flap.latex.lexer import Lexer
 
 
 class Macro:
@@ -74,29 +74,41 @@ class Environment:
         return key in self._definitions or (self._parent and key in self._parent)
 
 
+class Factory:
+
+    def __init__(self, symbols):
+        self._symbols = symbols
+
+    def as_tokens(self, text):
+        return Lexer(self._symbols, text)
+
+    def as_list(self, text):
+        return list(Lexer(self._symbols, text))
+
+    def as_stream(self, tokens):
+        return Stream(tokens)
+
+
 class Parser:
 
-    def __init__(self, lexer, engine, environment):
-        self._lexer = lexer
-        self._tokens = None
-        self._symbols = TokenFactory(self._lexer.symbols)
+    def __init__(self, tokens, factory, engine, environment):
+        self._create = factory
         self._engine = engine
+        self._tokens = self._create.as_stream(tokens)
         self._definitions = environment
         self._filters = {r"\input": self._process_input,
                          r"\def": self._process_definition,
                          r"\begin": self._process_environment}
 
-    def _spawn(self, tokens=None, environment=None):
-        parser = Parser(self._lexer, self._engine, self._definitions.fork())
-        if tokens:
-            parser._tokens = Stream(iter(tokens))
-        if environment:
-            parser._definitions = environment
-        return parser
+    def _spawn(self, tokens, environment):
+        return Parser(
+            tokens,
+            self._create,
+            self._engine,
+            environment)
 
-    def rewrite(self, tokens):
+    def rewrite(self):
         result = []
-        self._tokens = Stream(iter(tokens))
         while not self._tokens.is_empty:
             result += self._rewrite_one()
         return result
@@ -192,7 +204,7 @@ class Parser:
         argument = self._evaluate_one()
         file_name = self._as_text(argument)
         content = self._engine.content_of(file_name)
-        return [self._symbols.character(Position(0,0), content)]
+        return self._spawn(self._create.as_tokens(content), Environment()).rewrite()
 
     @staticmethod
     def _as_text(tokens):

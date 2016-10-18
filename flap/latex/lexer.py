@@ -27,15 +27,21 @@ class Lexer:
     These handlers are automatically selected using reflection: each handler shall be named "_read_category".
     """
 
-    def __init__(self, symbols):
-        self._input = None
+    def __init__(self, symbols, text):
+        self._text = text
         self._symbols = symbols
         self._tokens = TokenFactory(self._symbols)
-        self._position = Position(1, 1)
+        self._reset()
 
-    @property
-    def symbols(self):
-        return self._symbols
+    def _reset(self):
+        self._position = Position(1, 0)
+        self._input = Stream(iter(self._text), self._on_take)
+
+    def _on_take(self, character):
+        if character in self._symbols.NEW_LINE:
+            self._position = self._position.next_line()
+        else:
+            self._position = self._position.next_character()
 
     @property
     def position(self):
@@ -48,17 +54,13 @@ class Lexer:
     def _next(self):
         return self._input.look_ahead()
 
-    def tokens_from(self, source):
-        def on_take(character):
-            if character in self._symbols.NEW_LINE:
-                self._position = self._position.next_line()
-            else:
-                self._position = self._position.next_character()
+    def __iter__(self):
+        return self
 
-        self._position = Position(1, 0)
-        self._input = Stream(iter(source), on_take)
-        while self._next is not None:
-            yield self._one_token()
+    def __next__(self):
+        if self._next is None:
+            raise StopIteration()
+        return self._one_token()
 
     def _one_token(self):
         handler = self._handler_for(self._symbols.category_of(self._next))

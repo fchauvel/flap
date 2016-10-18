@@ -20,6 +20,8 @@
 from flap import __version__
 
 from flap.util.path import Path
+from flap.latex.symbols import SymbolTable
+from flap.latex.parser import Parser, Factory, Environment
 
 
 class Display:
@@ -74,12 +76,25 @@ class Controller:
         self._display = display
 
     def run(self, arguments):
+        tex_file, destination = self._parse(arguments)
         self._display.version()
         self._display.header()
-        self._display.entry(file="test.tex", line=2, column=1, code="\\input{result.tex}")
+        self._flatten(tex_file)
         self._display.footer()
 
+    def _flatten(self, tex_file):
+        root = self._file_system.open(Path.fromText(tex_file))
+        factory = Factory(SymbolTable.default())
+        parser = Parser(factory.as_tokens(root.content()), factory, self, Environment())
+        flattened = "".join(str(each_token) for each_token in parser.rewrite())
         self._file_system.create_file(Path.fromText("output/merged.tex"),
-                                      "Blabla \n"
-                                      "Some results \n"
-                                      "Blabla \n")
+                                      flattened)
+
+    @staticmethod
+    def _parse(arguments):
+        assert len(arguments) == 3, "Expected 3 arguments, but found %s" % arguments
+        return arguments[1], arguments[2]
+
+    def content_of(self, location):
+        self._display.entry(file="test.tex", line=2, column=1, code=r"\input{result.tex}")
+        return self._file_system.open(Path.fromText(location)).content()

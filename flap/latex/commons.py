@@ -31,7 +31,7 @@ class Stream:
     def __init__(self, iterable, handler=lambda x: None):
         assert hasattr(iterable, "__iter__"), \
             "Stream requires an iterable, but found an '%s'!" % (type(iterable))
-        self._characters = iterable
+        self._characters = iter(iterable)
         assert callable(handler), \
             "Stream expect a callable hanlder, but found a '%s" % (type(handler))
         self._handler = handler

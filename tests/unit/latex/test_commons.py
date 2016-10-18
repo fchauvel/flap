@@ -57,6 +57,18 @@ class CharacterStreamTest(TestCase):
         self._stream.look_ahead()
         self._handler.assert_not_called()
 
+
+class ListStreamTest(TestCase):
+
+    def setUp(self):
+        self._text = "sample text"
+        self._handler = MagicMock()
+        self._stream = Stream([c for c in self._text], self._handler)
+
+    def test_returns_all_characters(self):
+        self.assertEqual(self._text, "".join(self._stream.take_all()))
+
+
 class PositionTest(TestCase):
 
     def setUp(self):
