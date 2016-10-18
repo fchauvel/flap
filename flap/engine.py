@@ -41,11 +41,11 @@ class Fragment:
     """
     A fragment of text, taken from a line in a file
     """
-    
-    def __init__(self, file, lineNumber=1, text=None):
-        if lineNumber < 1:
-            raise ValueError("Line number must be strictly positive (found %d)" % lineNumber)
-        self._lineNumber = lineNumber
+
+    def __init__(self, file, line_number=1, text=None):
+        if line_number < 1:
+            raise ValueError("Line number must be strictly positive (found %d)" % line_number)
+        self._lineNumber = line_number
         if file.is_missing():
             raise ValueError("Missing file '%s'" % file.fullname())
         self._file = file
@@ -85,8 +85,8 @@ class Fragment:
 class Flap:
     """
     The Flap engine. Does the flattening of LaTeX projects, including merging
-    included files, moving graphics and resources files such as classes, styles 
-    and bibliography 
+    included files, moving graphics and resources files such as classes, styles
+    and bibliography.
     """
 
     DEFAULT_OUTPUT_FILE = "merged.tex"

@@ -44,36 +44,36 @@ class Version:
         pattern = re.compile("(\\d+)\\.(\\d+)(?:\\.(?:dev)?(\\d+))?")
         match = re.match(pattern, text)
         return Version(int(match.group(1)), int(match.group(2)), int(match.group(3)) if match.group(3) else None)
-                    
+
     def __init__(self, major, minor, micro=None):
         self.major = major
         self.minor = minor
         self.micro = micro
-        
+
     def has_minor(self, minor):
         return self.minor == minor
-    
+
     def has_major(self, major):
         return self.major == major
-        
+
     def has_micro(self, micro):
         return self.micro == micro
-    
+
     def next_micro_release(self):
         return Version(self.major, self.minor, self.micro + 1)
-            
+
     def next_minor_release(self):
         return Version(self.major, self.minor + 1, 0)
-            
+
     def next_major_release(self):
         return Version(self.major + 1, 0, 0)            
-            
+
     def __repr__(self):
         version = "{}.{}".format(self.major, self.minor)
         if self.micro is not None:
             version += ".%d" % self.micro
         return version
-    
+
     def __str__(self):
         return self.__repr__()
 
@@ -85,7 +85,7 @@ class Version:
 
 
 class SourceControl:
-    
+
     def __init__(self):
         self.environment = os.environ.copy()
         self.environment["PATH"] += ";C:/Program Files (x86)/Git/bin/"
@@ -95,27 +95,27 @@ class SourceControl:
         subprocess.call(command, env=self.environment, shell=True)
         command = ["git.exe", "commit", "-m", "%s" % message ]
         subprocess.call(command, env=self.environment, shell=True)
-    
+
     def tag(self, version):
         command = ["git.exe", "tag", "-a", "v" + str(version), "-m", "\"Version %s\"" % str(version) ]
         subprocess.call(command, env=self.environment, shell=True)
-    
+
     
 class Release(Command):
-            
+
     def __init__(self, dist, scm = SourceControl()):
         super().__init__(dist)
         self.scm = scm
         self.type = None
 
     user_options = [('type=', None, 'The type of release (micro, minor or major')]
-    
+
     def initialize_options(self):
         self.type = ""
-        
+
     def finalize_options(self):
         pass
-    
+
     def run(self):      
         current_version = self.release()
         self.prepare_next_release(current_version)
@@ -160,4 +160,3 @@ class Release(Command):
         Version.update_source_code(new_version)
         print("Preparing version " + str(new_version))
         self.scm.commit("Preparing version %s" % new_version)
-

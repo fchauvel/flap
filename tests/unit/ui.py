@@ -28,11 +28,12 @@ from mock import patch, MagicMock
 
 
 class UiTest(TestCase):
-    
-    def makeUI(self, mock):
+
+    @staticmethod
+    def makeUI(mock):
         ui = UI(mock, True)
         return ui
-    
+
     @patch('sys.stdout', new_callable=StringIO)
     def test_ui_displays_version_number(self, mock):
         ui = self.makeUI(mock)        
@@ -41,7 +42,7 @@ class UiTest(TestCase):
 
     @patch('sys.stdout', new_callable=StringIO)
     def test_ui_reports_fragment(self, mock):
-        ui = self.makeUI(mock)     
+        ui = self.makeUI(mock)
         self.run_test(ui.on_fragment, mock, ["main.tex", "3", "foo"])
 
     @patch("sys.stdout", new_callable=StringIO)

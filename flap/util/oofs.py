@@ -213,11 +213,11 @@ class OSFileSystem(FileSystem):
 
 class InMemoryFileSystem(FileSystem):
         
-    def __init__(self, pathSeparator = os.path.sep):
+    def __init__(self, path_separator=os.path.sep):
         super().__init__()
         self.drive = {}
         self._current_directory = ROOT
-        self.pathSeparator = pathSeparator
+        self.pathSeparator = path_separator
 
     def move_to_directory(self, path):
         self._current_directory = path.absolute_from(self._current_directory)
