@@ -46,7 +46,7 @@ class Fragment:
         if lineNumber < 1:
             raise ValueError("Line number must be strictly positive (found %d)" % lineNumber)
         self._lineNumber = lineNumber
-        if file.isMissing():
+        if file.is_missing():
             raise ValueError("Missing file '%s'" % file.fullname())
         self._file = file
         self._text = text if text is not None else self._file.content()
@@ -117,7 +117,7 @@ class Flap:
 
     def open_file(self, source):
         self._root = self._file_system.open(source)
-        if self._root.isMissing():
+        if self._root.is_missing():
             raise ValueError("The file '%s' could not be found." % source)
 
     def merge_latex_source(self):

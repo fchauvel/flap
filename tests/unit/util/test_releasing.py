@@ -68,8 +68,6 @@ class VersionTest(TestCase):
         mock().write.assert_called_once_with("__version__ = \"1.3.0\"")
 
 
-
-
 class SourceControlTest(TestCase):
     
     def test_commit(self):

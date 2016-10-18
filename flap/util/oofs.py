@@ -33,11 +33,12 @@ class File:
     
     def is_directory(self):
         return not self.is_file()
-    
-    def exists(self):
+
+    @classmethod
+    def exists(cls):
         return True
     
-    def isMissing(self):
+    def is_missing(self):
         return not self.exists()
     
     def contains(self, content):
@@ -73,8 +74,9 @@ class File:
         
     def sibling(self, name):
         return self.fileSystem.open(self._path.container() / name) 
-    
-    def files(self):
+
+    @classmethod
+    def files(cls):
         return []
     
     def files_that_matches(self, pattern):
@@ -151,58 +153,59 @@ class OSFileSystem(FileSystem):
     def __init__(self):
         super().__init__()
         self.current_directory = Path.fromText(os.getcwd())
-        
-    def forOS(self, path):
+
+    @staticmethod
+    def for_OS(path):
         return os.path.sep.join([eachPart.fullname() for eachPart in path.parts()])
 
     def move_to_directory(self, path):
-        os.chdir(self.forOS(path))
+        os.chdir(self.for_OS(path))
         
     def create_file(self, path, content):
         self._create_path(path)
-        osPath = self.forOS(path) 
-        with open(osPath, "w") as f:
+        os_path = self.for_OS(path)
+        with open(os_path, "w") as f:
             f.write(content)
         
     def deleteDirectory(self, path):
         import shutil
-        osPath = self.forOS(path)
+        osPath = self.for_OS(path)
         if os.path.exists(osPath):
             shutil.rmtree(osPath)
     
     def open(self, path):
-        osPath = self.forOS(path)
+        osPath = self.for_OS(path)
         if os.path.isdir(osPath):
             return Directory(self, path)
         else:
             return File(self, path, None)
 
     def filesIn(self, path):
-        return [ self.open(path / each) for each in os.listdir(self.forOS(path)) ]         
+        return [self.open(path / each) for each in os.listdir(self.for_OS(path))]
 
     def copy(self, file, destination):
         import shutil
 
         self._create_path(destination)
         
-        source = self.forOS(file.path())
+        source = self.for_OS(file.path())
         target = destination if destination.has_extension() else destination / file.fullname()
 
-        shutil.copyfile(source, self.forOS(target))
+        shutil.copyfile(source, self.for_OS(target))
 
     def _create_path(self, path):
         targetDir = path
         if path.has_extension():
             targetDir = path.container()
 
-        os_target = self.forOS(targetDir)
+        os_target = self.for_OS(targetDir)
         if not os.path.exists(os_target):
             os.makedirs(os_target) 
         
     def load(self, path):
         assert path, "Invalid path (found '%s')" % path
-        osPath = self.forOS(path)
-        with open(osPath) as file:
+        os_path = self.for_OS(path)
+        with open(os_path) as file:
             return file.read()
 
 
