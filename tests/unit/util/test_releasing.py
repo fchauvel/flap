@@ -23,8 +23,9 @@ from mock import MagicMock, call, patch, ANY, mock_open
 
 
 class VersionTest(TestCase):
-    
-    def makeVersion(self, text):
+
+    @staticmethod
+    def makeVersion(text):
         return Version.from_text(text)
 
     def verifyVersion(self, version, major, minor, micro):
@@ -69,8 +70,9 @@ class VersionTest(TestCase):
 
 
 class SourceControlTest(TestCase):
-    
-    def test_commit(self):
+
+    @staticmethod
+    def test_commit():
         mock = MagicMock()
         with patch("subprocess.call", mock):
             scm = SourceControl()
@@ -78,7 +80,8 @@ class SourceControlTest(TestCase):
         mock.assert_has_calls([call(["git.exe", "add", "-u"], env=ANY, shell=True),
                                call(["git.exe", "commit", "-m", "my message"], env=ANY, shell=True)])
 
-    def test_tag(self):
+    @staticmethod
+    def test_tag():
         mock = MagicMock()
         with patch("subprocess.call", mock):
             scm = SourceControl()
@@ -87,24 +90,28 @@ class SourceControlTest(TestCase):
 
 
 class ReleaseTest(TestCase):
-    
-    def createSourceWithVersion(self, text):
+
+    @staticmethod
+    def createSourceWithVersion(text):
         return None
 
-    def release(self, scm, kind):
+    @staticmethod
+    def release(scm, kind):
         release = Release(Distribution(), scm)
         release.run_command = MagicMock()
         release.type = kind
         release.run()
         return release
-    
-    def createSCM(self):
+
+    @staticmethod
+    def createSCM():
         scm = SourceControl()
         scm.tag = MagicMock()
         scm.commit = MagicMock()
         return scm
 
-    def _verify_command_invocations(self, release):
+    @staticmethod
+    def _verify_command_invocations(release):
         release.run_command.assert_has_calls([
             call("bdist_egg"),
             call("sdist"),
@@ -124,7 +131,7 @@ class ReleaseTest(TestCase):
         scm.tag.assert_called_once_with(Version(1, 3, 3))
         read_version.assert_called_once_with()
         write_version.assert_called_once_with(Version(1, 3, 4))
-        scm.commit.assert_called_once_with("Preparing version 1.3.4")\
+        scm.commit.assert_called_once_with("Preparing version 1.3.4")
 
     @patch("flap.util.releasing.Version.from_source_code", return_value=Version(1, 3, 3))
     @patch("flap.util.releasing.Version.update_source_code")
@@ -137,9 +144,9 @@ class ReleaseTest(TestCase):
 
         read_version.assert_called_once_with()
         scm.tag.assert_called_once_with(Version(1, 4, 0))
-        write_version.assert_has_calls([call(Version(1,4,0)),
-                                               call(Version(1,4,1))])
-        scm.commit.assert_has_calls([call("Releasing version 1.4.0"), 
+        write_version.assert_has_calls([call(Version(1, 4, 0)),
+                                        call(Version(1, 4, 1))])
+        scm.commit.assert_has_calls([call("Releasing version 1.4.0"),
                                      call("Preparing version 1.4.1")])
 
     @patch("flap.util.releasing.Version.from_source_code", return_value=Version(1, 3, 3))
@@ -153,8 +160,8 @@ class ReleaseTest(TestCase):
 
         read_version.assert_called_once_with()
         scm.tag.assert_called_once_with(Version(2, 0, 0))
-        write_version.assert_has_calls([call(Version(2, 0, 0)), call(Version(2,0,1))])
-        scm.commit.assert_has_calls([call("Releasing version 2.0.0"), 
+        write_version.assert_has_calls([call(Version(2, 0, 0)), call(Version(2, 0, 1))])
+        scm.commit.assert_has_calls([call("Releasing version 2.0.0"),
                                      call("Preparing version 2.0.1")])
      
      

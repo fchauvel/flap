@@ -21,14 +21,15 @@ from flap.util.path import Path, ROOT
 
 
 class File:
-   
+
     def __init__(self, file_system, path, content):
         assert path, "Invalid path (found '%s')" % path.full()
         self.fileSystem = file_system
         self._path = path
         self._content = content
-    
-    def is_file(self):
+
+    @staticmethod
+    def is_file():
         return True
     
     def is_directory(self):
@@ -73,7 +74,7 @@ class File:
         return self.fileSystem.open(self._path.container())
         
     def sibling(self, name):
-        return self.fileSystem.open(self._path.container() / name) 
+        return self.fileSystem.open(self._path.container() / name)
 
     @classmethod
     def files(cls):
@@ -97,8 +98,8 @@ class Directory(File):
         return False
     
     def content(self):
-        return None 
-            
+        return None
+
     def files(self):
         return self.fileSystem.filesIn(self.path())
      
@@ -116,8 +117,9 @@ class MissingFile(File):
     
     def content(self):
         return None
-    
-    def location(self):
+
+    @staticmethod
+    def location():
         return None
 
 
@@ -200,7 +202,7 @@ class OSFileSystem(FileSystem):
 
         os_target = self.for_OS(targetDir)
         if not os.path.exists(os_target):
-            os.makedirs(os_target) 
+            os.makedirs(os_target)
         
     def load(self, path):
         assert path, "Invalid path (found '%s')" % path

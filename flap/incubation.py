@@ -76,18 +76,18 @@ class Controller:
         self._display = display
 
     def run(self, arguments):
-        tex_file, destination = self._parse(arguments)
         self._display.version()
         self._display.header()
-        self._flatten(tex_file)
+        tex_file, destination = self._parse(arguments)
+        self._flatten(tex_file, destination)
         self._display.footer()
 
-    def _flatten(self, tex_file):
+    def _flatten(self, tex_file, destination):
         root = self._file_system.open(Path.fromText(tex_file))
         factory = Factory(SymbolTable.default())
         parser = Parser(factory.as_tokens(root.content()), factory, self, Environment())
         flattened = "".join(str(each_token) for each_token in parser.rewrite())
-        self._file_system.create_file(Path.fromText("output/merged.tex"),
+        self._file_system.create_file(Path.fromText(destination) / "merged.tex",
                                       flattened)
 
     @staticmethod
