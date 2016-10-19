@@ -193,6 +193,11 @@ class ParserTests(TestCase):
 
     def test_rewriting_includegraphics(self):
         self._engine.update_link.return_value = "img_result"
+        self._do_test_with(r"\includegraphics{img/result.pdf}",
+                           r"\includegraphics{img_result}")
+
+    def test_rewriting_includegraphics_with_parameters(self):
+        self._engine.update_link.return_value = "img_result"
         self._do_test_with(r"\includegraphics[width=\linewidth]{img/result.pdf}",
                            r"\includegraphics[width=\linewidth]{img_result}")
 

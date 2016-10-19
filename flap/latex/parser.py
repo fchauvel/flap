@@ -142,7 +142,13 @@ class Parser:
 
     def _accept(self, as_expected):
         if not as_expected(self._next_token):
-            raise ValueError("Unexpected token %s!" % self._next_token)
+            error = "Unexpected {} '{}' at line {}, column {}.".format(
+                self._next_token._category.name,
+                self._next_token,
+                self._next_token.location.line,
+                self._next_token.location.column
+            )
+            raise ValueError(error)
         else:
             return self._tokens.take()
 
@@ -208,25 +214,6 @@ class Parser:
         content = self._engine.content_of(file_name)
         return self._spawn(self._create.as_tokens(content), Environment()).rewrite()
 
-    @staticmethod
-    def _as_text(tokens):
-        return "".join(str(each) for each in tokens)
-
-    def _process_definition(self):
-        self._tokens.take()
-        name = self._tokens.take()
-        signature = self._tokens.take_while(lambda t: not t.begins_a_group)
-        body = self._capture_group()
-        return self.define_macro(str(name), signature, body)
-
-    def _process_environment(self):
-        begin = self._tokens.take()
-        environment = self._capture_group()
-        if self._as_text(environment) == "{verbatim}":
-            return [begin] + environment + self._capture_until(r"\end{verbatim}")
-        else:
-            return [begin] + environment
-
     def _capture_until(self, expected_text):
         read = []
         while self._next_token:
@@ -250,18 +237,38 @@ class Parser:
         else:
             return [self._tokens.take()]
 
+    def _process_definition(self):
+        self._tokens.take()
+        name = self._tokens.take()
+        signature = self._tokens.take_while(lambda t: not t.begins_a_group)
+        body = self._capture_group()
+        return self.define_macro(str(name), signature, body)
+
+    def _process_environment(self):
+        begin = self._tokens.take()
+        environment = self._capture_group()
+        if self._as_text(environment) == "{verbatim}":
+            return [begin] + environment + self._capture_until(r"\end{verbatim}")
+        else:
+            return [begin] + environment
+
+    @staticmethod
+    def _as_text(tokens):
+        return "".join(str(each) for each in tokens)
+
     def _process_includegraphics(self):
         command = self._tokens.take()
-        open = self._accept(lambda token: token.has_text("["))
-        parameters = self._evaluate_until(lambda token: token.has_text("]"))
-        close = self._accept(lambda token: token.has_text("]"))
-        link = self._evaluate_group()
-        new_link = self._engine.update_link(link)
-        return [command, open ] + parameters + [close] + self._create.as_list("{" + new_link + "}")
+        options = []
+        if self._next_token.has_text("["):
+            options += [self._accept(lambda token: token.has_text("["))]
+            options += self._evaluate_until(lambda token: token.has_text("]"))
+            options += [self._accept(lambda token: token.has_text("]"))]
+        new_link = self._engine.update_link(self._evaluate_group())
+        return [command] + options + self._create.as_list("{" + new_link + "}")
 
     def _process_graphicpath(self):
         command = self._tokens.take()
         path_tokens = self._capture_group()
         path = self._spawn(path_tokens, Environment(self._definitions))._evaluate_one()
-        self._engine.record_graphic_path("".join(str(token) for token in path))
+        self._engine.record_graphic_path(self._as_text(path))
         return [command] + path_tokens
