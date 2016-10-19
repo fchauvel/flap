@@ -191,6 +191,10 @@ class ParserTests(TestCase):
         self._do_test_with(r"\def\foo#1{File: \input{#1}} \foo{test.tex}",
                            r" File: blabla")
 
+    def test_rewriting_includegraphics(self):
+        self._engine.update_link.return_value = "img_result"
+        self._do_test_with(r"\includegraphics[width=\linewidth]{img/result.pdf}",
+                           r"\includegraphics[width=\linewidth]{img_result}")
 
 if __name__ == '__main__':
     main()

@@ -98,7 +98,8 @@ class Parser:
         self._definitions = environment
         self._filters = {r"\input": self._process_input,
                          r"\def": self._process_definition,
-                         r"\begin": self._process_environment}
+                         r"\begin": self._process_environment,
+                         r"\includegraphics": self._process_includegraphics}
 
     def _spawn(self, tokens, environment):
         return Parser(
@@ -247,3 +248,12 @@ class Parser:
             return self._capture_group()
         else:
             return [self._tokens.take()]
+
+    def _process_includegraphics(self):
+        command = self._tokens.take() #
+        open = self._accept(lambda token: token.has_text("["))
+        parameters = self._evaluate_until(lambda token: token.has_text("]"))
+        close = self._accept(lambda token: token.has_text("]"))
+        link = self._evaluate_group()
+        new_link = self._engine.update_link(link)
+        return [command, open ] + parameters + [close] + self._create.as_list("{" + new_link + "}")
