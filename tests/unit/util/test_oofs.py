@@ -26,7 +26,7 @@ class InMemoryFileSystemTest(unittest.TestCase):
     def setUp(self):
         self.fileSystem = InMemoryFileSystem()
         self.current_directory = Path.fromText("/temp")
-       
+
     def test_file_creation(self):
         path = Path.fromText("dir/test/source.tex")
         self.fileSystem.create_file(path, "blah")
@@ -38,77 +38,60 @@ class InMemoryFileSystemTest(unittest.TestCase):
 
     def test_create_file_rejects_content_that_is_not_text(self):
         path = Path.fromText("dir/test.txt")
-
         with self.assertRaises(ValueError):
             self.fileSystem.create_file(path, [1, 2, 3, 4])
 
     def testThatMissingFileDoNotExist(self):
         path = Path.fromText("file\\that\\do\\not\\exist.txt")
-        
         file = self.fileSystem.open(path)
-        
         self.assertFalse(file.exists())
 
     def testContainingDirectoryIsAvailable(self):
         path = Path.fromText("my\\dir\\test.txt")
         self.fileSystem.create_file(path, "data")
-        
-        file = self.fileSystem.open(path) 
-        
+        file = self.fileSystem.open(path)
         self.assertEqual(file.container().path(), ROOT / "my" / "dir")
 
     def testFullNameIsAvailable(self):
         path = Path.fromText("/my/dir/test.txt")
-
         self.fileSystem.create_file(path, "data")
-        
         file = self.fileSystem.open(path)
-        
         self.assertEqual(file.fullname(), "test.txt")
 
     def testBasenameIsAvailable(self):
         path = Path.fromText("my/dir/test.txt")
         self.fileSystem.create_file(path, "whatever")
-
         file = self.fileSystem.open(path)
-        
         self.assertEqual(file.basename(), "test")
 
     def testDirectoryContainsFiles(self):
         self.fileSystem.create_file(Path.fromText("dir/test.txt"), "x")
         self.fileSystem.create_file(Path.fromText("dir/test2.txt"), "y")
-        
         file = self.fileSystem.open(Path.fromText("dir"))
-        
         self.assertEqual(len(file.files()), 2)
-        
+
     def testDirectoryContainsOnlyItsDirectContent(self):
         self.fileSystem.create_file(Path.fromText("dir/test.txt"), "x")
         self.fileSystem.create_file(Path.fromText("dir/test2.txt"), "y")
         self.fileSystem.create_file(Path.fromText("dir/more/test.txt"), "x")
-        
         directory = self.fileSystem.open(Path.fromText("dir"))
-        
         self.assertEqual(len(directory.files()), 3, [ str(file.path()) for file in directory.files() ])
-        
+
     def testFilteringFilesInDirectory(self):
         self.fileSystem.create_file(Path.fromText("dir/test.txt"), "x")
         self.fileSystem.create_file(Path.fromText("dir/test2.txt"), "y")
         self.fileSystem.create_file(Path.fromText("dir/blah"), "z")
-        
         file = self.fileSystem.open(Path.fromText("dir"))
-        
         self.assertEqual(len(file.files_that_matches("test")), 2)
 
     def testCopyingFile(self):
         source = Path.fromText("dir/test.txt")
         self.fileSystem.create_file(source, "whatever")
-        
         file = self.fileSystem.open(source)
-        
         destination = Path.fromText("dir2/clone")
+
         self.fileSystem.copy(file, destination)
-        
+
         copy = self.fileSystem.open(destination / "test.txt")
         self.assertTrue(copy.exists())
         self.assertEqual(copy.content(), "whatever")
@@ -148,6 +131,6 @@ class InMemoryFileSystemTest(unittest.TestCase):
 
         self.assertEqual(file.content(), "blahblah blah")
 
-        
+
 if __name__ == "__main__":
     unittest.main()

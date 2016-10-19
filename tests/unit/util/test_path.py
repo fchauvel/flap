@@ -29,7 +29,6 @@ class PathTests(unittest.TestCase):
 
     def test_path_to_file(self):
         path = (ROOT / "test" / "source.tex")
-        
         self.assertEqual(path.container(), ROOT / "test")
         self.assertEqual(path.fullname(), "source.tex")
 
@@ -116,7 +115,6 @@ class PathTests(unittest.TestCase):
         path = Path.fromText("foo.tex")
         self.assertEquals(CURRENT_DIRECTORY, path.container())
 
-
     def testContainment(self):
         path1 = ROOT / "dir" / "file.txt"
         path2 = ROOT / "dir"
@@ -128,7 +126,7 @@ class PathTests(unittest.TestCase):
         path2 = ROOT / "dir" / "file.txt"
         
         self.assertFalse(path1 in path2)
-        self.assertFalse(path2 in path1) 
+        self.assertFalse(path2 in path1)
 
     def testPathBuilding(self):
         path = Path.fromText("\\Users\\franckc\\file.txt")

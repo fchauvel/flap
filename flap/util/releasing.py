@@ -66,7 +66,7 @@ class Version:
         return Version(self.major, self.minor + 1, 0)
 
     def next_major_release(self):
-        return Version(self.major + 1, 0, 0)            
+        return Version(self.major + 1, 0, 0)
 
     def __repr__(self):
         version = "{}.{}".format(self.major, self.minor)
@@ -93,14 +93,14 @@ class SourceControl:
     def commit(self, message):
         command = ["git.exe", "add", "-u"]
         subprocess.call(command, env=self.environment, shell=True)
-        command = ["git.exe", "commit", "-m", "%s" % message ]
+        command = ["git.exe", "commit", "-m", "%s" % message]
         subprocess.call(command, env=self.environment, shell=True)
 
     def tag(self, version):
-        command = ["git.exe", "tag", "-a", "v" + str(version), "-m", "\"Version %s\"" % str(version) ]
+        command = ["git.exe", "tag", "-a", "v" + str(version), "-m", "\"Version %s\"" % str(version)]
         subprocess.call(command, env=self.environment, shell=True)
 
-    
+
 class Release(Command):
 
     def __init__(self, dist, scm = SourceControl()):
