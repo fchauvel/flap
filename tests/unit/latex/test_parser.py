@@ -196,5 +196,11 @@ class ParserTests(TestCase):
         self._do_test_with(r"\includegraphics[width=\linewidth]{img/result.pdf}",
                            r"\includegraphics[width=\linewidth]{img_result}")
 
+    def test_rewriting_graphicspath(self):
+        self._do_test_with(r"\graphicspath{{img}}",
+                           r"\graphicspath{{img}}")
+        self._engine.record_graphic_path.assert_called_once_with("img")
+
+
 if __name__ == '__main__':
     main()

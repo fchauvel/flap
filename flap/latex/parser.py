@@ -99,7 +99,8 @@ class Parser:
         self._filters = {r"\input": self._process_input,
                          r"\def": self._process_definition,
                          r"\begin": self._process_environment,
-                         r"\includegraphics": self._process_includegraphics}
+                         r"\includegraphics": self._process_includegraphics,
+                         r"\graphicspath": self._process_graphicpath}
 
     def _spawn(self, tokens, environment):
         return Parser(
@@ -250,10 +251,17 @@ class Parser:
             return [self._tokens.take()]
 
     def _process_includegraphics(self):
-        command = self._tokens.take() #
+        command = self._tokens.take()
         open = self._accept(lambda token: token.has_text("["))
         parameters = self._evaluate_until(lambda token: token.has_text("]"))
         close = self._accept(lambda token: token.has_text("]"))
         link = self._evaluate_group()
         new_link = self._engine.update_link(link)
         return [command, open ] + parameters + [close] + self._create.as_list("{" + new_link + "}")
+
+    def _process_graphicpath(self):
+        command = self._tokens.take()
+        path_tokens = self._capture_group()
+        path = self._spawn(path_tokens, Environment(self._definitions))._evaluate_one()
+        self._engine.record_graphic_path("".join(str(token) for token in path))
+        return [command] + path_tokens
