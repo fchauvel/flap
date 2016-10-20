@@ -15,7 +15,7 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from re import compile, split, DOTALL
+import re
 from itertools import chain
 
 from flap.engine import Fragment
@@ -47,7 +47,7 @@ class Input(FileSubstitution):
         super().__init__(delegate, flap)
 
     def prepare_pattern(self):
-        return compile(r"\\input\s*\{([^}]+)\}")
+        return re.compile(r"\\input\s*\{([^}]+)\}")
 
 
 class SubFile(FileSubstitution):
@@ -61,7 +61,7 @@ class SubFile(FileSubstitution):
         super().__init__(delegate, flap)
 
     def prepare_pattern(self):
-        return compile(r"\\subfile\s*\{([^}]+)\}")
+        return re.compile(r"\\subfile\s*\{([^}]+)\}")
 
 
 class SubFileExtractor(Substitution):
@@ -74,7 +74,7 @@ class SubFileExtractor(Substitution):
         super().__init__(delegate, flap)
 
     def prepare_pattern(self):
-        return compile(r"\\documentclass(?:\[[^\]]+\])?\{subfiles\}.*\\begin\{document\}(.+)\\end\{document\}", DOTALL)
+        return re.compile(r"\\documentclass(?:\[[^\]]+\])?\{subfiles\}.*\\begin\{document\}(.+)\\end\{document\}", re.DOTALL)
 
     def replacements_for(self, fragment, match):
         if match is None:
@@ -89,10 +89,10 @@ class IncludeOnly(Substitution):
     """
 
     def prepare_pattern(self):
-        return compile(r"\\includeonly\{([^\}]+)\}")
+        return re.compile(r"\\includeonly\{([^\}]+)\}")
 
     def replacements_for(self, fragment, match):
-        included_files = split(",", match.group(1))
+        included_files = re.split(",", match.group(1))
         self.flap.restrict_inclusion_to(included_files)
         return []
 
@@ -106,7 +106,7 @@ class Include(Input):
         super().__init__(delegate, flap)
 
     def prepare_pattern(self):
-        return compile(r"\\include\s*\{([^}]+)\}")
+        return re.compile(r"\\include\s*\{([^}]+)\}")
 
     def replacements_for(self, fragment, match):
         if self.flap.is_ignored(match.group(1)):

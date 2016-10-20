@@ -15,7 +15,7 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from re import compile, DOTALL
+import re
 from flap.substitutions.commons import Substitution
 
 
@@ -25,7 +25,7 @@ class EndInput(Substitution):
     """
 
     def prepare_pattern(self):
-        return compile(r"\\endinput.+\Z", DOTALL)
+        return re.compile(r"\\endinput.+\Z", re.DOTALL)
 
     def replacements_for(self, fragment, match):
         return []
