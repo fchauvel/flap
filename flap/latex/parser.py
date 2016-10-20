@@ -23,21 +23,39 @@ from flap.latex.lexer import Lexer
 
 class Macro:
     """
-    A LaTeX macro, including its name (e.g., '\point'), its signature as a list of expected tokens (e.g., '(#1,#2)')
-    and the text that should replace it.
+    A LaTeX macro, including its name (e.g., '\point'), its signature as a list
+    of expected tokens (e.g., '(#1,#2)') and the text that should replace it.
     """
 
-    def __init__(self, name, signature, replacement):
+    def __init__(self, name, signature, body):
         self._name = name
         self._signature = signature
-        self._body = replacement
+        self._body = body
 
-    @property
-    def name(self):
-        return self._name
+    def invoke(self, parser):
+        arguments = self._parse(parser)
+        return self._execute(parser, arguments)
 
-    def parse_with(self, parser):
-        return parser.evaluate_macro(self._name, self._signature, self._body)
+    def _parse(self, parser):
+        parser._accept(lambda token: token.is_a_command and token.has_text(self._name))
+        return self._evaluate_arguments(parser)
+
+    def _evaluate_arguments(self, parser):
+        environment = Environment()
+        for index, any_token in enumerate(self._signature):
+            if any_token.is_a_parameter:
+                parameter = str(any_token)
+                if index == len(self._signature)-1:
+                    environment[parameter] = parser._evaluate_one()
+                else:
+                    next_token = self._signature[index + 1]
+                    environment[parameter] = parser._evaluate_until(lambda token: token.has_text(next_token._text))
+            else:
+                parser._accept(lambda token: True)
+        return environment
+
+    def _execute(self, parser, arguments):
+        return parser._spawn(self._body, arguments)._evaluate_group()
 
     def __eq__(self, other):
         if not isinstance(other, Macro):
@@ -52,6 +70,27 @@ class Macro:
         return r"\def" + self._name + signature + body
 
 
+class IncludeGraphics(Macro):
+
+    def __init__(self):
+        super().__init__(r"\includegraphics", None, None)
+
+    @staticmethod
+    def _evaluate_arguments(parser):
+        arguments = Environment()
+        arguments["options"] = []
+        if parser._next_token.has_text("["):
+            arguments["options"] += [parser._accept(lambda token: token.has_text("["))]
+            arguments["options"] += parser._evaluate_until(lambda token: token.has_text("]"))
+            arguments["options"] += [parser._accept(lambda token: token.has_text("]"))]
+        arguments["link"] = parser._evaluate_group()
+        return arguments
+
+    def _execute(self, parser, arguments):
+        new_link = parser._engine.update_link(arguments["link"])
+        return parser._create.as_list(self._name) + arguments["options"] + parser._create.as_list("{" + new_link + "}")
+
+
 class Environment:
 
     def __init__(self, parent=None):
@@ -60,6 +99,13 @@ class Environment:
 
     def fork(self):
         return Environment(self)
+
+    def extend_with(self, other):
+        for key, value in other._definitions.items():
+            self._definitions[key] = value
+
+    def items(self):
+        return self._definitions.items()
 
     def __setitem__(self, key, value):
         self._definitions[key] = value
@@ -96,18 +142,20 @@ class Parser:
         self._engine = engine
         self._tokens = self._create.as_stream(tokens)
         self._definitions = environment
+        self._definitions[r"\includegraphics"] = IncludeGraphics()
         self._filters = {r"\input": self._process_input,
                          r"\def": self._process_definition,
                          r"\begin": self._process_environment,
-                         r"\includegraphics": self._process_includegraphics,
                          r"\graphicspath": self._process_graphicpath}
 
     def _spawn(self, tokens, environment):
+        new_environment = Environment(self._definitions)
+        new_environment.extend_with(environment)
         return Parser(
             tokens,
             self._create,
             self._engine,
-            environment)
+            new_environment)
 
     def rewrite(self):
         result = []
@@ -135,11 +183,6 @@ class Parser:
         self._definitions[name] = Macro(name, signature, replacement)
         return []
 
-    def evaluate_macro(self, name, signature, body):
-        self._accept(lambda token: token.is_a_command and token.has_text(name))
-        environment = self._evaluate_arguments(signature)
-        return self._spawn(body, environment)._evaluate_group()
-
     def _accept(self, as_expected):
         if not as_expected(self._next_token):
             error = "Unexpected {} '{}' at line {}, column {}.".format(
@@ -155,20 +198,6 @@ class Parser:
     def evaluate_parameter(self, parameter):
         self._tokens.take()
         return self._definitions[parameter]
-
-    def _evaluate_arguments(self, signature):
-        environment = self._definitions.fork()
-        for index, any_token in enumerate(signature):
-            if any_token.is_a_parameter:
-                parameter = str(any_token)
-                if index == len(signature)-1:
-                    environment[parameter] = self._evaluate_one()
-                else:
-                    next_token = signature[index + 1]
-                    environment[parameter] = self._evaluate_until(lambda token: token.has_text(next_token._text))
-            else:
-                self._accept(lambda token: True)
-        return environment
 
     def _evaluate_one(self):
         self._abort_on_end_of_text()
@@ -200,7 +229,7 @@ class Parser:
     def evaluate_command(self, command):
         if command in self._definitions:
             macro = self._definitions[command]
-            return macro.parse_with(self)
+            return macro.invoke(self)
         elif command in self._filters:
             return self._filters[command]()
         else:
@@ -255,16 +284,6 @@ class Parser:
     @staticmethod
     def _as_text(tokens):
         return "".join(str(each) for each in tokens)
-
-    def _process_includegraphics(self):
-        command = self._tokens.take()
-        options = []
-        if self._next_token.has_text("["):
-            options += [self._accept(lambda token: token.has_text("["))]
-            options += self._evaluate_until(lambda token: token.has_text("]"))
-            options += [self._accept(lambda token: token.has_text("]"))]
-        new_link = self._engine.update_link(self._evaluate_group())
-        return [command] + options + self._create.as_list("{" + new_link + "}")
 
     def _process_graphicpath(self):
         command = self._tokens.take()

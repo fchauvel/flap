@@ -21,8 +21,7 @@
 from unittest import TestCase, main
 
 from flap.latex.commons import Position
-from flap.latex.symbols import SymbolTable
-from flap.latex.tokens import Token, TokenFactory
+from flap.latex.tokens import *
 
 
 class TokenTests(TestCase):

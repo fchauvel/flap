@@ -35,6 +35,9 @@ class Token:
     def location(self):
         return self._location
 
+    def satisfies(self, predicate):
+        return predicate.evaluate_on(self._text, self._category, self._location)
+
     def is_a(self, category):
         return self._category == category
 
