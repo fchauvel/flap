@@ -91,6 +91,23 @@ class IncludeGraphics(Macro):
         return parser._create.as_list(self._name) + arguments["options"] + parser._create.as_list("{" + new_link + "}")
 
 
+class GraphicsPath(Macro):
+
+    def __init__(self):
+        super().__init__(r"\graphicspath", None, None)
+
+    def _evaluate_arguments(self, parser):
+        arguments = Environment()
+        path_tokens = parser._capture_group()
+        arguments["path"] = parser._spawn(path_tokens, Environment())._evaluate_one()
+        return arguments
+
+    def _execute(self, parser, arguments):
+        path = parser._as_text(arguments["path"])
+        parser._engine.record_graphic_path(path)
+        return parser._create.as_list(self._name + "{{" + path + "}}")
+
+
 class Environment:
 
     def __init__(self, parent=None):
@@ -143,10 +160,11 @@ class Parser:
         self._tokens = self._create.as_stream(tokens)
         self._definitions = environment
         self._definitions[r"\includegraphics"] = IncludeGraphics()
+        self._definitions[r"\graphicspath"] = GraphicsPath()
         self._filters = {r"\input": self._process_input,
                          r"\def": self._process_definition,
                          r"\begin": self._process_environment,
-                         r"\graphicspath": self._process_graphicpath}
+                         }
 
     def _spawn(self, tokens, environment):
         new_environment = Environment(self._definitions)
@@ -285,9 +303,3 @@ class Parser:
     def _as_text(tokens):
         return "".join(str(each) for each in tokens)
 
-    def _process_graphicpath(self):
-        command = self._tokens.take()
-        path_tokens = self._capture_group()
-        path = self._spawn(path_tokens, Environment(self._definitions))._evaluate_one()
-        self._engine.record_graphic_path(self._as_text(path))
-        return [command] + path_tokens
