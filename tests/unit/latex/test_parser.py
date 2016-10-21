@@ -22,14 +22,14 @@ from mock import MagicMock
 
 from flap.latex.symbols import SymbolTable
 from flap.latex.tokens import TokenFactory
-from flap.latex.parser import Parser, Macro, Environment, Factory
+from flap.latex.parser import Parser, Macro, Context, Factory
 
 
-class EnvironmentTest(TestCase):
+class ContextTest(TestCase):
 
     def setUp(self):
         self._data = {"Z": 1}
-        self._environment = Environment()
+        self._environment = Context()
         for key, value in self._data.items():
             self._environment[key] = value
 
@@ -68,7 +68,7 @@ class ParserTests(TestCase):
         self._symbols = SymbolTable.default()
         self._tokens = TokenFactory(self._symbols)
         self._factory = Factory(self._symbols)
-        self._environment = Environment()
+        self._environment = Context()
         self._lexer = None
         self._parser = None
 
