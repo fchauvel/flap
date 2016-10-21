@@ -71,6 +71,26 @@ class Macro:
         return r"\def" + self._name + signature + body
 
 
+class Begin(Macro):
+    """
+    A LaTeX environment such as \begin{center} \end{center}.
+    """
+
+    def __init__(self):
+        super().__init__(r"\begin", None, None)
+
+    def _evaluate_arguments(self, parser):
+        arguments = dict()
+        arguments["environment"] = parser._as_text(parser._evaluate_group())
+        return arguments
+
+    def _execute(self, parser, arguments):
+        if arguments["environment"] == "verbatim":
+            return parser._create.as_list(r"\begin{verbatim}") + parser._capture_until(r"\end{verbatim}")
+        else:
+            return parser._create.as_list(r"\begin{" + arguments["environment"] + "}")
+
+
 class Def(Macro):
 
     def __init__(self):
@@ -195,13 +215,14 @@ class Parser:
         self._engine = engine
         self._tokens = self._create.as_stream(tokens)
         self._definitions = environment
+        self._set_builtin_definitions()
+
+    def _set_builtin_definitions(self):
         self._definitions[r"\input"] = Input()
         self._definitions[r"\includegraphics"] = IncludeGraphics()
         self._definitions[r"\graphicspath"] = GraphicsPath()
         self._definitions[r"\def"] = Def()
-        self._filters = {
-                         r"\begin": self._process_environment,
-                         }
+        self._definitions[r"\begin"] = Begin()
 
     def _spawn(self, tokens, environment):
         new_environment = Context(self._definitions)
@@ -285,8 +306,6 @@ class Parser:
         if command in self._definitions:
             macro = self._definitions[command]
             return macro.invoke(self)
-        elif command in self._filters:
-            return self._filters[command]()
         else:
             return self.default(command)
 
@@ -312,14 +331,6 @@ class Parser:
             return self._capture_group()
         else:
             return [self._tokens.take()]
-
-    def _process_environment(self):
-        begin = self._tokens.take()
-        environment = self._capture_group()
-        if self._as_text(environment) == "{verbatim}":
-            return [begin] + environment + self._capture_until(r"\end{verbatim}")
-        else:
-            return [begin] + environment
 
     @staticmethod
     def _as_text(tokens):
