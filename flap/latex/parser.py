@@ -70,6 +70,26 @@ class Macro:
         return r"\def" + self._name + signature + body
 
 
+class Def(Macro):
+
+    def __init__(self):
+        super().__init__(r"\def", None, None)
+
+    def _evaluate_arguments(self, parser):
+        arguments = Environment()
+        arguments["name"] = parser._tokens.take()
+        arguments["signature"] = parser._tokens.take_while(lambda t: not t.begins_a_group)
+        arguments["body"] = parser._capture_group()
+        return arguments
+
+    def _execute(self, parser, arguments):
+        return parser.define_macro(
+            str(arguments["name"]),
+            arguments["signature"],
+            arguments["body"]
+        )
+
+
 class IncludeGraphics(Macro):
 
     def __init__(self):
@@ -161,8 +181,8 @@ class Parser:
         self._definitions = environment
         self._definitions[r"\includegraphics"] = IncludeGraphics()
         self._definitions[r"\graphicspath"] = GraphicsPath()
+        self._definitions[r"\def"] = Def()
         self._filters = {r"\input": self._process_input,
-                         r"\def": self._process_definition,
                          r"\begin": self._process_environment,
                          }
 
@@ -283,13 +303,6 @@ class Parser:
             return self._capture_group()
         else:
             return [self._tokens.take()]
-
-    def _process_definition(self):
-        self._tokens.take()
-        name = self._tokens.take()
-        signature = self._tokens.take_while(lambda t: not t.begins_a_group)
-        body = self._capture_group()
-        return self.define_macro(str(name), signature, body)
 
     def _process_environment(self):
         begin = self._tokens.take()
