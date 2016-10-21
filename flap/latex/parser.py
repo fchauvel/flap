@@ -38,6 +38,7 @@ class Macro:
 
     def _parse(self, parser):
         parser._accept(lambda token: token.is_a_command and token.has_text(self._name))
+        parser._tokens.take_while(lambda c: c.is_a_whitespace)
         return self._evaluate_arguments(parser)
 
     def _evaluate_arguments(self, parser):
@@ -88,6 +89,21 @@ class Def(Macro):
             arguments["signature"],
             arguments["body"]
         )
+
+
+class Input(Macro):
+
+    def __init__(self):
+        super().__init__(r"\input", None, None)
+
+    def _evaluate_arguments(self, parser):
+        arguments = dict()
+        arguments["link"] = parser._as_text(parser._evaluate_one())
+        return arguments
+
+    def _execute(self, parser, arguments):
+        content = parser._engine.content_of(arguments["link"])
+        return parser._spawn(parser._create.as_tokens(content), Environment()).rewrite()
 
 
 class IncludeGraphics(Macro):
@@ -179,10 +195,11 @@ class Parser:
         self._engine = engine
         self._tokens = self._create.as_stream(tokens)
         self._definitions = environment
+        self._definitions[r"\input"] = Input()
         self._definitions[r"\includegraphics"] = IncludeGraphics()
         self._definitions[r"\graphicspath"] = GraphicsPath()
         self._definitions[r"\def"] = Def()
-        self._filters = {r"\input": self._process_input,
+        self._filters = {
                          r"\begin": self._process_environment,
                          }
 
@@ -272,14 +289,6 @@ class Parser:
             return self._filters[command]()
         else:
             return self.default(command)
-
-    def _process_input(self):
-        self._tokens.take()  # the command name
-        self._tokens.take_while(lambda c: c.is_a_whitespace)
-        argument = self._evaluate_one()
-        file_name = self._as_text(argument)
-        content = self._engine.content_of(file_name)
-        return self._spawn(self._create.as_tokens(content), Environment()).rewrite()
 
     def _capture_until(self, expected_text):
         read = []
