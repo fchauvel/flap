@@ -42,7 +42,7 @@ class Macro:
         return self._evaluate_arguments(parser)
 
     def _evaluate_arguments(self, parser):
-        environment = Environment()
+        environment = Context()
         for index, any_token in enumerate(self._signature):
             if any_token.is_a_parameter:
                 parameter = str(any_token)
@@ -77,7 +77,7 @@ class Def(Macro):
         super().__init__(r"\def", None, None)
 
     def _evaluate_arguments(self, parser):
-        arguments = Environment()
+        arguments = Context()
         arguments["name"] = parser._tokens.take()
         arguments["signature"] = parser._tokens.take_while(lambda t: not t.begins_a_group)
         arguments["body"] = parser._capture_group()
@@ -103,7 +103,7 @@ class Input(Macro):
 
     def _execute(self, parser, arguments):
         content = parser._engine.content_of(arguments["link"])
-        return parser._spawn(parser._create.as_tokens(content), Environment()).rewrite()
+        return parser._spawn(parser._create.as_tokens(content), Context()).rewrite()
 
 
 class IncludeGraphics(Macro):
@@ -113,7 +113,7 @@ class IncludeGraphics(Macro):
 
     @staticmethod
     def _evaluate_arguments(parser):
-        arguments = Environment()
+        arguments = Context()
         arguments["options"] = []
         if parser._next_token.has_text("["):
             arguments["options"] += [parser._accept(lambda token: token.has_text("["))]
@@ -133,9 +133,9 @@ class GraphicsPath(Macro):
         super().__init__(r"\graphicspath", None, None)
 
     def _evaluate_arguments(self, parser):
-        arguments = Environment()
+        arguments = Context()
         path_tokens = parser._capture_group()
-        arguments["path"] = parser._spawn(path_tokens, Environment())._evaluate_one()
+        arguments["path"] = parser._spawn(path_tokens, Context())._evaluate_one()
         return arguments
 
     def _execute(self, parser, arguments):
@@ -144,14 +144,14 @@ class GraphicsPath(Macro):
         return parser._create.as_list(self._name + "{{" + path + "}}")
 
 
-class Environment:
+class Context:
 
     def __init__(self, parent=None):
         self._definitions = dict()
         self._parent = parent
 
     def fork(self):
-        return Environment(self)
+        return Context(self)
 
     def extend_with(self, other):
         for key, value in other._definitions.items():
@@ -204,7 +204,7 @@ class Parser:
                          }
 
     def _spawn(self, tokens, environment):
-        new_environment = Environment(self._definitions)
+        new_environment = Context(self._definitions)
         new_environment.extend_with(environment)
         return Parser(
             tokens,

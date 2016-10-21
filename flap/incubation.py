@@ -21,7 +21,7 @@ from flap import __version__
 
 from flap.util.path import Path
 from flap.latex.symbols import SymbolTable
-from flap.latex.parser import Parser, Factory, Environment
+from flap.latex.parser import Parser, Factory, Context
 
 
 class Display:
@@ -85,7 +85,7 @@ class Controller:
     def _flatten(self, tex_file, destination):
         root = self._file_system.open(Path.fromText(tex_file))
         factory = Factory(SymbolTable.default())
-        parser = Parser(factory.as_tokens(root.content()), factory, self, Environment())
+        parser = Parser(factory.as_tokens(root.content()), factory, self, Context())
         flattened = "".join(str(each_token) for each_token in parser.rewrite())
         self._file_system.create_file(Path.fromText(destination) / "merged.tex",
                                       flattened)
