@@ -108,10 +108,10 @@ class Def(Macro):
         )
 
 
-class Input(Macro):
+class TexFileInclusion(Macro):
 
-    def __init__(self):
-        super().__init__(r"\input", None, None)
+    def __init__(self, name):
+        super().__init__(name, None, None)
 
     def _evaluate_arguments(self, parser):
         arguments = dict()
@@ -123,7 +123,33 @@ class Input(Macro):
         return parser._spawn(parser._create.as_tokens(content), dict()).rewrite()
 
 
+class Input(TexFileInclusion):
+    """
+    Intercept the `\input` directive
+    """
+
+    def __init__(self):
+        super().__init__(r"\input")
+
+
+class Include(TexFileInclusion):
+    """
+    Intercept the `\include` directive
+    """
+
+    def __init__(self):
+        super().__init__(r"\include")
+
+    def _execute(self, parser, arguments):
+        result = super()._execute(parser, arguments)
+        return result + parser._create.as_list(r"\clearpage")
+
+
 class IncludeGraphics(Macro):
+    """
+    Intercept the `\includegraphics` directive
+    """
+
 
     def __init__(self):
         super().__init__(r"\includegraphics", None, None)

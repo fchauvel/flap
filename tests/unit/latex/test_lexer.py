@@ -20,7 +20,7 @@
 
 from unittest import TestCase, main
 
-from flap.latex.commons import Position, Stream
+from flap.latex.commons import Position
 from flap.latex.symbols import SymbolTable
 from flap.latex.tokens import TokenFactory
 from flap.latex.lexer import Lexer

@@ -206,6 +206,12 @@ class ParserTests(TestCase):
                            r"\graphicspath{{img}}")
         self._engine.record_graphic_path.assert_called_once_with("img")
 
+    def test_rewriting_include(self):
+        self._engine.content_of.return_value = "File content"
+        self._do_test_with(r"\include{my-file}",
+                           r"File content\clearpage")
+        self._engine.content_of.assert_called_once_with("my-file")
+
 
 if __name__ == '__main__':
     main()
