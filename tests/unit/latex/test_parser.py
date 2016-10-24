@@ -207,10 +207,30 @@ class ParserTests(TestCase):
         self._engine.record_graphic_path.assert_called_once_with("img")
 
     def test_rewriting_include(self):
+        self._engine.shall_include.return_value = True
         self._engine.content_of.return_value = "File content"
+
         self._do_test_with(r"\include{my-file}",
                            r"File content\clearpage")
+
+        self._engine.shall_include.assert_called_once_with("my-file")
         self._engine.content_of.assert_called_once_with("my-file")
+
+    def test_rewriting_include_when_the_file_shall_not_be_included(self):
+        self._engine.shall_include.return_value = False
+        self._engine.content_of.return_value = "File content"
+
+        self._do_test_with(r"\include{my-file}",
+                           r"")
+
+        self._engine.shall_include.assert_called_once_with("my-file")
+        self._engine.content_of.assert_not_called()
+
+    def test_rewriting_includeonly(self):
+        self._engine.shall_include.return_value = True
+        self._do_test_with(r"\includeonly{my-file.tex}",
+                           r"")
+        self._engine.include_only.assert_called_once_with(["my-file.tex"])
 
 
 if __name__ == '__main__':

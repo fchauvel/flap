@@ -84,6 +84,7 @@ class Parser:
     def _set_builtin_definitions(self):
         self._definitions[r"\input"] = Input()
         self._definitions[r"\include"] = Include()
+        self._definitions[r"\includeonly"] = IncludeOnly()
         self._definitions[r"\includegraphics"] = IncludeGraphics()
         self._definitions[r"\graphicspath"] = GraphicsPath()
         self._definitions[r"\def"] = Def()

@@ -141,8 +141,29 @@ class Include(TexFileInclusion):
         super().__init__(r"\include")
 
     def _execute(self, parser, arguments):
-        result = super()._execute(parser, arguments)
-        return result + parser._create.as_list(r"\clearpage")
+        if parser._engine.shall_include(arguments["link"]):
+            result = super()._execute(parser, arguments)
+            return result + parser._create.as_list(r"\clearpage")
+        return []
+
+
+class IncludeOnly(Macro):
+    """
+    Intercept includeonly commands
+    """
+
+    def __init__(self):
+        super().__init__(r"\includeonly", None, None)
+
+    def _evaluate_arguments(self, parser):
+        arguments = dict()
+        list_as_text = parser._as_text(parser._evaluate_one())
+        arguments["selection"] = [part.strip() for part in list_as_text.split(",")]
+        return arguments
+
+    def _execute(self, parser, arguments):
+        parser._engine.include_only(arguments["selection"])
+        return []
 
 
 class IncludeGraphics(Macro):
