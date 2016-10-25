@@ -88,6 +88,34 @@ class Begin(Macro):
             return parser._create.as_list(r"\begin{" + arguments["environment"] + "}")
 
 
+class DocumentClass(Macro):
+    """
+    Extract some specific document class, e.g., subfile
+    """
+
+    def __init__(self):
+        super().__init__(r"\documentclass", None, None)
+
+    def _evaluate_arguments(self, parser):
+        arguments = dict()
+        arguments["options"] = parser.optional_arguments()
+        arguments["class"] = parser._evaluate_group()
+        return arguments
+
+    def _execute(self, parser, arguments):
+        class_name = parser._as_text(arguments["class"])
+        if class_name == "subfile":
+            parser._capture_until(r"\begin{document}")
+            document = parser._capture_until(r"\end{document}")
+            return parser._spawn(document[:-11], dict()).rewrite()
+        else:
+            return parser._create.as_list(r"\documentclass") + \
+                   arguments["options"] + \
+                   parser._create.as_list("{") + \
+                   arguments["class"] + \
+                   parser._create.as_list("}")
+
+
 class Def(Macro):
 
     def __init__(self):
@@ -147,6 +175,12 @@ class Include(TexFileInclusion):
         return []
 
 
+class SubFile(TexFileInclusion):
+
+    def __init__(self):
+        super().__init__(r"\subfile")
+
+
 class IncludeOnly(Macro):
     """
     Intercept includeonly commands
@@ -178,11 +212,7 @@ class IncludeGraphics(Macro):
     @staticmethod
     def _evaluate_arguments(parser):
         arguments = dict()
-        arguments["options"] = []
-        if parser._next_token.has_text("["):
-            arguments["options"] += [parser._accept(lambda token: token.has_text("["))]
-            arguments["options"] += parser._evaluate_until(lambda token: token.has_text("]"))
-            arguments["options"] += [parser._accept(lambda token: token.has_text("]"))]
+        arguments["options"] = parser.optional_arguments()
         arguments["link"] = parser._evaluate_group()
         return arguments
 

@@ -232,6 +232,19 @@ class ParserTests(TestCase):
                            r"")
         self._engine.include_only.assert_called_once_with(["my-file.tex"])
 
+    def test_rewriting_subfile(self):
+        self._engine.content_of.return_value \
+            = r"\documentclass[../main.tex]{subfile}" \
+              r"" \
+              r"\begin{document}" \
+              r"File content" \
+              r"\end{document}"
+
+        self._do_test_with(r"\subfile{my-file}",
+                           r"File content")
+
+        self._engine.content_of.assert_called_once_with("my-file")
+
 
 if __name__ == '__main__':
     main()

@@ -82,9 +82,11 @@ class Parser:
         self._set_builtin_definitions()
 
     def _set_builtin_definitions(self):
+        self._definitions[r"\documentclass"] = DocumentClass()
         self._definitions[r"\input"] = Input()
         self._definitions[r"\include"] = Include()
         self._definitions[r"\includeonly"] = IncludeOnly()
+        self._definitions[r"\subfile"] = SubFile()
         self._definitions[r"\includegraphics"] = IncludeGraphics()
         self._definitions[r"\graphicspath"] = GraphicsPath()
         self._definitions[r"\def"] = Def()
@@ -174,6 +176,14 @@ class Parser:
             return macro.invoke(self)
         else:
             return self.default(command)
+
+    def optional_arguments(self, start="[", end="]"):
+        result = []
+        if self._next_token.has_text(start):
+            result += [self._accept(lambda token: token.has_text(start))]
+            result += self._evaluate_until(lambda token: token.has_text(end))
+            result += [self._accept(lambda token: token.has_text(end))]
+        return result
 
     def _capture_until(self, expected_text):
         read = []
