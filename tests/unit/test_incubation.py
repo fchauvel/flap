@@ -77,6 +77,34 @@ class ControllerTests(TestCase):
 
         print(self._output.getvalue())
 
+
+    def test_flatten_an_include_graphics(self):
+        self._file_system.create_file(Path.fromText("test.tex"),
+                                      "Blabla \n"
+                                      "\includegraphics{img/result.pdf}\n"
+                                      "Blabla \n")
+        self._file_system.create_file(Path.fromText("img/result.pdf"),
+                                      "FAKE IMAGE")
+
+        self._controller.run(["__main.py__", "test.tex", "output"])
+
+        flattened_file = self._file_system.open(Path.fromText("output/merged.tex"))
+        self.assertIsNotNone(flattened_file)
+        self.assertEqual("Blabla \n"
+                         "\includegraphics{img_result}\n"
+                         "Blabla \n",
+                         flattened_file.content()
+                         )
+
+        self._verify_shown(__version__)
+        self._verify_shown(self._display.HEADER)
+        self._verify_shown(self._display._horizontal_line())
+        self._verify_shown(self._display.ENTRY.format(file="test.tex", line=2, column=1, code="\\includegraphics{img/result.pdf}"))
+        self._verify_shown(self._display.SUMMARY.format(count=1))
+
+        print(self._output.getvalue())
+
+
     def _verify_shown(self, text):
         self.assertIn(text, self._output.getvalue())
 

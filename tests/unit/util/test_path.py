@@ -88,6 +88,13 @@ class PathTests(unittest.TestCase):
 
         self.assertEqual(absolute_path, Path.fromText("/home/test/foo.txt"))
 
+    def test_as_absolute_with_root(self):
+        path = ROOT
+
+        absolute_path = path.absolute_from(Path.fromText("/home/franck"))
+
+        self.assertEqual(absolute_path, ROOT)
+
     def test_relative_to_directory(self):
         path = Path.fromText("/home/test/foo.txt")
 

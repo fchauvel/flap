@@ -68,11 +68,13 @@ class Path:
 
     def absolute_from(self, current_directory):
         parts = self.parts()
-        if parts[0].is_current_directory():
+        if parts[0].is_root():
+            return self
+        elif parts[0].is_current_directory():
             parts = current_directory.parts() + parts[1:]
         elif parts[0].is_parent_directory():
             parts = current_directory.container().parts() + parts[1:]
-        elif not parts[0].is_root():
+        else:
             parts = current_directory.parts() + parts
         return Path.fromText("/".join([each.fullname() for each in parts]))
 

@@ -69,6 +69,68 @@ class Display:
         self._output.write(template.format(**values))
 
 
+class Settings:
+
+    def __init__(self, file_system, ui, root_tex_file, output):
+        self._file_system = file_system
+        self._display = ui
+        self._root_tex_file = root_tex_file
+        self._output = output
+
+    @property
+    def root_tex_file(self):
+        return Path.fromText(self._root_tex_file)
+
+    @property
+    def root_directory(self):
+        return self._file_system.open(self.root_tex_file).container()
+
+    @property
+    def graphics_directory(self):
+        return self.root_directory
+
+    @property
+    def read_root_tex(self):
+        return self._file_system.open(self.root_tex_file).content()
+
+    @property
+    def output_directory(self):
+        return Path.fromText(self._output)
+
+    @property
+    def flattened(self):
+        return self.output_directory / "merged.tex"
+
+    def write(self, tokens):
+        latex_code =  "".join(str(each_token) for each_token in tokens)
+        self._file_system.create_file(self.flattened, latex_code)
+
+    def content_of(self, location):
+        self._display.entry(file="test.tex", line=2, column=1, code=r"\input{result.tex}")
+        return self._file_system.open(Path.fromText(location)).content()
+
+    def update_link(self, path):
+        self._display.entry(file="test.tex", line=2, column=1, code=r"\includegraphics{img/result.pdf}")
+        resource = self.find_graphics(None, path, ["pdf", "png", "jpeg"])
+        new_path = resource._path.relative_to(self.root_directory._path)
+        new_file_name = str(new_path).replace("/", "_")
+        self._file_system.copy(resource, self.output_directory / new_file_name)
+        return str(new_path.without_extension()).replace("/", "_")
+
+    def find_graphics(self, fragment, path, extensions_by_priority):
+        return self._find(path, self.graphics_directory, extensions_by_priority, GraphicNotFound(fragment))
+
+    @staticmethod
+    def _find(path, directory, extensions, error):
+        candidates = directory.files_that_matches(Path.fromText(path))
+        for any_possible_extension in extensions:
+            for any_resource in candidates:
+                if any_resource.has_extension(any_possible_extension):
+                    return any_resource
+        raise error
+
+
+
 class Controller:
 
     def __init__(self, file_system, display):
@@ -78,23 +140,44 @@ class Controller:
     def run(self, arguments):
         self._display.version()
         self._display.header()
-        tex_file, destination = self._parse(arguments)
-        self._flatten(tex_file, destination)
+        settings = self._parse(arguments)
+        self._flatten(settings)
         self._display.footer()
 
-    def _flatten(self, tex_file, destination):
-        root = self._file_system.open(Path.fromText(tex_file))
+    def _flatten(self, flap):
         factory = Factory(SymbolTable.default())
-        parser = Parser(factory.as_tokens(root.content()), factory, self, Context())
-        flattened = "".join(str(each_token) for each_token in parser.rewrite())
-        self._file_system.create_file(Path.fromText(destination) / "merged.tex",
-                                      flattened)
+        parser = Parser(factory.as_tokens(flap.read_root_tex), factory, flap, Context())
+        flap.write(parser.rewrite())
 
-    @staticmethod
-    def _parse(arguments):
+    def _parse(self, arguments):
         assert len(arguments) == 3, "Expected 3 arguments, but found %s" % arguments
-        return arguments[1], arguments[2]
+        return Settings(file_system=self._file_system,
+                        ui = self._display,
+                        root_tex_file=arguments[1],
+                        output=arguments[2])
 
-    def content_of(self, location):
-        self._display.entry(file="test.tex", line=2, column=1, code=r"\input{result.tex}")
-        return self._file_system.open(Path.fromText(location)).content()
+
+class ResourceNotFound(Exception):
+
+    def __init__(self, fragment):
+        self._fragment = fragment
+
+    def fragment(self):
+        return self._fragment
+
+
+class GraphicNotFound(ResourceNotFound):
+    """
+    Exception thrown when a graphic file cannot be found
+    """
+    def __init__(self, fragment):
+        super().__init__(fragment)
+
+
+class TexFileNotFound(ResourceNotFound):
+    """
+    Exception thrown when a LaTeX source file cannot be found
+    """
+
+    def __init__(self, fragment):
+        super().__init__(fragment)

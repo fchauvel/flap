@@ -205,7 +205,6 @@ class IncludeGraphics(Macro):
     Intercept the `\includegraphics` directive
     """
 
-
     def __init__(self):
         super().__init__(r"\includegraphics", None, None)
 
@@ -213,12 +212,13 @@ class IncludeGraphics(Macro):
     def _evaluate_arguments(parser):
         arguments = dict()
         arguments["options"] = parser.optional_arguments()
-        arguments["link"] = parser._evaluate_group()
+        arguments["link"] = parser._as_text(parser._evaluate_group())
         return arguments
 
     def _execute(self, parser, arguments):
         new_link = parser._engine.update_link(arguments["link"])
-        return parser._create.as_list(self._name) + arguments["options"] + parser._create.as_list("{" + new_link + "}")
+        return parser._create.as_list(self._name) + arguments["options"] \
+               + parser._create.as_list("{" + new_link + "}")
 
 
 class GraphicsPath(Macro):
