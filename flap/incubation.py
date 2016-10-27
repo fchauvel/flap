@@ -105,20 +105,20 @@ class Settings:
         latex_code =  "".join(str(each_token) for each_token in tokens)
         self._file_system.create_file(self.flattened, latex_code)
 
-    def content_of(self, location):
-        self._display.entry(file="test.tex", line=2, column=1, code=r"\input{result.tex}")
+    def content_of(self, location, latex_command):
+        self._display.entry(file="test.tex", line=2, column=1, code=latex_command)
         return self._file_system.open(Path.fromText(location)).content()
 
-    def update_link(self, path):
-        self._display.entry(file="test.tex", line=2, column=1, code=r"\includegraphics{img/result.pdf}")
-        resource = self.find_graphics(None, path, ["pdf", "png", "jpeg"])
+    def update_link(self, path, latex_command):
+        self._display.entry(file="test.tex", line=2, column=1, code=latex_command)
+        resource = self.find_graphics(None, path)
         new_path = resource._path.relative_to(self.root_directory._path)
         new_file_name = str(new_path).replace("/", "_")
         self._file_system.copy(resource, self.output_directory / new_file_name)
         return str(new_path.without_extension()).replace("/", "_")
 
-    def find_graphics(self, fragment, path, extensions_by_priority):
-        return self._find(path, self.graphics_directory, extensions_by_priority, GraphicNotFound(fragment))
+    def find_graphics(self, fragment, path):
+        return self._find(path, self.graphics_directory, ["pdf", "png", "jpeg"], GraphicNotFound(fragment))
 
     @staticmethod
     def _find(path, directory, extensions, error):
@@ -128,7 +128,6 @@ class Settings:
                 if any_resource.has_extension(any_possible_extension):
                     return any_resource
         raise error
-
 
 
 class Controller:

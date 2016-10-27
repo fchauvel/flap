@@ -147,7 +147,8 @@ class TexFileInclusion(Macro):
         return arguments
 
     def _execute(self, parser, arguments):
-        content = parser._engine.content_of(arguments["link"])
+        latex_command = self._name + "{" + parser._as_text(arguments["link"]) + "}"
+        content = parser._engine.content_of(arguments["link"], latex_command)
         return parser._spawn(parser._create.as_tokens(content), dict()).rewrite()
 
 
@@ -216,9 +217,15 @@ class IncludeGraphics(Macro):
         return arguments
 
     def _execute(self, parser, arguments):
-        new_link = parser._engine.update_link(arguments["link"])
+        latex_command = self._format(arguments, parser)
+        new_link = parser._engine.update_link(arguments["link"], latex_command)
         return parser._create.as_list(self._name) + arguments["options"] \
                + parser._create.as_list("{" + new_link + "}")
+
+    def _format(self, arguments, parser):
+        return self._name + parser._as_text(
+            arguments["options"]) + "{" + parser._as_text(
+            arguments["link"]) + "}"
 
 
 class GraphicsPath(Macro):
