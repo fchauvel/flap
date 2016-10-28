@@ -143,6 +143,9 @@ class Parser:
         self._tokens.take()
         return self._definitions[parameter]
 
+    def evaluate_as_text(self, tokens):
+        return self._as_text(self._spawn(tokens, dict())._evaluate_one())
+
     def _evaluate_one(self):
         self._abort_on_end_of_text()
         if self._next_token.begins_a_group:
