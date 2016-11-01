@@ -18,7 +18,7 @@
 #
 
 from unittest import TestCase, main
-from mock import MagicMock
+from mock import MagicMock, ANY
 
 from flap.latex.symbols import SymbolTable
 from flap.latex.tokens import TokenFactory
@@ -179,7 +179,7 @@ class ParserTests(TestCase):
         self._engine.content_of.return_value = "File content"
         self._do_test_with(r"\input{my-file}",
                            r"File content")
-        self._engine.content_of.assert_called_once_with("my-file", r"\input{my-file}")
+        self._engine.content_of.assert_called_once_with("my-file", ANY)
 
     def test_macro_with_inner_redefinition_of_input(self):
         self._engine.content_of.return_value = "File content"
@@ -195,13 +195,13 @@ class ParserTests(TestCase):
         self._engine.update_link.return_value = "img_result"
         self._do_test_with(r"\includegraphics{img/result.pdf}",
                            r"\includegraphics{img_result}")
-        self._engine.update_link.assert_called_once_with("img/result.pdf", r"\includegraphics{img/result.pdf}")
+        self._engine.update_link.assert_called_once_with("img/result.pdf", ANY)
 
     def test_rewriting_includegraphics_with_parameters(self):
         self._engine.update_link.return_value = "img_result"
         self._do_test_with(r"\includegraphics[width=\linewidth]{img/result.pdf}",
                            r"\includegraphics[width=\linewidth]{img_result}")
-        self._engine.update_link.assert_called_once_with("img/result.pdf", r"\includegraphics[width=\linewidth]{img/result.pdf}")
+        self._engine.update_link.assert_called_once_with("img/result.pdf", ANY)
 
     def test_rewriting_graphicspath(self):
         self._do_test_with(r"\graphicspath{{img}}",
@@ -216,7 +216,7 @@ class ParserTests(TestCase):
                            r"File content\clearpage")
 
         self._engine.shall_include.assert_called_once_with("my-file")
-        self._engine.content_of.assert_called_once_with("my-file", r"\include{my-file}")
+        self._engine.content_of.assert_called_once_with("my-file", ANY)
 
     def test_rewriting_include_when_the_file_shall_not_be_included(self):
         self._engine.shall_include.return_value = False
@@ -245,7 +245,7 @@ class ParserTests(TestCase):
         self._do_test_with(r"\subfile{my-file}",
                            r"File content")
 
-        self._engine.content_of.assert_called_once_with("my-file", r"\subfile{my-file}")
+        self._engine.content_of.assert_called_once_with("my-file", ANY)
 
 
 if __name__ == '__main__':

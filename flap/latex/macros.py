@@ -40,6 +40,11 @@ class Invocation:
         return self._arguments[self._keys[key]]
 
     @property
+    def location(self):
+        assert self.as_tokens, "Could not fetch invocation's position '%s'" % self.as_text
+        return self.as_tokens[0].location
+
+    @property
     def arguments(self):
         return {key:self._arguments[value] for (key, value) in self._keys.items()}
 
@@ -180,7 +185,7 @@ class TexFileInclusion(Macro):
 
     def _execute(self, parser, invocation):
         link = parser.evaluate_as_text(invocation.argument("link"))
-        content = parser._engine.content_of(link, invocation.as_text)
+        content = parser._engine.content_of(link, invocation)
         return parser._spawn(parser._create.as_tokens(content), dict()).rewrite()
 
 
@@ -247,7 +252,7 @@ class IncludeGraphics(Macro):
 
     def _execute(self, parser, invocation):
         link = parser.evaluate_as_text(invocation.argument("link"))
-        new_link = parser._engine.update_link(link, invocation.as_text)
+        new_link = parser._engine.update_link(link, invocation)
         return parser._create.as_list(self._name) + invocation.argument("options") \
                + parser._create.as_list("{" + new_link + "}")
 

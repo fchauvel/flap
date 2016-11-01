@@ -77,7 +77,6 @@ class ControllerTests(TestCase):
 
         print(self._output.getvalue())
 
-
     def test_flatten_an_include_graphics(self):
         self._file_system.create_file(Path.fromText("test.tex"),
                                       "Blabla \n"
@@ -103,7 +102,6 @@ class ControllerTests(TestCase):
         self._verify_shown(self._display.SUMMARY.format(count=1))
 
         print(self._output.getvalue())
-
 
     def _verify_shown(self, text):
         self.assertIn(text, self._output.getvalue())
