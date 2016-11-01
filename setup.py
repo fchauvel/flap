@@ -23,7 +23,7 @@ from setuptools import setup, find_packages
 
 setup(name='FLaP',
      version=flap.__version__,
-     description='Flat LaTeX Projects', 
+     description='Flat LaTeX Projects',
      author='Franck Chauvel',
      author_email='franck.chauvel@gmail.com',
      license="GPLv3",

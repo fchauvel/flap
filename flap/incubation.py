@@ -149,7 +149,8 @@ class Controller:
         self._flatten(settings)
         self._display.footer()
 
-    def _flatten(self, flap):
+    @staticmethod
+    def _flatten(flap):
         factory = Factory(SymbolTable.default())
         parser = Parser(factory.as_tokens(flap.read_root_tex), factory, flap, Context())
         flap.write(parser.rewrite())

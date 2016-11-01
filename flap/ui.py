@@ -35,7 +35,7 @@ class UI(Listener):
 
     def set_verbose(self, is_activated):
         self._verbose = is_activated
-    
+
     def show_opening_message(self):
         self._show("FLaP v" + flap.__version__ + " -- Flat LaTeX Projects")
 

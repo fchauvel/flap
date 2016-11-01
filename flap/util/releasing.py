@@ -116,7 +116,7 @@ class Release(Command):
     def finalize_options(self):
         pass
 
-    def run(self):      
+    def run(self):
         current_version = self.release()
         self.prepare_next_release(current_version)
 

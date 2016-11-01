@@ -31,7 +31,7 @@ class File:
     @staticmethod
     def is_file():
         return True
-    
+
     def is_directory(self):
         return not self.is_file()
 
@@ -41,7 +41,7 @@ class File:
     
     def is_missing(self):
         return not self.exists()
-    
+
     def contains(self, content):
         return self._content == content
     
@@ -52,7 +52,7 @@ class File:
 
     def path(self):
         return self._path
-    
+
     def fullname(self):
         return self._path.fullname()
     

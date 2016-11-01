@@ -20,7 +20,7 @@ import tempfile
 
 
 class Path:
-    
+
     @staticmethod
     def fromText(text):
         pattern = re.compile("[\\\\/]+")
@@ -90,7 +90,7 @@ class Path:
     def parts(self):
         return self._parts
     
-    def __contains__(self, other): 
+    def __contains__(self, other):
         return self != other and self.__str__() in other.__str__()
 
     def __truediv__(self, other):
