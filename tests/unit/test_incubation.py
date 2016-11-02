@@ -25,86 +25,103 @@ from flap import __version__
 from flap.incubation import Controller, Display
 from flap.util.oofs import InMemoryFileSystem
 from flap.util.path import Path
+from tests.latex_project import a_project, LatexProject
 
 
-class ControllerTests(TestCase):
+class EndToEndTest(TestCase):
 
     def setUp(self):
         self._file_system = InMemoryFileSystem()
+        self._assume = None
+        self._test_case = None
         self._output = StringIO()
         self._display = Display(self._output)
         self._controller = Controller(self._file_system, self._display)
 
-    def test_flatten_a_file_without_known_commands(self):
-        self._file_system.create_file(Path.fromText("test.tex"), "Blabla")
+    def assume(self, project):
+        self._assume = project
 
-        self._controller.run(["__main.py__", "test.tex", "output"])
+    def invoke_flap(self):
+        assert self._assume, "No project defined!"
+        latex_project = self._assume.build()
+        latex_project.setup(self._file_system, Path.fromText("tests"))
+        self._controller.run(["__main.py__", "tests/main.tex", "output"])
 
-        flattened_file = self._file_system.open(Path.fromText("output/merged.tex"))
-        self.assertIsNotNone(flattened_file)
-        self.assertEqual("Blabla", flattened_file.content())
+    def verify_generated(self, expected):
+        location = self._file_system.open(Path.fromText("output"))
+        actual = LatexProject.extract_from_directory(location)
+        actual.assert_is_equivalent_to(expected.build())
 
+    def verify_output(self, entries):
         self._verify_shown(__version__)
         self._verify_shown(self._display.HEADER)
         self._verify_shown(self._display._horizontal_line())
-        self._verify_shown(self._display.SUMMARY.format(count=1))
+        for each_entry in entries:
+            self._verify_shown(self._display.ENTRY.format(**each_entry))
+        self._verify_shown(self._display.SUMMARY.format(count=len(entries)))
 
-        print(self._output.getvalue())
+    def _verify_shown(self, text):
+        self.assertIn(text, self._output.getvalue())
+
+
+class ControllerTests(EndToEndTest):
+
+    def test_flatten_a_file_without_known_commands(self):
+        self.assume(
+            a_project().with_main_file("Blabla")
+        )
+
+        self.invoke_flap()
+
+        self.verify_generated(
+            a_project().with_merged_file("Blabla")
+        )
+
+        self.verify_output(entries=[])
 
     def test_flatten_a_simple_file(self):
-        self._file_system.create_file(Path.fromText("test.tex"),
-                                      "Blabla \n"
-                                      "\\input{result.tex} \n"
-                                      "Blabla \n")
-        self._file_system.create_file(Path.fromText("result.tex"),
-                                      "Some results")
+        self.assume(
+            a_project()\
+                .with_main_file("Blabla \n"
+                                "\\input{result.tex} \n"
+                                "Blabla \n")\
+                .with_file("result.tex", "Some results"))
 
-        self._controller.run(["__main.py__", "test.tex", "output"])
+        self.invoke_flap()
 
-        flattened_file = self._file_system.open(Path.fromText("output/merged.tex"))
-        self.assertIsNotNone(flattened_file)
-        self.assertEqual("Blabla \n"
-                         "Some results \n"
-                         "Blabla \n",
-                         flattened_file.content()
-                         )
+        self.verify_generated(
+            a_project().with_merged_file("Blabla \n"
+                                         "Some results \n"
+                                         "Blabla \n"))
 
-        self._verify_shown(__version__)
-        self._verify_shown(self._display.HEADER)
-        self._verify_shown(self._display._horizontal_line())
-        self._verify_shown(self._display.ENTRY.format(file="test.tex", line=2, column=1, code="\\input{result.tex}"))
-        self._verify_shown(self._display.SUMMARY.format(count=1))
+        self.verify_output([
+            {"file": "test.tex", "line": 2, "column": 1, "code": r"\input{result.tex}"}
+        ])
 
         print(self._output.getvalue())
 
     def test_flatten_an_include_graphics(self):
-        self._file_system.create_file(Path.fromText("test.tex"),
-                                      "Blabla \n"
-                                      "\includegraphics{img/result.pdf}\n"
-                                      "Blabla \n")
-        self._file_system.create_file(Path.fromText("img/result.pdf"),
-                                      "FAKE IMAGE")
+        self.assume(
+            a_project()
+                .with_main_file("Blabla \n"
+                                "\includegraphics{img/result.pdf}\n"
+                                "Blabla \n")\
+                .with_image("img/result.pdf"))
 
-        self._controller.run(["__main.py__", "test.tex", "output"])
+        self.invoke_flap()
 
-        flattened_file = self._file_system.open(Path.fromText("output/merged.tex"))
-        self.assertIsNotNone(flattened_file)
-        self.assertEqual("Blabla \n"
-                         "\includegraphics{img_result}\n"
-                         "Blabla \n",
-                         flattened_file.content()
-                         )
+        self.verify_generated(
+            a_project()
+                .with_merged_file("Blabla \n"
+                                  "\includegraphics{img_result}\n"
+                                  "Blabla \n")
+                .with_image("img_result.pdf"))
 
-        self._verify_shown(__version__)
-        self._verify_shown(self._display.HEADER)
-        self._verify_shown(self._display._horizontal_line())
-        self._verify_shown(self._display.ENTRY.format(file="test.tex", line=2, column=1, code="\\includegraphics{img/result.pdf}"))
-        self._verify_shown(self._display.SUMMARY.format(count=1))
+        self.verify_output([
+            {"file": "test.tex", "line": 2, "column": 1, "code": r"\includegraphics{img/result.pdf}"}
+        ])
 
         print(self._output.getvalue())
-
-    def _verify_shown(self, text):
-        self.assertIn(text, self._output.getvalue())
 
 
 if __name__ == "__main__":

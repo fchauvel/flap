@@ -50,9 +50,9 @@ class Display:
     def entry(self, file, line, column, code):
         self._show(self.ENTRY, file=file, line=line, column=column, code=code)
 
-    def footer(self):
+    def footer(self, count):
         self._show(self._horizontal_line())
-        self._show(self.SUMMARY, count=1)
+        self._show(self.SUMMARY, count=count)
 
     def _horizontal_line(self):
         return self.ENTRY.format(
@@ -76,6 +76,7 @@ class Settings:
         self._display = ui
         self._root_tex_file = root_tex_file
         self._output = output
+        self._count = 0
 
     @property
     def root_tex_file(self):
@@ -107,24 +108,28 @@ class Settings:
 
     def content_of(self, location, invocation):
         self._show_invocation(invocation)
-        return self._file_system.open(Path.fromText(location)).content()
+        return self.find_tex_file(location).content()
 
     def update_link(self, path, invocation):
         self._show_invocation(invocation)
-        resource = self.find_graphics(None, path)
+        resource = self.find_graphics(path)
         new_path = resource._path.relative_to(self.root_directory._path)
         new_file_name = str(new_path).replace("/", "_")
         self._file_system.copy(resource, self.output_directory / new_file_name)
         return str(new_path.without_extension()).replace("/", "_")
 
     def _show_invocation(self, invocation):
+        self._count += 1
         self._display.entry(file="test.tex",
                             line=invocation.location.line,
                             column=invocation.location.column,
                             code=invocation.as_text)
 
-    def find_graphics(self, fragment, path):
-        return self._find(path, self.graphics_directory, ["pdf", "png", "jpeg"], GraphicNotFound(fragment))
+    def find_graphics(self, path):
+        return self._find(path, self.graphics_directory, ["pdf", "png", "jpeg"], GraphicNotFound(None))
+
+    def find_tex_file(self, path):
+        return self._find(path, self.root_directory, ["tex"], TexFileNotFound(None))
 
     @staticmethod
     def _find(path, directory, extensions, error):
@@ -147,7 +152,7 @@ class Controller:
         self._display.header()
         settings = self._parse(arguments)
         self._flatten(settings)
-        self._display.footer()
+        self._display.footer(settings._count)
 
     @staticmethod
     def _flatten(flap):
