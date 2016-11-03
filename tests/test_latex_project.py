@@ -19,7 +19,7 @@ from unittest import TestCase
 
 from flap.util.oofs import InMemoryFileSystem
 from flap.util.path import Path
-from tests.latex_project import LatexProject, LatexProjectBuilder, TexFile, a_project
+from tests.latex_project import Fragment, LatexProject, LatexProjectBuilder, TexFile, a_project
 
 
 class TexFileTest(TestCase):
@@ -220,7 +220,6 @@ class BuilderTests(TestCase):
             .build()
         self.assertEqual(LatexProject(TexFile(LatexProjectBuilder.MERGED_FILE, "foo")), project)
 
-
     def test_build_project_with_image(self):
         project = a_project()\
             .with_image("img/result.pdf")\
@@ -228,3 +227,20 @@ class BuilderTests(TestCase):
         self.assertEqual(
             LatexProject(TexFile("img/result.pdf", LatexProjectBuilder.IMAGE_CONTENT.format(key="img_result.pdf"))),
             project)
+
+
+class FragmentTest(TestCase):
+
+    def setUp(self):
+        self._file = "test.tex"
+        self._line = 1
+        self._column = 2
+        self._code = r"\input{file.tex}"
+
+    def test_conversion_to_dictionary(self):
+        fragment = Fragment(self._file, self._line, self._column, self._code)
+        expected = {Fragment.KEY_FILE: self._file,
+                    Fragment.KEY_LINE: self._line,
+                    Fragment.KEY_COLUMN : self._column,
+                    Fragment.KEY_CODE: self._code}
+        self.assertEqual(expected, fragment.as_dictionary)

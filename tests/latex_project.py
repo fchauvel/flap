@@ -119,6 +119,27 @@ def a_project():
     return LatexProjectBuilder()
 
 
+class Fragment:
+
+    KEY_FILE = "file"
+    KEY_LINE = "line"
+    KEY_COLUMN = "column"
+    KEY_CODE = "code"
+
+    def __init__(self, file_name, line, column, code):
+        self._file_name = file_name
+        self._line = line
+        self._column = column
+        self._code = code
+
+    @property
+    def as_dictionary(self):
+        return {self.KEY_FILE: self._file_name,
+                self.KEY_LINE: self._line,
+                self.KEY_COLUMN: self._column,
+                self.KEY_CODE: self._code}
+
+
 class FlapTestCase:
 
     def __init__(self, name, project, expected, skipped=False):
