@@ -236,11 +236,41 @@ class FragmentTest(TestCase):
         self._line = 1
         self._column = 2
         self._code = r"\input{file.tex}"
+        self._fragment = self._make_fragment(self._file, self._line, self._column, self._code)
+
+    @staticmethod
+    def _make_fragment(file, line, column, code):
+        return Fragment(file, line, column, code)
 
     def test_conversion_to_dictionary(self):
-        fragment = Fragment(self._file, self._line, self._column, self._code)
         expected = {Fragment.KEY_FILE: self._file,
                     Fragment.KEY_LINE: self._line,
                     Fragment.KEY_COLUMN : self._column,
                     Fragment.KEY_CODE: self._code}
-        self.assertEqual(expected, fragment.as_dictionary)
+        self.assertEqual(expected, self._fragment.as_dictionary)
+
+    def test_equals_itself(self):
+        self.assertEqual(self._fragment, self._fragment)
+
+    def test_equals_a_similar_fragment(self):
+        clone = self._make_fragment(self._file, self._line, self._column, self._code)
+        self.assertEqual(clone, self._fragment)
+
+    def test_differs_from_a_random_object(self):
+        self.assertNotEqual(self._fragment, [])
+
+    def test_differs_when_filename_varies(self):
+        other = self._make_fragment(self._file + "xxx", self._line, self._column, self._code)
+        self.assertNotEqual(self._fragment, other)
+
+    def test_differs_when_line_varies(self):
+        other = self._make_fragment(self._file, self._line + 1, self._column, self._code)
+        self.assertNotEqual(self._fragment, other)
+
+    def test_differs_when_column_varies(self):
+        other = self._make_fragment(self._file, self._line, self._column + 1, self._code)
+        self.assertNotEqual(self._fragment, other)
+
+    def test_differs_when_code_varies(self):
+        other = self._make_fragment(self._file, self._line, self._column, self._code + "blabla")
+        self.assertNotEqual(self._fragment, other)

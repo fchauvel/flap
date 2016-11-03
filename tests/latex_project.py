@@ -139,16 +139,25 @@ class Fragment:
                 self.KEY_COLUMN: self._column,
                 self.KEY_CODE: self._code}
 
+    def __eq__(self, other):
+        if not isinstance(other, Fragment):
+            return False
+        return self._file_name == other._file_name and \
+               self._line == other._line and \
+               self._column == other._column and \
+               self._code == other._code
+
 
 class FlapTestCase:
 
-    def __init__(self, name, project, expected, skipped=False):
+    def __init__(self, name, project, expected, skipped=False, output=[]):
         if not len or len(name) == 0:
             raise ValueError("Invalid test case name (found '%s')" % name)
         self._name = name
         self._project = project
         self._expected = expected
         self._is_skipped = skipped
+        self._output = output
 
     @property
     def name(self):
@@ -175,4 +184,5 @@ class FlapTestCase:
         return self._name == other._name and \
                self._project == other._project and \
                self._expected == other._expected and \
-               self._is_skipped == other._is_skipped
+               self._is_skipped == other._is_skipped and \
+               self._output == other._output

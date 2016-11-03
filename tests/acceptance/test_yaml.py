@@ -23,7 +23,7 @@ from flap.util.oofs import InMemoryFileSystem
 from flap.util.path import Path, TEMP
 from mock import MagicMock
 from tests.commons import AcceptanceTestRunner
-from tests.latex_project import LatexProject, TexFile, a_project, FlapTestCase
+from tests.latex_project import Fragment, LatexProject, TexFile, a_project, FlapTestCase
 from tests.acceptance.yaml import FileBasedTestRepository, YamlCodec, InvalidYamlTestCase
 
 
@@ -33,7 +33,8 @@ class FlapTestCaseTests(TestCase):
         self.project = a_project().with_main_file("blabla").build()
         self.expected = a_project().with_merged_file("blabla").build()
         self.test_case_name = "foo"
-        self.test_case = FlapTestCase(self.test_case_name, self.project, self.expected)
+        self.output = [Fragment("test.tex", 1, 1, r"\input{foo}")]
+        self.test_case = FlapTestCase(self.test_case_name, self.project, self.expected, False, self.output)
 
     def test_is_not_skipped(self):
         self.assertFalse(self.test_case.is_skipped)
@@ -59,7 +60,9 @@ class FlapTestCaseTests(TestCase):
             FlapTestCase(
                 "foo",
                 a_project().with_main_file("blabla").build(),
-                a_project().with_merged_file("blabla").build()),
+                a_project().with_merged_file("blabla").build(),
+                False,
+                [Fragment("test.tex", 1, 1, r"\input{foo}")]),
             self.test_case)
 
     def test_differs_from_a_project_with_another_expectation(self):
@@ -67,7 +70,9 @@ class FlapTestCaseTests(TestCase):
             FlapTestCase(
                 "foo",
                 a_project().with_main_file("blabla").build(),
-                a_project().with_merged_file("something different").build()),
+                a_project().with_merged_file("something different").build(),
+                False,
+                [Fragment("test.tex", 1, 1, r"\input{foo}")]),
             self.test_case)
 
     def test_differs_from_an_equivalent_but_skipped_case(self):
@@ -76,7 +81,17 @@ class FlapTestCaseTests(TestCase):
                 "foo",
                 a_project().with_main_file("blabla").build(),
                 a_project().with_merged_file("blabla").build(),
-                skipped=True),
+                True,
+                [Fragment("test.tex", 1, 1, r"\input{foo}")]),
+            self.test_case)
+
+    def test_differs_from_an_equivalent_but_with_different_output(self):
+        self.assertNotEqual(
+            FlapTestCase(
+                "foo",
+                a_project().with_main_file("blabla").build(),
+                a_project().with_merged_file("blabla").build(),
+                output=[Fragment("test.tex", 123, 0, r"\input{foo}")]),
             self.test_case)
 
     def test_test_with(self):
