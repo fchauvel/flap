@@ -146,6 +146,20 @@ class TestYamlCodec(TestCase):
 
         self.assertEqual(expected, test_case)
 
+    def test_parsing_a_test_case_with_expected_outputs(self):
+        yaml_file = self._create_file(YamlTest.that_includes_expected_outputs("Test 1"))
+        test_case = self._read_test_case_from(yaml_file)
+
+        expected = FlapTestCase(
+                        "Test 1",
+                        a_project().with_main_file("blabla").build(),
+                        a_project().with_merged_file("blabla").build(),
+                        False,
+                        [Fragment("main.tex", 1, 1, "\\input{result}")])
+
+        self.assertEqual(expected, test_case)
+
+
     def test_parsing_invalid_yaml_code(self):
         yaml_file = self._create_file("This is not a valid YAML content!")
         with self.assertRaises(InvalidYamlTestCase):
@@ -353,6 +367,21 @@ class YamlTest:
                  "      \\begin{document}\n"
                  "        This is a simple \\LaTeX document!\n"
                  "      \\end{document}\n")
+
+    @staticmethod
+    def that_includes_expected_outputs(name):
+         return ("name: {name}\n".format(name=name) +
+                 "project:\n"
+                 " - path: main.tex\n"
+                 "   content: blabla\n"
+                 "expected:\n"
+                 "  - path: merged.tex\n"
+                 "    content: blabla\n"
+                 "outputs:\n"
+                 "  - file: main.tex\n"
+                 "    line: 1\n"
+                 "    column: 1\n"
+                 "    code: \\input{result}\n")
 
     @staticmethod
     def that_passes(test_case_name):
