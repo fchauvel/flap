@@ -178,6 +178,9 @@ class FlapTestCase:
     def run_with(self, runner):
         runner.test(self._name, self._project, self._expected)
 
+    def run_with2(self, runner):
+        runner.test(self)
+
     def __eq__(self, other):
         if not isinstance(other, FlapTestCase):
             return False

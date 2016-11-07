@@ -18,14 +18,15 @@
 from unittest import TestCase
 from mock import MagicMock
 
+from flap import __version__
 from flap.engine import Flap
 from flap.substitutions.factory import ProcessorFactory
 from flap.ui import UI, Factory, Controller
 from flap.util.oofs import InMemoryFileSystem
-from flap.util.path import TEMP
+from flap.util.path import Path, TEMP
 from io import StringIO
 from tests.latex_project import LatexProject, a_project, FlapTestCase
-
+import flap.incubation
 
 class TestRunner:
 
@@ -126,3 +127,52 @@ class FlapTest(TestCase):
         self.assertEqual(fragment.text().strip(), excerpt)
 
 
+class EndToEndRunner:
+
+    def __init__(self, file_system):
+        self._file_system = file_system
+        self._output = StringIO()
+        self._display = flap.incubation.Display(self._output)
+        self._controller = flap.incubation.Controller(self._file_system, self._display)
+
+    def test(self, test_case):
+        self._tear_down(test_case)
+        self._setup(test_case)
+        self._execute(test_case)
+        self._verify(test_case)
+
+    def _tear_down(self, test_case):
+        self._file_system.deleteDirectory(Path.fromText("output"))
+
+    def _setup(self, test_case):
+         test_case._project.setup(self._file_system, Path.fromText("tests"))
+
+    def _execute(self, test_case):
+        self._controller.run(["__main.py__", "tests/main.tex", "output"])
+
+    def _verify(self, test_case):
+        self._verify_generated_files(test_case)
+        self._verify_console_output(test_case)
+
+    def _verify_generated_files(self, test_case):
+        location = self._file_system.open(Path.fromText("output"))
+        actual = LatexProject.extract_from_directory(location)
+        actual.assert_is_equivalent_to(test_case._expected)
+
+    def _verify_console_output(self, test_case):
+        self._verify_shown(__version__)
+        self._verify_shown(self._display.HEADER)
+        self._verify_shown(self._display._horizontal_line())
+        entries = [each.as_dictionary for each in test_case._output]
+        for each_entry in entries:
+            self._verify_shown(self._display.ENTRY.format(**each_entry))
+        self._verify_shown(self._display.SUMMARY.format(count=len(test_case._output)))
+
+    def _verify_shown(self, text):
+        message = "Could not find the following text:\n" \
+                  "  \"{pattern}\"\n" \
+                  "\n" \
+                  "The output was:\n" \
+                  "{output}\n"
+        if text not in self._output.getvalue():
+            raise AssertionError(message.format(pattern=text, output=self._output.getvalue()))

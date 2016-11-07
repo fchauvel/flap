@@ -1,0 +1,45 @@
+#
+# This file is part of Flap.
+#
+# Flap is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Flap is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Flap.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+name: \includegraphics without extension
+description: >
+   Test that FLaP does properly flatten single '\includegraphics' directives
+   when the image is in the same directory and the file has no extension
+
+# Describe the LaTeX projects, as found on the disk
+project:
+  - path: main.tex
+    content: |
+      \includegraphics{img/result.pdf}
+  - path: img/result.pdf
+    content: |
+      This is a PDF image!
+
+# Describe the LaTeX project, once flattened
+expected:
+  - path: merged.tex
+    content: |
+      \includegraphics{img_result}
+  - path: img_result.pdf
+    content: |
+      This is a PDF image!
+
+outputs:
+  - file: test.tex
+    line: 1
+    column: 1
+    code: \includegraphics{img/result.pdf}

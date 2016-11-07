@@ -159,7 +159,6 @@ class TestYamlCodec(TestCase):
 
         self.assertEqual(expected, test_case)
 
-
     def test_parsing_invalid_yaml_code(self):
         yaml_file = self._create_file("This is not a valid YAML content!")
         with self.assertRaises(InvalidYamlTestCase):
