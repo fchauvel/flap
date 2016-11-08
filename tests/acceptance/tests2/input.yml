@@ -38,7 +38,7 @@ expected:
       This is a PDF image!
 
 outputs:
-  - file: test.tex
+  - file: main.tex
     line: 2
     column: 1
     code: \input{result.tex}

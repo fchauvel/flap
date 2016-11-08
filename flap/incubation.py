@@ -120,7 +120,7 @@ class Settings:
 
     def _show_invocation(self, invocation):
         self._count += 1
-        self._display.entry(file="test.tex",
+        self._display.entry(file=invocation.location.source,
                             line=invocation.location.line,
                             column=invocation.location.column,
                             code=invocation.as_text)
@@ -157,7 +157,7 @@ class Controller:
     @staticmethod
     def _flatten(flap):
         factory = Factory(SymbolTable.default())
-        parser = Parser(factory.as_tokens(flap.read_root_tex), factory, flap, Context())
+        parser = Parser(factory.as_tokens(flap.read_root_tex, str(flap.root_tex_file.resource())), factory, flap, Context())
         flap.write(parser.rewrite())
 
     def _parse(self, arguments):

@@ -27,15 +27,15 @@ class Lexer:
     These handlers are automatically selected using reflection: each handler shall be named "_read_category".
     """
 
-    def __init__(self, symbols, text):
-        self._text = text
+    def __init__(self, symbols, source):
+        self._source = source
         self._symbols = symbols
         self._tokens = TokenFactory(self._symbols)
         self._reset()
 
     def _reset(self):
-        self._position = Position(1, 0)
-        self._input = Stream(iter(self._text), self._on_take)
+        self._position = Position(1, 0, self._source.name)
+        self._input = Stream(iter(self._source.content), self._on_take)
 
     def _on_take(self, character):
         if character in self._symbols.NEW_LINE:

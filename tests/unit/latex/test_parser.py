@@ -76,7 +76,7 @@ class ParserTests(TestCase):
         self._do_test_with("hello", "hello")
 
     def _do_test_with(self, input, output):
-        parser = Parser(self._factory.as_tokens(input), self._factory, self._engine, self._environment)
+        parser = Parser(self._factory.as_tokens(input, "Unknown"), self._factory, self._engine, self._environment)
         tokens = parser.rewrite()
         self._verify_output_is(output, tokens)
 

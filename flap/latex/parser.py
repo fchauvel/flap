@@ -17,7 +17,7 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from flap.latex.commons import Stream
+from flap.latex.commons import Stream, Source
 from flap.latex.lexer import Lexer
 from flap.latex.macros import *
 
@@ -62,11 +62,11 @@ class Factory:
     def __init__(self, symbols):
         self._symbols = symbols
 
-    def as_tokens(self, text):
-        return Lexer(self._symbols, text)
+    def as_tokens(self, text, name):
+        return Lexer(self._symbols, Source.with_name(text, name))
 
     def as_list(self, text):
-        return list(Lexer(self._symbols, text))
+        return list(Lexer(self._symbols, Source.anonymous(text)))
 
     def as_stream(self, tokens):
         return Stream(tokens)

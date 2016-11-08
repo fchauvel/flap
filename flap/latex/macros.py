@@ -186,7 +186,7 @@ class TexFileInclusion(Macro):
     def _execute(self, parser, invocation):
         link = parser.evaluate_as_text(invocation.argument("link"))
         content = parser._engine.content_of(link, invocation)
-        return parser._spawn(parser._create.as_tokens(content), dict()).rewrite()
+        return parser._spawn(parser._create.as_tokens(content, link), dict()).rewrite()
 
 
 class Input(TexFileInclusion):

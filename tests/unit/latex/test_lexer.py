@@ -20,7 +20,7 @@
 
 from unittest import TestCase, main
 
-from flap.latex.commons import Position
+from flap.latex.commons import Position, Source
 from flap.latex.symbols import SymbolTable
 from flap.latex.tokens import TokenFactory
 from flap.latex.lexer import Lexer
@@ -127,7 +127,7 @@ class LexerTests(TestCase):
         self._verify_tokens(self._tokens.non_breaking_space(Position(1,1)))
 
     def _verify_tokens(self, *expected_tokens):
-        self.assertListEqual(list(expected_tokens), list(Lexer(self._symbols, self._text)))
+        self.assertListEqual(list(expected_tokens), list(Lexer(self._symbols, Source(self._text))))
 
 
 if __name__ == "__main__":

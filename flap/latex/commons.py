@@ -20,6 +20,23 @@
 from itertools import chain
 
 
+class Source:
+    """
+    A data source, that is a text
+    """
+    @staticmethod
+    def anonymous(text):
+        return Source(text, "anonymous")
+
+    @staticmethod
+    def with_name(text, name):
+        return Source(text, name)
+
+    def __init__(self, content, name = "Unknown"):
+        self.name = name
+        self.content = content
+
+
 class Stream:
     """
     A stream of characters, on which we can peek.
@@ -70,9 +87,14 @@ class Position:
 
     REPRESENTATION = "@({line}, {column})"
 
-    def __init__(self, line, column):
+    def __init__(self, line, column, source=None):
+        self._source = source
         self._line = line
         self._column = column
+
+    @property
+    def source(self):
+        return self._source
 
     @property
     def line(self):
@@ -83,10 +105,10 @@ class Position:
         return self._column
 
     def next_line(self):
-        return Position(self._line+1, 0)
+        return Position(self._line+1, 0, self._source)
 
     def next_character(self):
-        return Position(self._line, self._column+1)
+        return Position(self._line, self._column+1, self._source)
 
     def __eq__(self, other):
         if not isinstance(other, Position):

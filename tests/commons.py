@@ -131,9 +131,6 @@ class EndToEndRunner:
 
     def __init__(self, file_system):
         self._file_system = file_system
-        self._output = StringIO()
-        self._display = flap.incubation.Display(self._output)
-        self._controller = flap.incubation.Controller(self._file_system, self._display)
 
     def test(self, test_case):
         self._tear_down(test_case)
@@ -142,6 +139,9 @@ class EndToEndRunner:
         self._verify(test_case)
 
     def _tear_down(self, test_case):
+        self._output = StringIO()
+        self._display = flap.incubation.Display(self._output)
+        self._controller = flap.incubation.Controller(self._file_system, self._display)
         self._file_system.deleteDirectory(Path.fromText("output"))
 
     def _setup(self, test_case):

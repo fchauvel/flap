@@ -15,31 +15,39 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-name: \includegraphics without extension
+name: recurive input
 description: >
-   Test that FLaP does properly flatten single '\includegraphics' directives
-   when the image is in the same directory and the file has no extension
+   Test that FLaP properly process "recursive input" directives, that is \input
+   directives where the given file also contains \input directives.
 
 # Describe the LaTeX projects, as found on the disk
 project:
   - path: main.tex
     content: |
-      \includegraphics{img/result.pdf}
-  - path: img/result.pdf
+      Blabla
+      \input{result.tex}
+  - path: result.tex
     content: |
-      This is a PDF image!
+      More Blabla
+      \input{more-result.tex}
+  - path: more-result.tex
+    content: |
+      No more Blabla
 
 # Describe the LaTeX project, once flattened
 expected:
   - path: merged.tex
     content: |
-      \includegraphics{img_result}
-  - path: img_result.pdf
-    content: |
-      This is a PDF image!
+      Blabla
+      More Blabla
+      No more Blabla
 
 outputs:
   - file: main.tex
-    line: 1
+    line: 2
     column: 1
-    code: \includegraphics{img/result.pdf}
+    code: \input{result.tex}
+  - file: result.tex
+    line: 2
+    column: 1
+    code: \input{more-result.tex}
