@@ -23,9 +23,13 @@ description: >
 project:
   - path: main.tex
     content: |
-      \includegraphics{img/result.pdf}
-      \includegraphics[width=\textwidth]{img/result.pdf}
-      \includegraphics   [width=7cm]     {img/result.pdf}
+      \documentclass{article}
+      \usepackage{graphicx}
+      \begin{document}
+        \includegraphics{img/result.pdf}
+        \includegraphics[width=\textwidth]{img/result.pdf}
+        \includegraphics   [width=7cm]     {img/result.pdf}
+      \end{document}
   - path: img/result.pdf
     content: |
       This is a PDF image!
@@ -34,23 +38,27 @@ project:
 expected:
   - path: merged.tex
     content: |
-      \includegraphics{img_result}
-      \includegraphics[width=\textwidth]{img_result}
-      \includegraphics   [width=7cm]     {img_result}
+      \documentclass{article}
+      \usepackage{graphicx}
+      \begin{document}
+        \includegraphics{img_result}
+        \includegraphics[width=\textwidth]{img_result}
+        \includegraphics   [width=7cm]     {img_result}
+      \end{document}
   - path: img_result.pdf
     content: |
       This is a PDF image!
 
 outputs:
   - file: main.tex
-    line: 1
-    column: 1
+    line: 4
+    column: 3
     code: \includegraphics{img/result.pdf}
   - file: main.tex
-    line: 2
-    column: 1
+    line: 5
+    column: 3
     code: \includegraphics[width=\textwidth]{img/result.pdf}
   - file: main.tex
-    line: 3
-    column: 1
+    line: 6
+    column: 3
     code: \includegraphics   [width=7cm]     {img/result.pdf}
