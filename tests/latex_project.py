@@ -36,15 +36,15 @@ class LatexProject:
             location = anchor / path
             file_system.create_file(location, file.content)
 
-    def assert_is_equivalent_to(self, other):
-        self._verify_missing_files(other)
-        self._verify_extraneous_files(other)
-        self._verify_different_files(other)
+    def assert_is_equivalent_to(self, expectation):
+        self._verify_missing_files(expectation)
+        self._verify_extraneous_files(expectation)
+        self._verify_different_files(expectation)
 
-    def _verify_different_files(self, other):
+    def _verify_different_files(self, expectation):
         for (path, file) in self.files.items():
-            assert path in other.files and file == other.files[path], \
-                self.CONTENT_MISMATCH.format(file=path, expected=file.content, actual=other.files[path].content)
+            assert path in expectation.files and file == expectation.files[path], \
+                self.CONTENT_MISMATCH.format(file=path, expected=expectation.files[path].content, actual=file.content)
 
     CONTENT_MISMATCH = "Content mismatch for {file}\nExpected:\n'{expected}'\nbut found:\n'{actual}'"
 

@@ -17,6 +17,8 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from copy import copy
+
 
 class Invocation:
     """
@@ -55,11 +57,19 @@ class Invocation:
             text += "".join(str(each) for each in each_argument)
         return text
 
+    def substitute(self, argument, value):
+        clone = Invocation()
+        clone.name = copy(self.name)
+        clone._arguments = copy(self._arguments)
+        clone._keys = copy(self._keys)
+        clone._arguments[clone._keys[argument]] = value
+        return clone
+
     @property
     def as_tokens(self):
         tokens = [self.name]
         for each_argument in self._arguments:
-            tokens+= each_argument
+            tokens += each_argument
         return tokens
 
 
@@ -86,7 +96,8 @@ class Macro:
 
     def _capture_name(self, invocation, parser):
         invocation.name = parser._accept(lambda token: token.is_a_command and token.has_text(self._name))
-        invocation.append(parser._tokens.take_while(lambda c: c.is_a_whitespace))
+        extra_spaces = parser._tokens.take_while(lambda c: c.is_a_whitespace)
+        invocation.append(extra_spaces)
 
     def _capture_arguments(self, parser, invocation):
         for index, any_token in enumerate(self._signature):
@@ -253,8 +264,9 @@ class IncludeGraphics(Macro):
     def _execute(self, parser, invocation):
         link = parser.evaluate_as_text(invocation.argument("link"))
         new_link = parser._engine.update_link(link, invocation)
-        return parser._create.as_list(self._name) + invocation.argument("options") \
-               + parser._create.as_list("{" + new_link + "}")
+        #return parser._create.as_list(self._name) + invocation.argument("options") \
+        #       + parser._create.as_list("{" + new_link + "}")
+        return invocation.substitute("link", parser._create.as_list("{" + new_link + "}")).as_tokens
 
 
 class GraphicsPath(Macro):

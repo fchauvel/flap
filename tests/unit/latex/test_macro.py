@@ -39,7 +39,7 @@ class InvocationTests(TestCase):
     def test_as_text(self):
         self._invocation.name = r"\foo"
         self._invocation.append_argument("options", [each for each in "[this is a text]"])
-        self._invocation.append("----")
+        self._invocation.append(["-", "---"])
         self._invocation.append_argument("link", [each for each in "{link/to/a/file.tex}"])
         self.assertEqual(r"\foo[this is a text]----{link/to/a/file.tex}", self._invocation.as_text)
 
@@ -62,6 +62,11 @@ class InvocationTests(TestCase):
         self.assertEqual({"options": "this is a text",
                           "link": "{link/to/a/file.tex}"},
                          self._invocation.arguments)
+
+    def test_argument_substitution(self):
+        self._invocation.name = r"\foo"
+        self._invocation.append_argument("text", ["z", "y", "x"])
+        self.assertEqual("bar", self._invocation.substitute("text", "bar").arguments["text"])
 
 
 

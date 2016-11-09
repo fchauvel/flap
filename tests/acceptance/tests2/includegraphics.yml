@@ -15,16 +15,17 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-name: \includegraphics without extension
+name: \includegraphics
 description: >
-   Test that FLaP does properly flatten single '\includegraphics' directives
-   when the image is in the same directory and the file has no extension
+   Test that FLaP does properly flatten single '\includegraphics' directives.
 
 # Describe the LaTeX projects, as found on the disk
 project:
   - path: main.tex
     content: |
       \includegraphics{img/result.pdf}
+      \includegraphics[width=\textwidth]{img/result.pdf}
+      \includegraphics   [width=7cm]     {img/result.pdf}
   - path: img/result.pdf
     content: |
       This is a PDF image!
@@ -34,6 +35,8 @@ expected:
   - path: merged.tex
     content: |
       \includegraphics{img_result}
+      \includegraphics[width=\textwidth]{img_result}
+      \includegraphics   [width=7cm]     {img_result}
   - path: img_result.pdf
     content: |
       This is a PDF image!
@@ -43,3 +46,11 @@ outputs:
     line: 1
     column: 1
     code: \includegraphics{img/result.pdf}
+  - file: main.tex
+    line: 2
+    column: 1
+    code: \includegraphics[width=\textwidth]{img/result.pdf}
+  - file: main.tex
+    line: 3
+    column: 1
+    code: \includegraphics   [width=7cm]     {img/result.pdf}

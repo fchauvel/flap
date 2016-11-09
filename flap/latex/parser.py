@@ -129,9 +129,10 @@ class Parser:
 
     def _accept(self, as_expected):
         if not as_expected(self._next_token):
-            error = "Unexpected {} '{}' at line {}, column {}.".format(
+            error = "Unexpected {} '{}' in file {} (line {}, column {}).".format(
                 self._next_token._category.name,
                 self._next_token,
+                self._next_token.location.source,
                 self._next_token.location.line,
                 self._next_token.location.column
             )
@@ -186,6 +187,7 @@ class Parser:
             result += [self._accept(lambda token: token.has_text(start))]
             result += self._evaluate_until(lambda token: token.has_text(end))
             result += [self._accept(lambda token: token.has_text(end))]
+            result += self._tokens.take_while(lambda c: c.is_a_whitespace)
         return result
 
     def _capture_until(self, expected_text):
