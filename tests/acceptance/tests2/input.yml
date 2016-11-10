@@ -15,30 +15,47 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-name: input tex files
+name: input
 description: >
-   Test that FLaP properly inline the content of the TeX files used as
-   argument of the '\input' directives
+   Test how FLaP handles '\input' directive. In particular, this tests
+   covers recursive \input, links with and without file extension, and links
+   to file in a sub directory.
 
 # Describe the LaTeX projects, as found on the disk
 project:
   - path: main.tex
     content: |
-      Blabla
+      \documentclass{article}
+
+      \begin{document}
       \input{result.tex}
+      \end{document}
   - path: result.tex
     content: |
-      This is a PDF image!
+      Here come the results!
+      \input  {extra/result.tex}
+  - path: extra/result.tex
+    content: |
+      With some extra results!
 
 # Describe the LaTeX project, once flattened
 expected:
   - path: merged.tex
     content: |
-      Blabla
-      This is a PDF image!
+      \documentclass{article}
 
+      \begin{document}
+      Here come the results!
+      With some extra results!
+      \end{document}
+
+# Describe what should be reported on the console
 outputs:
   - file: main.tex
-    line: 2
+    line: 4
     column: 1
     code: \input{result.tex}
+  - file: result.tex
+    line: 2
+    column: 1
+    code: \input  {extra/result.tex}
