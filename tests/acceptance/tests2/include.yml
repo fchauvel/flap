@@ -1,0 +1,73 @@
+#
+# This file is part of Flap.
+#
+# Flap is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Flap is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Flap.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+name: include
+skipped: True
+description: >
+   Test how FLaP handles '\include' directive. In particular, this tests
+   covers the use of '\includeonly', inclusions of file located in
+   subdirectories, and inclusions of files without the ".tex" extension.
+
+# Describe the LaTeX projects, as found on the disk
+project:
+  - path: main.tex
+    content: |
+      \documentclass{article}
+      \includeonly{partA}
+      \begin{document}
+      \include    {intro.tex}
+      \include{parts/partA}
+      \include{parts/partB.tex}
+      \end{document}
+  - path: intro.tex
+    content: |
+      Here come the introduction!
+  - path: parts/partA.tex
+    content: |
+      Here is the content of Part A.
+  - path: parts/partB.tex
+    content: |
+      Here is the content of Part B.
+
+# Describe the LaTeX project, once flattened
+expected:
+  - path: merged.tex
+    content: |
+      \documentclass{article}
+      \begin{document}
+      Here come the introduction! \clearpage
+      Here is the content of Part A. \clearpage
+      \end{document}
+
+# Describe what should be reported on the console
+outputs:
+  - file: main.tex
+    line: 2
+    column: 1
+    code: \includeonly{partA}
+  - file: main.tex
+    line: 4
+    column: 1
+    code: \include    {intro.tex}
+  - file: main.tex
+    line: 5
+    column: 1
+    code: \include{parts/partA}
+  - file: main.tex
+    line: 6
+    column: 1
+    code: \include{parts/partB.tex}
