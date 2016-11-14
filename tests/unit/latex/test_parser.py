@@ -232,7 +232,7 @@ class ParserTests(TestCase):
         self._engine.shall_include.return_value = True
         self._do_test_with(r"\includeonly{my-file.tex}",
                            r"")
-        self._engine.include_only.assert_called_once_with(["my-file.tex"])
+        self._engine.include_only.assert_called_once_with(["my-file.tex"], ANY)
 
     def test_rewriting_subfile(self):
         self._engine.content_of.return_value \

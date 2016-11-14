@@ -16,7 +16,7 @@
 #
 
 name: include
-skipped: True
+skipped: False
 description: >
    Test how FLaP handles '\include' directive. In particular, this tests
    covers the use of '\includeonly', inclusions of file located in
@@ -27,11 +27,11 @@ project:
   - path: main.tex
     content: |
       \documentclass{article}
-      \includeonly{partA}
+      \includeonly{intro,parts/partA}
       \begin{document}
-      \include    {intro.tex}
+      \include    {intro}
       \include{parts/partA}
-      \include{parts/partB.tex}
+      \include{parts/partB}
       \end{document}
   - path: intro.tex
     content: |
@@ -48,9 +48,11 @@ expected:
   - path: merged.tex
     content: |
       \documentclass{article}
+
       \begin{document}
-      Here come the introduction! \clearpage
-      Here is the content of Part A. \clearpage
+      Here come the introduction!\clearpage
+      Here is the content of Part A.\clearpage
+
       \end{document}
 
 # Describe what should be reported on the console
@@ -58,16 +60,12 @@ outputs:
   - file: main.tex
     line: 2
     column: 1
-    code: \includeonly{partA}
+    code: \includeonly{intro,parts/partA}
   - file: main.tex
     line: 4
     column: 1
-    code: \include    {intro.tex}
+    code: \include    {intro}
   - file: main.tex
     line: 5
     column: 1
     code: \include{parts/partA}
-  - file: main.tex
-    line: 6
-    column: 1
-    code: \include{parts/partB.tex}

@@ -240,11 +240,12 @@ class IncludeOnly(Macro):
         super().__init__(r"\includeonly", None, None)
 
     def _capture_arguments(self, parser, invocation):
-        list_as_text = parser._as_text(parser._evaluate_one())
-        invocation.append_argument("selection", [part.strip() for part in list_as_text.split(",")])
+        invocation.append_argument("selection", parser._capture_one())
 
     def _execute(self, parser, invocation):
-        parser._engine.include_only(invocation.argument("selection"))
+        text = parser.evaluate_as_text(invocation.argument("selection"))
+        files_to_include = [each.strip() for each in text.split(",")]
+        parser._engine.include_only(files_to_include, invocation)
         return []
 
 

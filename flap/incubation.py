@@ -77,6 +77,7 @@ class Settings:
         self._root_tex_file = root_tex_file
         self._output = output
         self._count = 0
+        self._selected_for_inclusion = []
 
     @property
     def root_tex_file(self):
@@ -117,6 +118,16 @@ class Settings:
         new_file_name = str(new_path).replace("/", "_")
         self._file_system.copy(resource, self.output_directory / new_file_name)
         return str(new_path.without_extension()).replace("/", "_")
+
+    def include_only(self, selection, invocation):
+        self._show_invocation(invocation)
+        self._selected_for_inclusion.extend(selection)
+
+    def shall_include(self, link):
+        if len(self._selected_for_inclusion) == 0:
+            return True
+        else:
+            return link in self._selected_for_inclusion
 
     def _show_invocation(self, invocation):
         self._count += 1
