@@ -161,7 +161,7 @@ class DocumentClass(Macro):
 
     def _execute(self, parser, invocation):
         class_name = parser.evaluate_as_text(invocation.argument("class"))
-        if class_name == "subfile":
+        if class_name == "subfiles":
             parser._capture_until(r"\begin{document}")
             document = parser._capture_until(r"\end{document}")
             return parser._spawn(document[:-11], dict()).rewrite()

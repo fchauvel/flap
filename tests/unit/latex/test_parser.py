@@ -236,7 +236,7 @@ class ParserTests(TestCase):
 
     def test_rewriting_subfile(self):
         self._engine.content_of.return_value \
-            = r"\documentclass[../main.tex]{subfile}" \
+            = r"\documentclass[../main.tex]{subfiles}" \
               r"" \
               r"\begin{document}" \
               r"File content" \
