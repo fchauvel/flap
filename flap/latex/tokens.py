@@ -42,6 +42,18 @@ class Token:
         return self._category == category
 
     @property
+    def is_ignored(self):
+        return self.is_a_whitespace or self.is_a_comment or self.is_a_new_line
+
+    @property
+    def is_a_comment(self):
+        return self._category == Symbol.COMMENT
+
+    @property
+    def is_a_new_line(self):
+        return self._category == Symbol.NEW_LINE
+
+    @property
     def is_a_command(self):
         return self._category == Symbol.CONTROL
 

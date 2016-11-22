@@ -191,6 +191,16 @@ class ParserTests(TestCase):
         self._do_test_with(r"\def\foo#1{File: \input{#1}} \foo{test.tex}",
                            r" File: blabla")
 
+    def test_rewriting_multiline_commands(self):
+        self._engine.update_link.return_value = "img_result"
+        self._do_test_with("\\includegraphics % \n" +
+                           "[witdh=\\textwidth] % Blabla\n" +
+                           "{img/result.pdf}",
+                           "\\includegraphics % \n" +
+                           "[witdh=\\textwidth] % Blabla\n" +
+                           "{img_result}")
+        self._engine.update_link.assert_called_once_with("img/result.pdf", ANY)
+
     def test_rewriting_includegraphics(self):
         self._engine.update_link.return_value = "img_result"
         self._do_test_with(r"\includegraphics{img/result.pdf}",

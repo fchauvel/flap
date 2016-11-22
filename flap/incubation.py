@@ -48,7 +48,8 @@ class Display:
         self._show(self._horizontal_line())
 
     def entry(self, file, line, column, code):
-        self._show(self.ENTRY, file=file, line=line, column=column, code=code)
+        escaped_code = code.replace("\n", r"\n")
+        self._show(self.ENTRY, file=file, line=line, column=column, code=escaped_code)
 
     def footer(self, count):
         self._show(self._horizontal_line())

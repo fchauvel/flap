@@ -128,17 +128,19 @@ class Parser:
         return []
 
     def _accept(self, as_expected):
-        if not as_expected(self._next_token):
-            error = "Unexpected {} '{}' in file {} (line {}, column {}).".format(
-                self._next_token._category.name,
-                self._next_token,
-                self._next_token.location.source,
-                self._next_token.location.line,
-                self._next_token.location.column
-            )
-            raise ValueError(error)
-        else:
-            return self._tokens.take()
+        buffer = []
+        while self._next_token.is_ignored:
+            buffer.append(self._tokens.take())
+        if as_expected(self._next_token):
+            buffer.append(self._tokens.take())
+            return buffer
+        error = "Unexpected {} '{}' in file {} (line {}, column {}).".format(
+            self._next_token._category.name,
+            self._next_token,
+            self._next_token.location.source,
+            self._next_token.location.line,
+            self._next_token.location.column)
+        raise ValueError(error)
 
     def evaluate_parameter(self, parameter):
         self._tokens.take()
@@ -184,10 +186,10 @@ class Parser:
     def optional_arguments(self, start="[", end="]"):
         result = []
         if self._next_token.has_text(start):
-            result += [self._accept(lambda token: token.has_text(start))]
+            result += self._accept(lambda token: token.has_text(start))
             result += self._evaluate_until(lambda token: token.has_text(end))
-            result += [self._accept(lambda token: token.has_text(end))]
-            result += self._tokens.take_while(lambda c: c.is_a_whitespace)
+            result += self._accept(lambda token: token.has_text(end))
+            result += self._tokens.take_while(lambda c: c.is_ignored)
         return result
 
     def _capture_until(self, expected_text):
@@ -200,10 +202,10 @@ class Parser:
         return read
 
     def _capture_group(self):
-        tokens = [self._accept(lambda token: token.begins_a_group)]
+        tokens = self._accept(lambda token: token.begins_a_group)
         while not self._next_token.ends_a_group:
             tokens += self._capture_one()
-        tokens.append(self._accept(lambda token: token.ends_a_group))
+        tokens += self._accept(lambda token: token.ends_a_group)
         return tokens
 
     def _capture_one(self):

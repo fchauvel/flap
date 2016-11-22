@@ -27,7 +27,7 @@ class Invocation:
     """
 
     def __init__(self):
-        self.name = None
+        self.name = []
         self._arguments = []
         self._keys = dict()
 
@@ -52,10 +52,17 @@ class Invocation:
 
     @property
     def as_text(self):
-        text = str(self.name)
+        text = "".join(str(each) for each in self.name)
         for each_argument in self._arguments:
             text += "".join(str(each) for each in each_argument)
         return text
+
+    @property
+    def as_tokens(self):
+        tokens = copy(self.name)
+        for each_argument in self._arguments:
+            tokens += each_argument
+        return tokens
 
     def substitute(self, argument, value):
         clone = Invocation()
@@ -65,12 +72,6 @@ class Invocation:
         clone._arguments[clone._keys[argument]] = value
         return clone
 
-    @property
-    def as_tokens(self):
-        tokens = [self.name]
-        for each_argument in self._arguments:
-            tokens += each_argument
-        return tokens
 
 
 class Macro:
@@ -96,7 +97,7 @@ class Macro:
 
     def _capture_name(self, invocation, parser):
         invocation.name = parser._accept(lambda token: token.is_a_command and token.has_text(self._name))
-        extra_spaces = parser._tokens.take_while(lambda c: c.is_a_whitespace)
+        extra_spaces = parser._tokens.take_while(lambda c: c.is_ignored)
         invocation.append(extra_spaces)
 
     def _capture_arguments(self, parser, invocation):
@@ -265,8 +266,6 @@ class IncludeGraphics(Macro):
     def _execute(self, parser, invocation):
         link = parser.evaluate_as_text(invocation.argument("link"))
         new_link = parser._engine.update_link(link, invocation)
-        #return parser._create.as_list(self._name) + invocation.argument("options") \
-        #       + parser._create.as_list("{" + new_link + "}")
         return invocation.substitute("link", parser._create.as_list("{" + new_link + "}")).as_tokens
 
 

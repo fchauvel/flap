@@ -15,44 +15,45 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-name: subfiles from the subfiles package
+name: multiline commands
 description: >
-   Test that FLaP does properly flatten single '\input' directives
-   when '.tex' extension is given
+   Test that FLaP does properly flatten commands that spans over multiple lines
+   using comments symbol (%) to cut the end-of-line.
 
 # Describe the LaTeX projects, as found on the disk
 project:
   - path: main.tex
     content: |
       \documentclass{article}
-      \usepackage{subfiles}
+      \usepackage{graphicx}
       \begin{document}
-      This is an example of subfiles.
-      \subfile{parts/introduction}
-      \subfile       {parts/introduction}
+      This is an example of graphic inclusion:
+      \includegraphics  % Blabla
+      [width=3cm] %
+      {figure1}
       \end{document}
-
-  - path: parts/introduction.tex
+  - path: figure1.pdf
     content: |
-      \documentclass[main.tex]{subfiles}
-
-      \begin{document}
-      Here is the content of the first part.
-      \end{document}
-
+      This is a PDF image!
 # Describe the LaTeX project, once flattened
 expected:
   - path: merged.tex
     content: |
       \documentclass{article}
-      \usepackage{subfiles}
+      \usepackage{graphicx}
       \begin{document}
-      This is an example of subfiles.
-
-      Here is the content of the first part.
-
-
-      Here is the content of the first part.
-
+      This is an example of graphic inclusion:
+      \includegraphics  % Blabla
+      [width=3cm] %
+      {figure1}
       \end{document}
+  - path: figure1.pdf
+    content: |
+      This is a PDF image!
 
+# Describe what should be reported on the console
+outputs:
+  - file: main.tex
+    line: 5
+    column: 1
+    code: \includegraphics  % Blabla\n[width=3cm] %\n{figure1}
