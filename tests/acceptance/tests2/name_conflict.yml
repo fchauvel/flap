@@ -15,10 +15,10 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-name: multiline commands
+name: conflicting \includegraphics
 description: >
-   Test that FLaP does properly flatten commands that spans over multiple lines
-   using comments symbol (%) to cut the end-of-line.
+   Test that FLaP does properly flatten links to files with the same name, but
+    places in different sub directories
 
 # Describe the LaTeX projects, as found on the disk
 project:
@@ -28,17 +28,18 @@ project:
       \usepackage{graphicx}
       \begin{document}
       This is an example of graphic inclusion:
-      \includegraphics%
-      [width=3cm]%
-      {figure1}
-      \includegraphics %
-      [width=3cm] %
-      {figure2}
+      \begin{figure}
+        \begin{center}
+          \includegraphics[width=3cm]{img/exp_1/result}
+          \includegraphics[width=3cm]{img/exp_2/result}
+        \end{center}
+        \caption{A sample graphic}
+      \end{figure}
       \end{document}
-  - path: figure1.pdf
+  - path: img/exp_1/result.pdf
     content: |
       This is a PDF image!
-  - path: figure2.pdf
+  - path: img/exp_2/result.pdf
     content: |
       This is a PDF image!
 # Describe the LaTeX project, once flattened
@@ -49,12 +50,27 @@ expected:
       \usepackage{graphicx}
       \begin{document}
       This is an example of graphic inclusion:
-      \includegraphics[width=3cm]{figure1}
-      \includegraphics[width=3cm]{figure2}
+      \begin{figure}
+        \begin{center}
+          \includegraphics[width=3cm]{img_exp_1_result}
+          \includegraphics[width=3cm]{img_exp_2_result}
+        \end{center}
+        \caption{A sample graphic}
+      \end{figure}
       \end{document}
-  - path: figure1.pdf
+  - path: img_exp_1_result.pdf
     content: |
       This is a PDF image!
-  - path: figure2.pdf
+  - path: img_exp_2_result.pdf
     content: |
       This is a PDF image!
+
+outputs:
+  - file: main.tex
+    line: 7
+    column: 5
+    code: \includegraphics[width=3cm]{img/exp_1/result}
+  - file: main.tex
+    line: 8
+    column: 5
+    code: \includegraphics[width=3cm]{img/exp_2/result}
