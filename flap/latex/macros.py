@@ -250,13 +250,10 @@ class IncludeOnly(Macro):
         return []
 
 
-class IncludeGraphics(Macro):
-    """
-    Intercept the `\includegraphics` directive
-    """
+class UpdateLink(Macro):
 
-    def __init__(self):
-        super().__init__(r"\includegraphics", None, None)
+    def __init__(self, name):
+        super().__init__(name, None, None)
 
     @staticmethod
     def _capture_arguments(parser, invocation):
@@ -265,8 +262,35 @@ class IncludeGraphics(Macro):
 
     def _execute(self, parser, invocation):
         link = parser.evaluate_as_text(invocation.argument("link"))
-        new_link = parser._engine.update_link(link, invocation)
+        new_link = self.update_link(parser, link, invocation)
         return invocation.substitute("link", parser._create.as_list("{" + new_link + "}")).as_tokens
+
+    def update_link(self, parser, link, invocation):
+        pass
+
+
+class IncludeGraphics(UpdateLink):
+    """
+    Intercept the `\includegraphics` directive
+    """
+
+    def __init__(self):
+        super().__init__(r"\includegraphics")
+
+    def update_link(self, parser, link, invocation):
+        return parser._engine.update_link(link, invocation)
+
+
+class Bibliography(UpdateLink):
+    """
+    Intercept the `\includegraphics` directive
+    """
+
+    def __init__(self):
+        super().__init__(r"\bibliography")
+
+    def update_link(self, parser, link, invocation):
+        return parser._engine.update_link_to_bibliography(link, invocation)
 
 
 class GraphicsPath(Macro):

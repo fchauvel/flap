@@ -110,11 +110,18 @@ class Settings:
 
     def content_of(self, location, invocation):
         self._show_invocation(invocation)
-        return self.find_tex_file(location).content()
+        file = self._find(location, self.root_directory, ["tex"], TexFileNotFound(None))
+        return file.content()
 
-    def update_link(self, path, invocation):
+    def update_link(self, path, invocation, ):
+        return self._update_link(path, invocation, self.graphics_directory, ["pdf", "png", "jpeg"], GraphicNotFound(None))
+
+    def update_link_to_bibliography(self, path, invocation, ):
+        return self._update_link(path, invocation, self.root_directory, ["bib"], ResourceNotFound(None))
+
+    def _update_link(self, path, invocation, location, extensions, error):
         self._show_invocation(invocation)
-        resource = self.find_graphics(path)
+        resource = self._find(path, location, extensions, error)
         new_path = resource._path.relative_to(self.root_directory._path)
         new_file_name = str(new_path).replace("/", "_")
         self._file_system.copy(resource, self.output_directory / new_file_name)
@@ -136,12 +143,6 @@ class Settings:
                             line=invocation.location.line,
                             column=invocation.location.column,
                             code=invocation.as_text)
-
-    def find_graphics(self, path):
-        return self._find(path, self.graphics_directory, ["pdf", "png", "jpeg"], GraphicNotFound(None))
-
-    def find_tex_file(self, path):
-        return self._find(path, self.root_directory, ["tex"], TexFileNotFound(None))
 
     @staticmethod
     def _find(path, directory, extensions, error):
