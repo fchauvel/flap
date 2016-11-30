@@ -303,5 +303,5 @@ class GraphicsPath(Macro):
 
     def _execute(self, parser, invocation):
         path = parser.evaluate_as_text(invocation.argument("path"))
-        parser._engine.record_graphic_path(path)
+        parser._engine.record_graphic_path(path, invocation)
         return invocation.as_tokens

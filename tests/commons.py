@@ -28,6 +28,7 @@ from io import StringIO
 from tests.latex_project import LatexProject, a_project, FlapTestCase
 import flap.incubation
 
+
 class TestRunner:
 
     def __init__(self, file_system, directory, ui=UI(StringIO())):
@@ -148,7 +149,9 @@ class EndToEndRunner:
          test_case._project.setup(self._file_system, Path.fromText("tests"))
 
     def _execute(self, test_case):
-        self._controller.run(["__main.py__", "tests/main.tex", "output"])
+        #main_tex_file = "./tests/" + test_case._name + "/main.tex"
+        main_tex_file = "./tests/main.tex"
+        self._controller.run(["__main.py__", main_tex_file, "output"])
 
     def _verify(self, test_case):
         self._verify_generated_files(test_case)

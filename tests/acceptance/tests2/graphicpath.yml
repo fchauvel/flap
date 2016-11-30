@@ -36,7 +36,7 @@ expected:
   - path: merged.tex
     content: |
        \documentclass{article}
-       
+       \graphicspath{{./img}}
        \begin{document}
        This is an example of including a graphics:
        \includegraphics[width=\textwidth]{img_figure}
@@ -44,3 +44,14 @@ expected:
   - path: img_figure.pdf
     content: |
       This is PDF file!
+
+# Describe what should be reported on the console
+outputs:
+  - file: main.tex
+    line: 2
+    column: 1
+    code: \graphicspath{{./img}}
+  - file: main.tex
+    line: 5
+    column: 1
+    code: \includegraphics[width=\textwidth]{figure}

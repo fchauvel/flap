@@ -79,6 +79,7 @@ class Settings:
         self._output = output
         self._count = 0
         self._selected_for_inclusion = []
+        self._graphic_directory = None
 
     @property
     def root_tex_file(self):
@@ -88,9 +89,13 @@ class Settings:
     def root_directory(self):
         return self._file_system.open(self.root_tex_file).container()
 
+    def record_graphic_path(self, path, invocation):
+        self._show_invocation(invocation)
+        self._graphic_directory = self._file_system.open(self.root_directory._path / path)
+
     @property
     def graphics_directory(self):
-        return self.root_directory
+        return self._graphic_directory if self._graphic_directory else self.root_directory
 
     @property
     def read_root_tex(self):
