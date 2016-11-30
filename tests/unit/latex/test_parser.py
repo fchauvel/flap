@@ -216,7 +216,7 @@ class ParserTests(TestCase):
     def test_rewriting_graphicspath(self):
         self._do_test_with(r"\graphicspath{{img}}",
                            r"\graphicspath{{img}}")
-        self._engine.record_graphic_path.assert_called_once_with("img", ANY)
+        self._engine.record_graphic_path.assert_called_once_with(["img"], ANY)
 
     def test_rewriting_include(self):
         self._engine.shall_include.return_value = True

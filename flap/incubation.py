@@ -79,7 +79,7 @@ class Settings:
         self._output = output
         self._count = 0
         self._selected_for_inclusion = []
-        self._graphic_directory = None
+        self._graphic_directories = []
 
     @property
     def root_tex_file(self):
@@ -89,13 +89,13 @@ class Settings:
     def root_directory(self):
         return self._file_system.open(self.root_tex_file).container()
 
-    def record_graphic_path(self, path, invocation):
+    def record_graphic_path(self, paths, invocation):
         self._show_invocation(invocation)
-        self._graphic_directory = self._file_system.open(self.root_directory._path / path)
+        self._graphic_directories = [self._file_system.open(self.root_directory._path / each) for each in paths]
 
     @property
     def graphics_directory(self):
-        return self._graphic_directory if self._graphic_directory else self.root_directory
+        return self._graphic_directories if self._graphic_directories else [self.root_directory]
 
     @property
     def read_root_tex(self):
@@ -115,14 +115,14 @@ class Settings:
 
     def content_of(self, location, invocation):
         self._show_invocation(invocation)
-        file = self._find(location, self.root_directory, ["tex"], TexFileNotFound(None))
+        file = self._find(location, [self.root_directory], ["tex"], TexFileNotFound(None))
         return file.content()
 
     def update_link(self, path, invocation, ):
         return self._update_link(path, invocation, self.graphics_directory, ["pdf", "png", "jpeg"], GraphicNotFound(None))
 
     def update_link_to_bibliography(self, path, invocation, ):
-        return self._update_link(path, invocation, self.root_directory, ["bib"], ResourceNotFound(None))
+        return self._update_link(path, invocation, [self.root_directory], ["bib"], ResourceNotFound(None))
 
     def _update_link(self, path, invocation, location, extensions, error):
         self._show_invocation(invocation)
@@ -150,12 +150,13 @@ class Settings:
                             code=invocation.as_text)
 
     @staticmethod
-    def _find(path, directory, extensions, error):
-        candidates = directory.files_that_matches(Path.fromText(path))
-        for any_possible_extension in extensions:
-            for any_resource in candidates:
-                if any_resource.has_extension(any_possible_extension):
-                    return any_resource
+    def _find(path, directories, extensions, error):
+        for any_directory in directories:
+            candidates = any_directory.files_that_matches(Path.fromText(path))
+            for any_possible_extension in extensions:
+                for any_resource in candidates:
+                    if any_resource.has_extension(any_possible_extension):
+                        return any_resource
         raise error
 
 

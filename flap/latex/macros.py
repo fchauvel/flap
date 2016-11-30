@@ -299,9 +299,9 @@ class GraphicsPath(Macro):
         super().__init__(r"\graphicspath", None, None)
 
     def _capture_arguments(self, parser, invocation):
-        invocation.append_argument("path", parser._capture_group())
+        invocation.append_argument("paths", parser._capture_group())
 
     def _execute(self, parser, invocation):
-        path = parser.evaluate_as_text(invocation.argument("path"))
-        parser._engine.record_graphic_path(path, invocation)
+        paths = parser.evaluate_as_text(invocation.argument("paths"))
+        parser._engine.record_graphic_path([each.strip() for each in paths.split(",")], invocation)
         return invocation.as_tokens

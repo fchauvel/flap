@@ -23,12 +23,16 @@ project:
   - path: main.tex
     content: |
        \documentclass{article}
-       \graphicspath{{./img}}
+       \graphicspath{{./img},{./img2}}
        \begin{document}
        This is an example of including a graphics:
        \includegraphics[width=\textwidth]{figure}
+       \includegraphics{figure-bis}
        \end{document}
   - path: img/figure.pdf
+    content: |
+      This is PDF file!
+  - path: img2/figure-bis.pdf
     content: |
       This is PDF file!
 
@@ -36,12 +40,16 @@ expected:
   - path: merged.tex
     content: |
        \documentclass{article}
-       \graphicspath{{./img}}
+       \graphicspath{{./img},{./img2}}
        \begin{document}
        This is an example of including a graphics:
        \includegraphics[width=\textwidth]{img_figure}
+       \includegraphics{img2_figure-bis}
        \end{document}
   - path: img_figure.pdf
+    content: |
+      This is PDF file!
+  - path: img2_figure-bis.pdf
     content: |
       This is PDF file!
 
@@ -50,8 +58,12 @@ outputs:
   - file: main.tex
     line: 2
     column: 1
-    code: \graphicspath{{./img}}
+    code: \graphicspath{{./img},{./img2}}
   - file: main.tex
     line: 5
     column: 1
     code: \includegraphics[width=\textwidth]{figure}
+  - file: main.tex
+    line: 6
+    column: 1
+    code: \includegraphics{figure-bis}
