@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 #
 # This file is part of Flap.
 #
@@ -17,131 +19,82 @@
 
 import sys
 
-import flap
-from flap.engine import Flap, Listener, GraphicNotFound, TexFileNotFound
-from flap.substitutions.factory import ProcessorFactory
-from flap.util.oofs import OSFileSystem
-from flap.util.path import Path, TEMP
-
-
-class UI(Listener):
-    """
-    Gather all the interaction the console
-    """
-
-    def __init__(self, output=sys.stdout, is_verbose=False):
-        self._output = output
-        self._verbose = is_verbose
-
-    def set_verbose(self, is_activated):
-        self._verbose = is_activated
-
-    def show_opening_message(self):
-        self._show("FLaP v" + flap.__version__ + " -- Flat LaTeX Projects")
-
-    def on_fragment(self, fragment):
-        self.show_fragment(fragment)
-
-    def show_closing_message(self):
-        self._show("Flatten complete.")
-
-    def report_missing_graphic(self, fragment):
-        self._show("Error: Unable to find graphic file for %s" % fragment.text().strip())
-        self._show("Check %s, line %d" % (fragment.file().fullname(), fragment.line_number()))
-
-    def report_missing_tex_file(self, fragment):
-        self._show("Error: Unable to find LaTeX file referred in '%s'" % fragment.text().strip())
-        self._show("Check %s, line %d" % (fragment.file().fullname(), fragment.line_number()))
-
-    def report_unexpected_error(self, message):
-        self._show("Error: %s" % message)
-
-    def show_fragment(self, fragment):
-        if self._verbose:
-            text = "+ in '%s' line %d: '%s'" % (fragment.file().fullname(), fragment.line_number(), fragment.text().strip())
-            self._show(text)
-
-    def _show(self, message):
-        print(message, file=self._output)
-        
-    def show_usage(self):
-        self._show("Usage: python -m flap <path/to/tex_file> <output/directory>")
-
-
-class Factory:
-    """
-    Encapsulate the construction of FLaP, UI and FileSystem objects
-    """
-
-    def __init__(self, file_system = OSFileSystem(), ui=UI()):
-        self._file_system = file_system
-        self._ui = ui
-        self._flap = Flap(self._file_system, ProcessorFactory(), self._ui)
-
-    def ui(self):
-        return self._ui
-
-    def flap(self):
-        return self._flap
-
+from flap import __version__
+from flap.engine import Settings
+from flap.latex.symbols import SymbolTable
+from flap.latex.parser import Parser, Factory, Context
 
 class Controller:
-    """
-    Controller, as in the Model-View-Controller pattern. Receive commands, and
-    update the view accordingly.
-    """
-    
-    def __init__(self, factory=Factory()):
-        self._ui = factory.ui()
-        self._flap = factory.flap()
-        self._root_file = "main.tex"
-        self._output = TEMP / "flap"
-        self._verbose = False
+
+    def __init__(self, file_system, display):
+        self._file_system = file_system
+        self._display = display
 
     def run(self, arguments):
-        try:
-            self.parse(arguments)
-            self._ui.set_verbose(self._verbose)
-            self._ui.show_opening_message()
-            self._flap.flatten(self._root_file, self._output)
-            self._ui.show_closing_message()
+        self._display.version()
+        self._display.header()
+        settings = self._parse(arguments)
+        self._flatten(settings)
+        self._display.footer(settings._count)
 
-        except IllegalArguments:
-            self._ui.show_usage()
+    @staticmethod
+    def _flatten(flap):
+        factory = Factory(SymbolTable.default())
+        parser = Parser(factory.as_tokens(flap.read_root_tex, str(flap.root_tex_file.resource())), factory, flap, Context())
+        flap.write(parser.rewrite())
 
-        except GraphicNotFound as error:
-            self._ui.report_missing_graphic(error.fragment())
-
-        except TexFileNotFound as error:
-            self._ui.report_missing_tex_file(error.fragment())
-
-        except Exception as error:
-            self._ui.report_unexpected_error(str(error))
-
-    def parse(self, arguments):
-        if len(arguments) < 3 or len(arguments) > 4:
-            raise IllegalArguments("Wrong number of arguments (found %s)" % str(arguments))
-
-        root_set = False
-        for any_argument in arguments:
-            if any_argument == "__main__.py": continue
-            if any_argument in ["-v", "--verbose"]:
-                self._verbose = True
-            elif any_argument.endswith(".tex"):
-                if not root_set:
-                    self._root_file = Path.fromText(any_argument)
-                    root_set = True
-                else:
-                    self._output = Path.fromText(any_argument)
-            else:
-                self._output = Path.fromText(any_argument)
+    def _parse(self, arguments):
+        assert len(arguments) == 3, "Expected 3 arguments, but found %s" % arguments
+        return Settings(file_system=self._file_system,
+                        ui = self._display,
+                        root_tex_file=arguments[1],
+                        output=arguments[2])
 
 
-class IllegalArguments(ValueError):
-    """
-    Raised when FLaP cannot rewrite the the arguments received from the command line
-    """
-    pass
+class Display:
+
+    PADDING = "-"
+
+    FILE_WIDTH = 30
+    LINE_WIDTH = 5
+    COLUMN_WIDTH = 6
+    CODE_WIDTH = 35
+
+    ENTRY = "{file:<%d} {line:>%d} {column:>%d} {code:<%d}\n" % (FILE_WIDTH, LINE_WIDTH, COLUMN_WIDTH, CODE_WIDTH)
+    HEADER = ENTRY.format(file="File", line="Line", column="Column", code="LaTeX Command")
+    SUMMARY = "{count} modification(s)"
+
+    def __init__(self, output):
+        self._output = output
+
+    def version(self):
+        self._output.write("FLaP v%s\n" % __version__)
+
+    def header(self):
+        self._show(self.HEADER)
+        self._show(self._horizontal_line())
+
+    def entry(self, file, line, column, code):
+        escaped_code = code.replace("\n", r"\n")
+        self._show(self.ENTRY, file=file, line=line, column=column, code=escaped_code)
+
+    def footer(self, count):
+        self._show(self._horizontal_line())
+        self._show(self.SUMMARY, count=count)
+
+    def _horizontal_line(self):
+        return self.ENTRY.format(
+                   file=self._pad(self.FILE_WIDTH),
+                   line=self._pad(self.LINE_WIDTH),
+                   column=self._pad(self.COLUMN_WIDTH),
+                   code=self._pad(self.CODE_WIDTH))
+
+    @classmethod
+    def _pad(cls, length):
+        return "".ljust(length, cls.PADDING)
+
+    def _show(self, template, **values):
+        self._output.write(template.format(**values))
 
 
 def main(arguments):

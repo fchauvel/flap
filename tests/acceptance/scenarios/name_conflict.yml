@@ -15,7 +15,7 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-name: conflicting \includegraphics
+name: conflicting resource names
 description: >
    Test that FLaP does properly flatten links to files with the same name, but
     places in different sub directories

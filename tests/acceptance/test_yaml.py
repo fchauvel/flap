@@ -17,12 +17,9 @@
 
 from unittest import TestCase
 
-from io import StringIO
-from flap.ui import UI
 from flap.util.oofs import InMemoryFileSystem
 from flap.util.path import Path, TEMP
 from mock import MagicMock
-from tests.commons import AcceptanceTestRunner
 from tests.latex_project import Fragment, LatexProject, TexFile, a_project, FlapTestCase
 from tests.acceptance.yaml import FileBasedTestRepository, YamlCodec, InvalidYamlTestCase
 
@@ -244,53 +241,6 @@ class TestRepositoryTest(TestCase):
 
     def _create_file(self, path, content):
         self.file_system.create_file(Path.fromText(path), content)
-
-
-class TestRunningTestCase(TestCase):
-
-    def setUp(self):
-        self._directory = TEMP / "flap"
-        self._project_path = self._directory / "test_1" / "project"
-        self._root_tex_file = self._project_path / "main.tex"
-        self._output_path = self._directory / "test_1" / "flatten"
-        self._file_system = InMemoryFileSystem()
-        self._test_case = None
-        self._display = StringIO()
-        self._runner = AcceptanceTestRunner(self._file_system, self._directory, UI(self._display))
-
-    def _run_test(self):
-        assert self._test_case is not None
-        self._test_case.run_with(self._runner)
-
-    def test_running_a_test_case_that_passes(self):
-        self._test_case = FlapTestCase("test 1",
-                                       LatexProject(TexFile("main.tex", "blabla")),
-                                       LatexProject(TexFile("merged.tex", "blabla")))
-
-        try:
-            self._run_test()
-
-        except Exception as e:
-            self.fail("Unexpected exception " + str(e))
-
-    def test_running_a_test_case_that_fails(self):
-        self._test_case = FlapTestCase("test 1",
-                                       LatexProject(TexFile("main.tex", "blabla")),
-                                       LatexProject(TexFile("merged.tex", "blabla blabla")))
-
-        with self.assertRaises(AssertionError):
-            self._run_test()
-
-    def test_running_a_test_case_that_throws_an_exception(self):
-        self._test_case = FlapTestCase("test 1",
-                                       LatexProject(TexFile("main.tex", "blabla")),
-                                       LatexProject(TexFile("merged.tex", "blabla")))
-
-        self._runner._run_flap = MagicMock()
-        self._runner._run_flap.side_effect = Exception()
-
-        with self.assertRaises(Exception):
-            self._run_test()
 
 
 class YamlTest:

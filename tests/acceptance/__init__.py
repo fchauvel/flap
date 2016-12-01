@@ -15,13 +15,12 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+
 from unittest import TestCase, TestSuite, main
 
-from io import StringIO
-from flap.ui import UI
-from flap.util.path import TEMP, Path
+from flap.util.path import Path
 from flap.util.oofs import OSFileSystem
-from tests.commons import AcceptanceTestRunner
+from tests.commons import EndToEndRunner
 from tests.acceptance.yaml import FileBasedTestRepository, YamlCodec
 
 
@@ -36,19 +35,19 @@ class Generator:
             if test_case.is_skipped:
                 this.skipTest("Test skipped, according to its YAML description")
             else:
-                test_case.run_with(self._runner)
+                test_case.run_with2(self._runner)
         return run
 
     def test_class(self):
         test_cases = self._repository.fetch_all()
         methods = { "test " + each_case.name: self.create_execution(each_case) for each_case in test_cases }
-        return type("YAMLTests", (TestCase,), methods)
+        return type("YAMLParserTests", (TestCase,), methods)
 
 
 def load_tests(loader, tests, pattern):
     file_system = OSFileSystem()
-    repository = FileBasedTestRepository(file_system, Path.fromText("tests/acceptance/tests"), YamlCodec())
-    runner = AcceptanceTestRunner(file_system, TEMP / "flap" / "acceptance", UI(StringIO()))
+    repository = FileBasedTestRepository(file_system, Path.fromText("tests/acceptance/scenarios"), YamlCodec())
+    runner = EndToEndRunner(file_system)
     generate = Generator(repository, runner)
     suite = TestSuite()
     tests = loader.loadTestsFromTestCase(generate.test_class())

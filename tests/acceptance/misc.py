@@ -17,13 +17,11 @@
 
 from unittest import TestCase, main as testmain
 
-from flap.ui import UI
 from flap.util.oofs import OSFileSystem
 from flap.util.path import Path, TEMP
 from io import StringIO
 
 from re import search
-from tests.commons import FlapTest, AcceptanceTestRunner
 from tests.latex_project import a_project
 
 
@@ -64,50 +62,6 @@ class OSFileSystemTest(TestCase):
 
         copy = self.fileSystem.open(copy_path)
         self.assertEqual(copy.content(), self.content)
-
-
-class MoreAcceptanceTests(FlapTest):
-
-    def setUp(self):
-        super().setUp()
-        self._display = StringIO()
-        self._runner = AcceptanceTestRunner(self._file_system, TEMP / "flap" , UI(self._display))
-        self._assume = a_project()\
-            .with_main_file(r"\documentclass{article}"
-                            r"\begin{document}"
-                            r"   This is a \LaTeX document!"
-                            r"\end{document}")
-        self._expect = a_project()\
-            .with_merged_file(r"\documentclass{article}"
-                              r"\begin{document}"
-                              r"   This is a \LaTeX document!"
-                              r"\end{document}")
-
-    def _verify_no_error_in_output(self):
-        output = self._display.getvalue()
-        self.assertFalse(search(r"Error:", output), output)
-
-    def test_basic_case(self):
-        self._do_test_and_verify()
-        self._verify_no_error_in_output()
-
-    def test_invoking_locally(self):
-        self._runner._root_file = lambda name: Path.fromText("main.tex")
-
-        self._do_test_and_verify()
-        self._verify_no_error_in_output()
-
-    def test_usage_is_shown(self):
-        self._runner._arguments = lambda name: []
-
-        self._runner._run_flap("whatever")
-
-        output = self._display.getvalue()
-        self.assertNotEqual("", output, "No output detected")
-        self.assertTrue(search(r"Usage\:", output), output)
-        self.assertTrue(search(r"python -m flap <path/to/tex_file> <output/directory>", output), output)
-
-
 
 
 if __name__ == "__main__":
