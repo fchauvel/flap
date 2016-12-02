@@ -20,6 +20,7 @@
 import sys
 
 from flap import __version__
+from flap.util.oofs import OSFileSystem
 from flap.engine import Settings
 from flap.latex.symbols import SymbolTable
 from flap.latex.parser import Parser, Factory, Context
@@ -98,7 +99,7 @@ class Display:
 
 
 def main(arguments):
-    Controller().run(arguments)
+    Controller(OSFileSystem(), Display(sys.stdout)).run(arguments)
 
 if __name__ == "__main__":
     main(sys.argv)  # For compatibility with versions prior to 0.2.3
