@@ -65,6 +65,16 @@ class Settings:
         latex_code =  "".join(str(each_token) for each_token in tokens)
         self._file_system.create_file(self.flattened, latex_code)
 
+    def relocate_class_file(self, class_name, invocation):
+        logger.debug("Copying '" + class_name + " (" + invocation.as_text + ")")
+        self._show_invocation(invocation)
+        try:
+            file = self._find(class_name, [self.root_directory], ["cls"], TexFileNotFound(None))
+            self._file_system.copy(file,
+                                   self.output_directory / file.fullname())
+        except TexFileNotFound:
+            self._display.class_not_found(class_name)
+
     def content_of(self, location, invocation):
         logger.debug("Fetching '" + location + "(" + invocation.as_text + ")")
         self._show_invocation(invocation)
@@ -113,8 +123,6 @@ class Settings:
                     if any_resource.has_extension(any_possible_extension):
                         return any_resource
         raise error
-
-
 
 
 class ResourceNotFound(Exception):

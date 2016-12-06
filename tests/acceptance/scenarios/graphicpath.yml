@@ -56,6 +56,10 @@ expected:
 # Describe what should be reported on the console
 outputs:
   - file: main.tex
+    line: 1
+    column: 1
+    code: \documentclass{article}
+  - file: main.tex
     line: 2
     column: 1
     code: \graphicspath{{./img},{./img2}}

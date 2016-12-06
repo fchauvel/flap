@@ -257,6 +257,18 @@ class ParserTests(TestCase):
 
         self._engine.content_of.assert_called_once_with("my-file", ANY)
 
+    def test_rewriting_document_class(self):
+        self._do_test_with(r"\documentclass{article}"
+                           r"\begin{document}"
+                           r"Not much!"
+                           r"\end{document}",
+                           r"\documentclass{article}"
+                           r"\begin{document}"
+                           r"Not much!"
+                           r"\end{document}")
+
+        self._engine.relocate_class_file.assert_called_once_with("article", ANY)
+
 
 if __name__ == '__main__':
     main()

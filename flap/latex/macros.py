@@ -73,7 +73,6 @@ class Invocation:
         return clone
 
 
-
 class Macro:
     """
     A LaTeX macro, including its name (e.g., '\point'), its signature as a list
@@ -162,6 +161,7 @@ class DocumentClass(Macro):
 
     def _execute(self, parser, invocation):
         class_name = parser.evaluate_as_text(invocation.argument("class"))
+        parser._engine.relocate_class_file(class_name, invocation)
         if class_name == "subfiles":
             parser._capture_until(r"\begin{document}")
             document = parser._capture_until(r"\end{document}")

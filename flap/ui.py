@@ -18,7 +18,6 @@
 #
 
 import sys
-import logging
 
 from flap import __version__, __name__, logger
 from flap.util.oofs import OSFileSystem
@@ -68,6 +67,8 @@ class Display:
     HEADER = ENTRY.format(file="File", line="Line", column="Column", code="LaTeX Command")
     SUMMARY = "{count} modification(s)"
 
+    CLASS_NOT_FOUND = " -> Warning: Could not find class '{name}' locally.\n\n"
+
     def __init__(self, output):
         self._output = output
 
@@ -81,6 +82,9 @@ class Display:
     def entry(self, file, line, column, code):
         escaped_code = code.replace("\n", r"\n")
         self._show(self.ENTRY, file=file, line=line, column=column, code=escaped_code)
+
+    def class_not_found(self, class_name):
+        self._show(self.CLASS_NOT_FOUND, name=class_name)
 
     def footer(self, count):
         self._show(self._horizontal_line())
