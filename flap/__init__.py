@@ -15,5 +15,20 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from logging import getLogger, FileHandler, Formatter, DEBUG
+
+__name__ = "FLaP"
 __version__ = "0.4.2"
 
+
+def _configure_logger():
+    logger = getLogger(__name__)
+    handler = FileHandler("flap.log")
+    formatter = Formatter('%(asctime)s %(levelname)s %(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+    logger.setLevel(DEBUG)
+    return logger
+
+
+logger = _configure_logger()

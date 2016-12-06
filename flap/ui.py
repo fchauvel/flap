@@ -18,12 +18,14 @@
 #
 
 import sys
+import logging
 
-from flap import __version__
+from flap import __version__, __name__, logger
 from flap.util.oofs import OSFileSystem
 from flap.engine import Settings
 from flap.latex.symbols import SymbolTable
 from flap.latex.parser import Parser, Factory, Context
+
 
 class Controller:
 
@@ -45,9 +47,10 @@ class Controller:
         flap.write(parser.rewrite())
 
     def _parse(self, arguments):
+        logger.debug("Command line parameters:" + ", ".join(map(str, arguments)))
         assert len(arguments) == 3, "Expected 3 arguments, but found %s" % arguments
         return Settings(file_system=self._file_system,
-                        ui = self._display,
+                        ui=self._display,
                         root_tex_file=arguments[1],
                         output=arguments[2])
 
@@ -69,7 +72,7 @@ class Display:
         self._output = output
 
     def version(self):
-        self._output.write("FLaP v%s\n" % __version__)
+        self._output.write("%s v%s\n" % (__name__, __version__))
 
     def header(self):
         self._show(self.HEADER)
@@ -101,5 +104,7 @@ class Display:
 def main(arguments):
     Controller(OSFileSystem(), Display(sys.stdout)).run(arguments)
 
+
+# For compatibility with versions prior to 0.2.3
 if __name__ == "__main__":
-    main(sys.argv)  # For compatibility with versions prior to 0.2.3
+    main(sys.argv)

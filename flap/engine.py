@@ -17,6 +17,7 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from flap import logger
 from flap.util.path import Path
 
 
@@ -40,6 +41,7 @@ class Settings:
         return self._file_system.open(self.root_tex_file).container()
 
     def record_graphic_path(self, paths, invocation):
+        logger.debug("Updating graphicpath (" + invocation.as_text + ")")
         self._show_invocation(invocation)
         self._graphic_directories = [self._file_system.open(self.root_directory._path / each) for each in paths]
 
@@ -64,6 +66,7 @@ class Settings:
         self._file_system.create_file(self.flattened, latex_code)
 
     def content_of(self, location, invocation):
+        logger.debug("Fetching '" + location + "(" + invocation.as_text + ")")
         self._show_invocation(invocation)
         file = self._find(location, [self.root_directory], ["tex"], TexFileNotFound(None))
         return file.content()
@@ -75,6 +78,7 @@ class Settings:
         return self._update_link(path, invocation, [self.root_directory], ["bib"], ResourceNotFound(None))
 
     def _update_link(self, path, invocation, location, extensions, error):
+        logger.debug("Updating '" + path + "(" + invocation.as_text + ")")
         self._show_invocation(invocation)
         resource = self._find(path, location, extensions, error)
         new_path = resource._path.relative_to(self.root_directory._path)
@@ -83,6 +87,7 @@ class Settings:
         return str(new_path.without_extension()).replace("/", "_")
 
     def include_only(self, selection, invocation):
+        logger.debug("Restrict inclusion to [" + ", ".join(selection) + "] (" + invocation.as_text + ")")
         self._show_invocation(invocation)
         self._selected_for_inclusion.extend(selection)
 

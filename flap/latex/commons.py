@@ -17,8 +17,6 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from itertools import chain
-
 
 class Source:
     """
@@ -52,17 +50,19 @@ class Stream:
         assert callable(handler), \
             "Stream expect a callable hanlder, but found a '%s" % (type(handler))
         self._handler = handler
+        self._cache = []
 
     def look_ahead(self):
-        next = self._take()
-        self._characters = chain([next], self._characters)
-        return next
+        self._cache.append(self._take())
+        return self._cache[-1]
 
     @property
     def is_empty(self):
         return self.look_ahead() is None
 
     def _take(self):
+        if self._cache:
+            return self._cache.pop()
         try:
             return next(self._characters)
         except StopIteration:
