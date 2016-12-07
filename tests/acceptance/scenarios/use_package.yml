@@ -1,0 +1,62 @@
+#
+# This file is part of Flap.
+#
+# Flap is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Flap is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Flap.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+name: use packages
+description: >
+   Test that FLaP does copy local packages that are refered by the main LaTeX
+   file
+
+# Describe the LaTeX projects, as found on the disk
+project:
+  - path: main.tex
+    content: |
+      \documentclass{article}
+
+      \usepackage{my-package}
+
+      \begin{document}
+      This is an example of \LaTeX document that uses a special command from a
+      local package: \my-command{blabla!}
+      \end{document}
+
+  - path: my-package.sty
+    content: |
+      This is a wonderful package!
+
+# Describe the LaTeX project, once flattened
+expected:
+  - path: merged.tex
+    content: |
+      \documentclass{article}
+
+      \usepackage{my-package}
+
+      \begin{document}
+      This is an example of \LaTeX document that uses a special command from a
+      local package: \my-command{blabla!}
+      \end{document}
+
+  - path: my-package.sty
+    content: |
+      This is a wonderful package!
+
+# Describe what should be reported on the console
+outputs:
+  - file: main.tex
+    line: 1
+    column: 1
+    code: \documentclass{article}

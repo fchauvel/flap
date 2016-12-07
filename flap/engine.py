@@ -62,7 +62,7 @@ class Settings:
         return self.output_directory / "merged.tex"
 
     def write(self, tokens):
-        latex_code =  "".join(str(each_token) for each_token in tokens)
+        latex_code = "".join(str(each_token) for each_token in tokens)
         self._file_system.create_file(self.flattened, latex_code)
 
     def relocate_class_file(self, class_name, invocation):
@@ -74,6 +74,15 @@ class Settings:
                                    self.output_directory / file.fullname())
         except TexFileNotFound:
             self._display.class_not_found(class_name)
+
+    def relocate_package(self, package, invocation):
+        try:
+            file = self._find(package, [self.root_directory], ["sty"], TexFileNotFound(None))
+            self._file_system.copy(file,
+                                   self.output_directory / file.fullname())
+
+        except TexFileNotFound:
+            logger.debug("Could not find package '" + package + ".sty' locally")
 
     def content_of(self, location, invocation):
         logger.debug("Fetching '" + location + "(" + invocation.as_text + ")")

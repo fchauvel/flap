@@ -187,6 +187,25 @@ class Def(Macro):
             invocation.argument("body"))
 
 
+class UsePackage(Macro):
+    """
+    Intercept 'usepackage' commands. It triggers copying the package, if they are
+    defined locally.
+    """
+
+    def __init__(self):
+        super().__init__(r"\usepackage", None, None)
+
+    def _capture_arguments(self, parser, invocation):
+        invocation.append_argument("options", parser.optional_arguments())
+        invocation.append_argument("package", parser._capture_one())
+
+    def _execute(self, parser, invocation):
+        package = parser.evaluate_as_text(invocation.argument("package"))
+        parser._engine.relocate_package(package, invocation)
+        return invocation.as_tokens
+
+
 class TexFileInclusion(Macro):
 
     def __init__(self, name):
