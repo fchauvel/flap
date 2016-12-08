@@ -312,6 +312,19 @@ class Bibliography(UpdateLink):
         return parser._engine.update_link_to_bibliography(link, invocation)
 
 
+class BibliographyStyle(UpdateLink):
+    """
+    Intercept the `\includegraphics` directive
+    """
+
+    def __init__(self):
+        super().__init__(r"\bibliographystyle")
+
+    def update_link(self, parser, link, invocation):
+        return parser._engine.update_link_to_bibliography_style(link, invocation)
+
+
+
 class GraphicsPath(Macro):
 
     def __init__(self):

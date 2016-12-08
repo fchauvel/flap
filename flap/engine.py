@@ -90,11 +90,14 @@ class Settings:
         file = self._find(location, [self.root_directory], ["tex"], TexFileNotFound(None))
         return file.content()
 
-    def update_link(self, path, invocation, ):
+    def update_link(self, path, invocation):
         return self._update_link(path, invocation, self.graphics_directory, ["pdf", "png", "jpeg"], GraphicNotFound(None))
 
-    def update_link_to_bibliography(self, path, invocation, ):
+    def update_link_to_bibliography(self, path, invocation):
         return self._update_link(path, invocation, [self.root_directory], ["bib"], ResourceNotFound(None))
+
+    def update_link_to_bibliography_style(self, path, invocation):
+        return self._update_link(path, invocation, [self.root_directory], ["bst"], ResourceNotFound(None))
 
     def _update_link(self, path, invocation, location, extensions, error):
         logger.debug("Updating '" + path + "(" + invocation.as_text + ")")

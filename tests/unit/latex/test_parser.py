@@ -282,5 +282,13 @@ class ParserTests(TestCase):
         self._engine.relocate_package.assert_called_once_with("my-package", ANY)
 
 
+    def test_rewriting_bibliography_style(self):
+        self._engine.update_link_to_bibliography_style.return_value = "my-style"
+        self._do_test_with(r"\bibliographystyle{my-style}",
+                           r"\bibliographystyle{my-style}")
+
+        self._engine.update_link_to_bibliography_style.assert_called_once_with("my-style", ANY)
+
+
 if __name__ == '__main__':
     main()

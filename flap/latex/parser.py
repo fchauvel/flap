@@ -88,6 +88,7 @@ class Parser:
         self._definitions[r"\include"] = Include()
         self._definitions[r"\includeonly"] = IncludeOnly()
         self._definitions[r"\bibliography"] = Bibliography()
+        self._definitions[r"\bibliographystyle"] = BibliographyStyle()
         self._definitions[r"\subfile"] = SubFile()
         self._definitions[r"\includegraphics"] = IncludeGraphics()
         self._definitions[r"\graphicspath"] = GraphicsPath()
