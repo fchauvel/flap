@@ -17,6 +17,7 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import re
 from copy import copy
 
 
@@ -206,6 +207,34 @@ class UsePackage(Macro):
         return invocation.as_tokens
 
 
+class MakeIndex(Macro):
+    """
+    Intercept 'makeindex' commands. It triggers copying the index style file,
+    if they are it can be found locally.
+    """
+
+    def __init__(self):
+        super().__init__(r"\makeindex", None, None)
+
+    def _capture_arguments(self, parser, invocation):
+        invocation.append_argument("options", parser.optional_arguments())
+
+    def _fetch_style_file(self, parser, invocation):
+        text = parser.evaluate_as_text(invocation.argument("options"))
+        for each in text.strip()[1:-1].split(","):
+            key, value = each.split("=")
+            options = re.split("(-\w\s)", value)
+            for index in range(len(options)):
+                if "-s" in options[index]:
+                    return options[index+1]
+        return None
+
+    def _execute(self, parser, invocation):
+        style_file = self._fetch_style_file(parser, invocation)
+        new_style_file = parser._engine.update_link_to_index_style(style_file, invocation)
+        return invocation.as_text.replace(style_file, new_style_file)
+
+
 class TexFileInclusion(Macro):
 
     def __init__(self, name):
@@ -322,6 +351,7 @@ class BibliographyStyle(UpdateLink):
 
     def update_link(self, parser, link, invocation):
         return parser._engine.update_link_to_bibliography_style(link, invocation)
+
 
 
 

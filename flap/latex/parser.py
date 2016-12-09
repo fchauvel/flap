@@ -94,6 +94,7 @@ class Parser:
         self._definitions[r"\graphicspath"] = GraphicsPath()
         self._definitions[r"\def"] = Def()
         self._definitions[r"\begin"] = Begin()
+        self._definitions[r"\makeindex"] = MakeIndex()
 
     def _spawn(self, tokens, environment):
         new_environment = Context(self._definitions)
@@ -150,7 +151,13 @@ class Parser:
         return self._definitions[parameter]
 
     def evaluate_as_text(self, tokens):
-        return self._as_text(self._spawn(tokens, dict())._evaluate_one())
+        return self._as_text(self._spawn(tokens, dict()).evaluate())
+
+    def evaluate(self):
+        result = []
+        while not self._tokens.is_empty:
+            result += self._evaluate_one()
+        return result
 
     def _evaluate_one(self):
         self._abort_on_end_of_text()

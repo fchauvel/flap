@@ -99,6 +99,9 @@ class Settings:
     def update_link_to_bibliography_style(self, path, invocation):
         return self._update_link(path, invocation, [self.root_directory], ["bst"], ResourceNotFound(None))
 
+    def update_link_to_index_style(self, path, invocation):
+        return self._update_link(path, invocation, [self.root_directory], ["ist"], ResourceNotFound(path)) + ".ist"
+
     def _update_link(self, path, invocation, location, extensions, error):
         logger.debug("Updating '" + path + "(" + invocation.as_text + ")")
         self._show_invocation(invocation)

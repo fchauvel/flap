@@ -289,6 +289,13 @@ class ParserTests(TestCase):
 
         self._engine.update_link_to_bibliography_style.assert_called_once_with("my-style", ANY)
 
+    def test_rewriting_make_index(self):
+        self._engine.update_link_to_index_style.return_value = "my-style.ist"
+        self._do_test_with("\\makeindex[columns=3, title=Alphabetical Index,\n options= -s my-style.ist]",
+                           "\\makeindex[columns=3, title=Alphabetical Index,\n options= -s my-style.ist]")
+
+        self._engine.update_link_to_index_style.assert_called_once_with("my-style.ist", ANY)
+
 
 if __name__ == '__main__':
     main()
