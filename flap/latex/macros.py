@@ -21,6 +21,23 @@ import re
 from copy import copy
 
 
+def all_macros():
+    return [DocumentClass(),
+            UsePackage(),
+            RequirePackage(),
+            Input(),
+            Include(),
+            IncludeOnly(),
+            Bibliography(),
+            BibliographyStyle(),
+            SubFile(),
+            IncludeGraphics(),
+            GraphicsPath(),
+            Def(),
+            Begin(),
+            MakeIndex()]
+
+
 class Invocation:
     """
     The invocation of a LaTeX command, including the name of the command, and its
@@ -84,6 +101,10 @@ class Macro:
         self._name = name
         self._signature = signature
         self._body = body
+
+    @property
+    def name(self):
+        return self._name
 
     def invoke(self, parser):
         invocation = self._parse(parser)
@@ -188,14 +209,14 @@ class Def(Macro):
             invocation.argument("body"))
 
 
-class UsePackage(Macro):
+class PackageReference(Macro):
     """
     Intercept 'usepackage' commands. It triggers copying the package, if they are
     defined locally.
     """
 
-    def __init__(self):
-        super().__init__(r"\usepackage", None, None)
+    def __init__(self, name):
+        super().__init__(name, None, None)
 
     def _capture_arguments(self, parser, invocation):
         invocation.append_argument("options", parser.optional_arguments())
@@ -205,6 +226,26 @@ class UsePackage(Macro):
         package = parser.evaluate_as_text(invocation.argument("package"))
         parser._engine.relocate_package(package, invocation)
         return invocation.as_tokens
+
+
+class UsePackage(PackageReference):
+    """
+    Intercept 'usepackage' commands. It triggers copying the package, if it is
+    defined locally.
+    """
+
+    def __init__(self):
+        super().__init__(r"\usepackage")
+
+
+class RequirePackage(PackageReference):
+    """
+    Intercept 'RequirePackage' commands. It triggers copying the package, if it is
+    defined locally.
+    """
+
+    def __init__(self):
+        super().__init__(r"\RequirePackage")
 
 
 class MakeIndex(Macro):

@@ -19,7 +19,7 @@
 
 from flap.latex.commons import Stream, Source
 from flap.latex.lexer import Lexer
-from flap.latex.macros import *
+from flap.latex.macros import Macro, all_macros
 
 
 class Context:
@@ -82,19 +82,8 @@ class Parser:
         self._set_builtin_definitions()
 
     def _set_builtin_definitions(self):
-        self._definitions[r"\documentclass"] = DocumentClass()
-        self._definitions[r"\usepackage"] = UsePackage()
-        self._definitions[r"\input"] = Input()
-        self._definitions[r"\include"] = Include()
-        self._definitions[r"\includeonly"] = IncludeOnly()
-        self._definitions[r"\bibliography"] = Bibliography()
-        self._definitions[r"\bibliographystyle"] = BibliographyStyle()
-        self._definitions[r"\subfile"] = SubFile()
-        self._definitions[r"\includegraphics"] = IncludeGraphics()
-        self._definitions[r"\graphicspath"] = GraphicsPath()
-        self._definitions[r"\def"] = Def()
-        self._definitions[r"\begin"] = Begin()
-        self._definitions[r"\makeindex"] = MakeIndex()
+        for each_macro in all_macros():
+            self._definitions[each_macro.name] = each_macro
 
     def _spawn(self, tokens, environment):
         new_environment = Context(self._definitions)
