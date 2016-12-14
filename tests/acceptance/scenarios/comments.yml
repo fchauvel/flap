@@ -41,9 +41,3 @@ expected:
       Here is some nice text, powered by \LaTeX.
       % \input{result.tex}
       \end{document}
-
-outputs:
-  - file: main.tex
-    line: 1
-    column: 1
-    code: \documentclass{article}

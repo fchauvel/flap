@@ -267,25 +267,25 @@ class ParserTests(TestCase):
                            r"Not much!"
                            r"\end{document}")
 
-        self._engine.relocate_class_file.assert_called_once_with("article", ANY)
+        self._engine.relocate_dependency.assert_called_once_with("article", ANY)
 
     def test_rewriting_usepackage(self):
         self._do_test_with(r"\usepackage{my-package}",
                            r"\usepackage{my-package}")
 
-        self._engine.relocate_package.assert_called_once_with("my-package", ANY)
+        self._engine.relocate_dependency.assert_called_once_with("my-package", ANY)
 
     def test_rewriting_usepackage_with_options(self):
         self._do_test_with(r"\usepackage[length=3cm,width=2cm]{my-package}",
                            r"\usepackage[length=3cm,width=2cm]{my-package}")
 
-        self._engine.relocate_package.assert_called_once_with("my-package", ANY)
+        self._engine.relocate_dependency.assert_called_once_with("my-package", ANY)
 
     def test_rewriting_usepackage_with_options(self):
         self._do_test_with(r"\RequirePackage[length=3cm,width=2cm]{my-package}",
                            r"\RequirePackage[length=3cm,width=2cm]{my-package}")
 
-        self._engine.relocate_package.assert_called_once_with("my-package", ANY)
+        self._engine.relocate_dependency.assert_called_once_with("my-package", ANY)
 
 
 

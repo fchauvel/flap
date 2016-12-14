@@ -183,7 +183,7 @@ class DocumentClass(Macro):
 
     def _execute(self, parser, invocation):
         class_name = parser.evaluate_as_text(invocation.argument("class"))
-        parser._engine.relocate_class_file(class_name, invocation)
+        parser._engine.relocate_dependency(class_name, invocation)
         if class_name == "subfiles":
             parser._capture_until(r"\begin{document}")
             document = parser._capture_until(r"\end{document}")
@@ -211,8 +211,8 @@ class Def(Macro):
 
 class PackageReference(Macro):
     """
-    Intercept 'usepackage' commands. It triggers copying the package, if they are
-    defined locally.
+    Abstract commands that load a package, either locally or from those installed
+    with LaTeX (e.g., usepackage or RequirePackage).
     """
 
     def __init__(self, name):
@@ -224,7 +224,7 @@ class PackageReference(Macro):
 
     def _execute(self, parser, invocation):
         package = parser.evaluate_as_text(invocation.argument("package"))
-        parser._engine.relocate_package(package, invocation)
+        parser._engine.relocate_dependency(package, invocation)
         return invocation.as_tokens
 
 

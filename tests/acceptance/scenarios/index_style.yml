@@ -59,10 +59,6 @@ expected:
 # Describe what should be reported on the console
 outputs:
   - file: main.tex
-    line: 1
-    column: 1
-    code: \documentclass{article}
-  - file: main.tex
     line: 3
     column: 1
     code: \makeindex[columns=2, title=Alphabetical Index,\n           options= -s my-style.ist]

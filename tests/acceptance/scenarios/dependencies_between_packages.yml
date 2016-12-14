@@ -16,7 +16,7 @@
 #
 
 name: dependencies between packages
-skipped: True
+skipped: False
 description: >
    Test that FLaP does search for dependencies in classes and packages that
    are imported through directives such as \usepackage or \RequirePackage.
@@ -35,7 +35,7 @@ project:
     content: |
       \RequirePackage{copyright}
 
-  - path: style/copyright.sty
+  - path: copyright.sty
     content: |
       \RequirePackage{fontenc}
 
@@ -54,7 +54,7 @@ expected:
     content: |
       \RequirePackage{copyright}
 
-  - path: style/copyright.sty
+  - path: copyright.sty
     content: |
       \RequirePackage{fontenc}
 
@@ -64,7 +64,7 @@ outputs:
     line: 1
     column: 1
     code: \documentclass{my-article}
-  - file: my-article.tex
+  - file: my-article.cls
     line: 1
     column: 1
     code: \RequirePackage{copyright}

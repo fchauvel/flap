@@ -72,7 +72,3 @@ outputs:
     line: 5
     column: 1
     code: \bibliography{biblio/mybib}
-  - file: main.tex
-    line: 1
-    column: 1
-    code: \documentclass{article}

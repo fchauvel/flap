@@ -51,10 +51,6 @@ expected:
 
 outputs:
   - file: main.tex
-    line: 1
-    column: 1
-    code: \documentclass{article}
-  - file: main.tex
     line: 4
     column: 3
     code: \includegraphics{img/result.pdf}

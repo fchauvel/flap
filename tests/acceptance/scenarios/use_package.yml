@@ -57,6 +57,6 @@ expected:
 # Describe what should be reported on the console
 outputs:
   - file: main.tex
-    line: 1
+    line: 3
     column: 1
-    code: \documentclass{article}
+    code: \usepackage{my-package}

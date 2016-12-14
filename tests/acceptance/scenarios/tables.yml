@@ -74,9 +74,3 @@ expected:
         \label{tab:example}
       \end{table}
       \end{document}
-
-outputs:
-  - file: main.tex
-    line: 1
-    column: 1
-    code: \documentclass{article}

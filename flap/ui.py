@@ -22,8 +22,6 @@ import sys
 from flap import __version__, __name__, logger
 from flap.util.oofs import OSFileSystem
 from flap.engine import Settings
-from flap.latex.symbols import SymbolTable
-from flap.latex.parser import Parser, Factory, Context
 
 
 class Controller:
@@ -35,17 +33,11 @@ class Controller:
     def run(self, arguments):
         self._display.version()
         self._display.header()
-        settings = self._parse(arguments)
-        self._flatten(settings)
-        self._display.footer(settings._count)
+        request = self._read_request_from(arguments)
+        request.execute()
+        self._display.footer(request._count)
 
-    @staticmethod
-    def _flatten(flap):
-        factory = Factory(SymbolTable.default())
-        parser = Parser(factory.as_tokens(flap.read_root_tex, str(flap.root_tex_file.resource())), factory, flap, Context())
-        flap.write(parser.rewrite())
-
-    def _parse(self, arguments):
+    def _read_request_from(self, arguments):
         logger.debug("Command line parameters:" + ", ".join(map(str, arguments)))
         assert len(arguments) == 3, "Expected 3 arguments, but found %s" % arguments
         return Settings(file_system=self._file_system,

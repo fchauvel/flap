@@ -67,10 +67,6 @@ expected:
 
 outputs:
   - file: main.tex
-    line: 1
-    column: 1
-    code: \documentclass{article}
-  - file: main.tex
     line: 7
     column: 5
     code: \includegraphics[width=3cm]{img/exp_1/result}

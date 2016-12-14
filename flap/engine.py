@@ -19,6 +19,9 @@
 
 from flap import logger
 from flap.util.path import Path
+from flap.latex.symbols import SymbolTable
+from flap.latex.parser import Parser, Factory, Context
+
 
 
 class Settings:
@@ -31,6 +34,7 @@ class Settings:
         self._count = 0
         self._selected_for_inclusion = []
         self._graphic_directories = []
+        self._analysed_dependencies = []
 
     @property
     def root_tex_file(self):
@@ -61,28 +65,33 @@ class Settings:
     def flattened(self):
         return self.output_directory / "merged.tex"
 
-    def write(self, tokens):
+    def execute(self):
+        flattened = self._rewrite(self.read_root_tex, str(self.root_tex_file.resource()))
+        self._write(flattened)
+
+    def _rewrite(self, text, source):
+        factory = Factory(SymbolTable.default())
+        parser = Parser(factory.as_tokens(text, source),
+                        factory, self, Context())
+        return parser.rewrite()
+
+    def _write(self, tokens):
         latex_code = "".join(str(each_token) for each_token in tokens)
         self._file_system.create_file(self.flattened, latex_code)
 
-    def relocate_class_file(self, class_name, invocation):
-        logger.debug("Copying '" + class_name + " (" + invocation.as_text + ")")
-        self._show_invocation(invocation)
-        try:
-            file = self._find(class_name, [self.root_directory], ["cls"], TexFileNotFound(None))
-            self._file_system.copy(file,
-                                   self.output_directory / file.fullname())
-        except TexFileNotFound:
-            self._display.class_not_found(class_name)
+    def relocate_dependency(self, dependency, invocation):
+        if dependency not in self._analysed_dependencies:
+            self._analysed_dependencies.append(dependency)
+            try:
+                file = self._find(dependency, [self.root_directory], ["sty", "cls"], TexFileNotFound(None))
+                self._file_system.copy(file,
+                                       self.output_directory / file.fullname())
 
-    def relocate_package(self, package, invocation):
-        try:
-            file = self._find(package, [self.root_directory], ["sty"], TexFileNotFound(None))
-            self._file_system.copy(file,
-                                   self.output_directory / file.fullname())
+                self._show_invocation(invocation)
+                self._rewrite(file.content(), file.fullname())
 
-        except TexFileNotFound:
-            logger.debug("Could not find package '" + package + ".sty' locally")
+            except TexFileNotFound:
+                logger.debug("Could not find class or package '" + dependency + " locally")
 
     def content_of(self, location, invocation):
         logger.debug("Fetching '" + location + "(" + invocation.as_text + ")")
