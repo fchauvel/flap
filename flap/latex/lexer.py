@@ -80,10 +80,10 @@ class Lexer:
         marker = self._take()
         location = self._position
         assert marker in self._symbols.CONTROL
-        if not self._next.isalpha():
+        if not self._next in self._symbols.CHARACTER:
             name = self._take()
         else:
-            name = self._take_while(lambda c: c.isalpha())
+            name = self._take_while(lambda c: c in self._symbols.CHARACTER)
         return self._tokens.command(location, marker + name)
 
     def _take_while(self, predicate):
@@ -150,3 +150,9 @@ class Lexer:
         location = self._position
         assert marker in self._symbols.NON_BREAKING_SPACE
         return self._tokens.non_breaking_space(location, marker)
+
+    def _read_others(self):
+        marker = self._input.take()
+        location = self._position
+        #assert marker in self._symbols.OTHERS
+        return self._tokens.others(location, marker)

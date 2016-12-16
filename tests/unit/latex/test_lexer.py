@@ -103,11 +103,11 @@ class LexerTests(TestCase):
                             self._tokens.parameter(Position(1, 11), "#1"),
                             self._tokens.parameter(Position(1, 13),"#2"),
                             self._tokens.begin_group(Position(1, 15), "{"),
-                            self._tokens.character(Position(1, 16), "("),
+                            self._tokens.others(Position(1, 16), "("),
                             self._tokens.parameter(Position(1, 17),"#2"),
-                            self._tokens.character(Position(1, 19), ","),
+                            self._tokens.others(Position(1, 19), ","),
                             self._tokens.parameter(Position(1, 20), "#1"),
-                            self._tokens.character(Position(1, 22), ")"),
+                            self._tokens.others(Position(1, 22), ")"),
                             self._tokens.end_group(Position(1, 23), "}"))
 
     def test_recognises_math_mode(self):

@@ -69,8 +69,8 @@ class Settings:
         flattened = self._rewrite(self.read_root_tex, str(self.root_tex_file.resource()))
         self._write(flattened)
 
-    def _rewrite(self, text, source):
-        factory = Factory(SymbolTable.default())
+    def _rewrite(self, text, source, symbol_table=SymbolTable.default()):
+        factory = Factory(symbol_table)
         parser = Parser(factory.as_tokens(text, source),
                         factory, self, Context())
         return parser.rewrite()
@@ -88,7 +88,9 @@ class Settings:
                                        self.output_directory / file.fullname())
 
                 self._show_invocation(invocation)
-                self._rewrite(file.content(), file.fullname())
+                symbol_table = SymbolTable.default()
+                symbol_table.CHARACTER += '@'
+                self._rewrite(file.content(), file.fullname(), symbol_table)
 
             except TexFileNotFound:
                 logger.debug("Could not find class or package '" + dependency + " locally")

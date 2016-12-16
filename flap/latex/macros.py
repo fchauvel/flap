@@ -145,8 +145,11 @@ class Macro:
                self._body == other._body
 
     def __repr__(self):
-        signature = "".join(str(each_token) for each_token in self._signature)
-        body = "".join(str(each_token) for each_token in self._body)
+        signature, body = "", ""
+        if signature:
+            signature = "".join(str(each_token) for each_token in self._signature)
+        if body:
+            body = "".join(str(each_token) for each_token in self._body)
         return r"\def" + self._name + signature + body
 
 

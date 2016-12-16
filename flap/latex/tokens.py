@@ -153,3 +153,7 @@ class TokenFactory:
     def non_breaking_space(self, location, text=None):
         text = text if text else self._symbols.get(Symbol.NON_BREAKING_SPACE)
         return Token(text, Symbol.NON_BREAKING_SPACE, location)
+
+    def others(self, location, text=None):
+        text = text if text else self._symbols.get(Symbol.OTHERS)
+        return Token(text, Symbol.OTHERS, location)

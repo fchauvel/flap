@@ -31,10 +31,11 @@ class Symbol(Enum):
     MATH = 6
     NEW_LINE = 7
     NON_BREAKING_SPACE = 8
-    PARAMETER = 9
-    SUBSCRIPT = 10
-    SUPERSCRIPT = 11
-    WHITE_SPACES = 12
+    OTHERS = 9
+    PARAMETER = 10
+    SUBSCRIPT = 11
+    SUPERSCRIPT = 12
+    WHITE_SPACES = 13
 
 
 class SymbolTable:
@@ -43,9 +44,14 @@ class SymbolTable:
     """
 
     @staticmethod
+    def character_range(start, end):
+        return [chr(code) for code in range(ord(start), ord(end)+1)]
+
+    @staticmethod
     def default():
         return SymbolTable({
             Symbol.BEGIN_GROUP: ["{"],
+            Symbol.CHARACTER: SymbolTable.character_range('a', 'z') + SymbolTable.character_range('A', 'Z'),
             Symbol.COMMENT: ["%"],
             Symbol.CONTROL: ["\\"],
             Symbol.END_GROUP: ["}"],
@@ -76,7 +82,7 @@ class SymbolTable:
         for category, markers in self._symbols.items():
             if character in markers:
                 return category
-        return Symbol.CHARACTER
+        return Symbol.OTHERS
 
     @property
     def end_of_text(self):

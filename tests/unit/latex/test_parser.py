@@ -144,6 +144,13 @@ class ParserTests(TestCase):
                            r"")
         self.assertEqual(self._macro(r"\foo", "", "{X}"), self._environment[r"\foo"])
 
+    def test_defining_internal_macro(self):
+        self._symbols.CHARACTER += "@"
+        self._do_test_with(r"\def\internal@foo{\internal@bar} \internal@foo",
+                           r" \internal@bar")
+        self.assertEqual(self._macro(r"\internal@foo", "", r"{\internal@bar}"), self._environment[r"\internal@foo"])
+
+
     def test_defining_a_macro_with_one_parameter(self):
         self._do_test_with(r"\def\foo#1{X}",
                            r"")
