@@ -16,6 +16,7 @@
 #
 
 from io import StringIO
+from argparse import Namespace
 
 from flap import __version__
 from flap.util.path import Path
@@ -51,8 +52,7 @@ class EndToEndRunner:
 
     def _execute(self, test_case):
         self._file_system.move_to_directory(self._path_for(test_case))
-        main_tex_file = "./project/main.tex"
-        self._controller.run(["__main.py__", main_tex_file, "output"])
+        self._controller.run(Namespace(file="./project/main.tex", output="output"))
 
     def _verify(self, test_case):
         self._verify_generated_files(test_case)

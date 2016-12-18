@@ -18,6 +18,7 @@
 #
 
 import sys
+import argparse
 
 from flap import __version__, __name__, logger
 from flap.util.oofs import OSFileSystem
@@ -38,12 +39,10 @@ class Controller:
         self._display.footer(request._count)
 
     def _read_request_from(self, arguments):
-        logger.debug("Command line parameters:" + ", ".join(map(str, arguments)))
-        assert len(arguments) == 3, "Expected 3 arguments, but found %s" % arguments
         return Settings(file_system=self._file_system,
                         ui=self._display,
-                        root_tex_file=arguments[1],
-                        output=arguments[2])
+                        root_tex_file=arguments.file,
+                        output=arguments.output)
 
 
 class Display:
@@ -97,10 +96,16 @@ class Display:
         self._output.write(template.format(**values))
 
 
-def main(arguments):
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('file', help='Path to the tex file.')
+    parser.add_argument('output-dir', dest='output', help='Path to the output directory.')
+
+    arguments = parser.parse_args()
+
     Controller(OSFileSystem(), Display(sys.stdout)).run(arguments)
 
 
 # For compatibility with versions prior to 0.2.3
 if __name__ == "__main__":
-    main(sys.argv)
+    main()

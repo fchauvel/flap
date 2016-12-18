@@ -46,7 +46,7 @@ setup(name='FLaP',
                     ],
      entry_points = {
          'console_scripts': [
-             'flap = flap.__main__'
+             'flap = flap.ui:main'
          ]
      }
      )

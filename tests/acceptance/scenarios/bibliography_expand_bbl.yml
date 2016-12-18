@@ -15,10 +15,10 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-name: Bibliography in a sub-directory
+name: expand bbl
+skipped: True
 description: >
-   Test that FLaP does properly flatten a document whose bibliography
-   is a BibTeX file stored in a sub-directory
+   Test that FLaP does properly replace a bibtex directive with the contents of the rendered bbl file.
 
 # Describe the LaTeX projects, as found on the disk
 project:
