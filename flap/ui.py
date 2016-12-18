@@ -99,7 +99,7 @@ class Display:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('file', help='Path to the tex file.')
-    parser.add_argument('output-dir', dest='output', help='Path to the output directory.')
+    parser.add_argument('output', help='Path to the output directory.')
 
     arguments = parser.parse_args()
 
