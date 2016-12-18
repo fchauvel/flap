@@ -36,7 +36,7 @@ setup.py install`
 Use FLaP in the command line:
 
 ----
-$> python3 -m flap project/main.tex output/directory
+$> flap project/main.tex output/directory
 ----
 
 See also the link:https://pythonhosted.org/FLaP/[online FLaP documentation].
