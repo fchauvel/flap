@@ -1,0 +1,93 @@
+#
+# This file is part of Flap.
+#
+# Flap is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Flap is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Flap.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+name: Bibliography in a sub-directory
+description: >
+   Test that FLaP does properly flatten a document whose bibliography
+   is a BibTeX file stored in a sub-directory
+
+# Describe the LaTeX projects, as found on the disk
+project:
+  - path: main.tex
+    content: |
+      \documentclass{article}
+
+      \begin{document}
+      This is an example with a citation \cite{BA1991}
+      \bibliographystyle{unsrt}
+      \bibliography{biblio/mybib}
+      \end{document}
+
+  - path: main.bbl
+    content: |
+      \begin{thebibliography}{1}
+
+      \bibitem{BA1999}
+      Albert-L\'{a}szl\'{o} Barab\'{a}si and R\'{e}ka Albert.
+      \newblock Emergence of scaling in random networks.
+      \newblock {\em Science}, 286(5439):509--512, 1999.
+
+      \end{thebibliography}
+
+  - path: main.bib
+    content: |
+      @Article{BA1999,
+         Title                    = {Emergence of Scaling in Random Networks},
+         Author                   = {Barab\'{a}si, Albert-L\'{a}szl\'{o} and Albert, R\'{e}ka},
+         Journal                  = {Science},
+         Year                     = {1999},
+         Number                   = {5439},
+         Pages                    = {509-512},
+         Volume                   = {286},
+      }
+
+# Describe the LaTeX project, once flattened
+expected:
+  - path: merged.tex
+    content: |
+      \documentclass{article}
+
+      \begin{document}
+      This is an example with a citation \cite{BA1991}
+      \begin{thebibliography}{1}
+
+      \bibitem{BA1999}
+      Albert-L\'{a}szl\'{o} Barab\'{a}si and R\'{e}ka Albert.
+      \newblock Emergence of scaling in random networks.
+      \newblock {\em Science}, 286(5439):509--512, 1999.
+
+      \end{thebibliography}
+      \end{document}
+
+  - path: main.bib
+    content: |
+      @Article{BA1999,
+         Title                    = {Emergence of Scaling in Random Networks},
+         Author                   = {Barab\'{a}si, Albert-L\'{a}szl\'{o} and Albert, R\'{e}ka},
+         Journal                  = {Science},
+         Year                     = {1999},
+         Number                   = {5439},
+         Pages                    = {509-512},
+         Volume                   = {286},
+      }
+
+# Describe what should be reported on the console
+outputs:
+  - file: main.tex
+    line: 5
+    column: 1
+    code: \bibliographystyle{unsrt}\n\bibliography{biblio/mybib}
