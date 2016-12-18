@@ -375,7 +375,7 @@ class IncludeGraphics(UpdateLink):
 
 class Bibliography(UpdateLink):
     """
-    Intercept the `\includegraphics` directive
+    Intercept the `\bibliography` directive
     """
 
     def __init__(self):
@@ -387,7 +387,7 @@ class Bibliography(UpdateLink):
 
 class BibliographyStyle(UpdateLink):
     """
-    Intercept the `\includegraphics` directive
+    Intercept the `\bibliographystyle` directive
     """
 
     def __init__(self):
@@ -397,9 +397,10 @@ class BibliographyStyle(UpdateLink):
         return parser._engine.update_link_to_bibliography_style(link, invocation)
 
 
-
-
 class GraphicsPath(Macro):
+    """
+    Intercept the `\graphicspath` directive
+    """
 
     def __init__(self):
         super().__init__(r"\graphicspath", None, None)

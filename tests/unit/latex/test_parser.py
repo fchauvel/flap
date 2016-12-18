@@ -18,7 +18,7 @@
 #
 
 from unittest import TestCase, main
-from mock import MagicMock, ANY
+from unittest.mock import MagicMock, ANY
 
 from flap.latex.symbols import SymbolTable
 from flap.latex.tokens import TokenFactory
