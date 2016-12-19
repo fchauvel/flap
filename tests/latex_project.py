@@ -168,14 +168,14 @@ class Fragment:
 
 class FlapTestCase:
 
-    def __init__(self, name, project, expected, skipped=False, output=[]):
+    def __init__(self, name, project, expected, skipped=False, output=None):
         if not len or len(name) == 0:
             raise ValueError("Invalid test case name (found '%s')" % name)
         self._name = name
         self._project = project
         self._expected = expected
         self._is_skipped = skipped
-        self._output = output
+        self._output = output or []
 
     @property
     def name(self):

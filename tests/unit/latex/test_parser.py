@@ -288,14 +288,6 @@ class ParserTests(TestCase):
 
         self._engine.relocate_dependency.assert_called_once_with("my-package", ANY)
 
-    def test_rewriting_usepackage_with_options(self):
-        self._do_test_with(r"\RequirePackage[length=3cm,width=2cm]{my-package}",
-                           r"\RequirePackage[length=3cm,width=2cm]{my-package}")
-
-        self._engine.relocate_dependency.assert_called_once_with("my-package", ANY)
-
-
-
     def test_rewriting_bibliography_style(self):
         self._engine.update_link_to_bibliography_style.return_value = "my-style"
         self._do_test_with(r"\bibliographystyle{my-style}",
