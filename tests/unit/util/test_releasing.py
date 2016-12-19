@@ -19,7 +19,7 @@ from distutils.dist import Distribution
 from unittest import TestCase, main
 
 from flap.util.releasing import Version, Release, SourceControl
-from mock import MagicMock, call, patch, ANY, mock_open
+from unittest.mock import MagicMock, call, patch, ANY, mock_open
 
 
 class VersionTest(TestCase):

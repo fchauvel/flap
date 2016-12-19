@@ -19,7 +19,7 @@ from unittest import TestCase
 
 from flap.util.oofs import InMemoryFileSystem
 from flap.util.path import Path, TEMP
-from mock import MagicMock
+from unittest.mock import MagicMock
 from tests.latex_project import Fragment, LatexProject, TexFile, a_project, FlapTestCase
 from tests.acceptance.yaml import FileBasedTestRepository, YamlCodec, InvalidYamlTestCase
 
@@ -371,5 +371,3 @@ class YamlTest:
                 "expected:\n"
                 "  - path: rewritten.tex\n"
                 "    content: blabla\n").format(name=test_name)
-
-
