@@ -18,9 +18,9 @@
 from unittest import TestCase
 
 from flap.util.oofs import InMemoryFileSystem
-from flap.util.path import Path, TEMP
+from flap.util.path import Path
 from unittest.mock import MagicMock
-from tests.latex_project import Fragment, LatexProject, TexFile, a_project, FlapTestCase
+from tests.latex_project import Fragment, a_project, FlapTestCase
 from tests.acceptance.yaml import FileBasedTestRepository, YamlCodec, InvalidYamlTestCase
 
 

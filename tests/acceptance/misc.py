@@ -18,11 +18,7 @@
 from unittest import TestCase, main as testmain
 
 from flap.util.oofs import OSFileSystem
-from flap.util.path import Path, TEMP
-from io import StringIO
-
-from re import search
-from tests.latex_project import a_project
+from flap.util.path import TEMP
 
 
 class OSFileSystemTest(TestCase):
