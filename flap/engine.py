@@ -23,7 +23,6 @@ from flap.latex.symbols import SymbolTable
 from flap.latex.parser import Parser, Factory, Context
 
 
-
 class Settings:
 
     def __init__(self, file_system, ui, root_tex_file, output):
@@ -108,7 +107,12 @@ class Settings:
         return self._update_link(path, invocation, [self.root_directory], ["bib"], ResourceNotFound(None))
 
     def update_link_to_bibliography_style(self, path, invocation):
-        return self._update_link(path, invocation, [self.root_directory], ["bst"], ResourceNotFound(None))
+        try:
+            return self._update_link(path, invocation, [self.root_directory], ["bst"], ResourceNotFound(None))
+        except ResourceNotFound:
+            logger.debug(
+                "Could not find bibliography style '" + path + " locally")
+            return path
 
     def update_link_to_index_style(self, path, invocation):
         return self._update_link(path, invocation, [self.root_directory], ["ist"], ResourceNotFound(path)) + ".ist"

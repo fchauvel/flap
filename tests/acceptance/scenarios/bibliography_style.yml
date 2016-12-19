@@ -17,7 +17,8 @@
 
 name: bibliography style
 description: >
-   Test that FLaP does move around bibliography style, if it is defined locally.
+   Test that FLaP does move raises error when bibliography style are not defined
+   locally (e.g., unsrt)
 
 # Describe the LaTeX projects, as found on the disk
 project:
@@ -27,7 +28,7 @@ project:
 
       \begin{document}
       This is an example with a citation \cite{BA1991}
-      \bibliographystyle{my-style}
+      \bibliographystyle{unsrt}
       \bibliography{my-bib}
       \end{document}
 
@@ -42,10 +43,6 @@ project:
          Pages                    = {509-512},
          Volume                   = {286},
       }
-
-  - path: my-style.bst
-    content: |
-      What a nice bibliography style!
 
 # Describe the LaTeX project, once flattened
 expected:
@@ -55,7 +52,7 @@ expected:
 
       \begin{document}
       This is an example with a citation \cite{BA1991}
-      \bibliographystyle{my-style}
+      \bibliographystyle{unsrt}
       \bibliography{my-bib}
       \end{document}
   - path: my-bib.bib
@@ -69,9 +66,7 @@ expected:
          Pages                    = {509-512},
          Volume                   = {286},
       }
-  - path: my-style.bst
-    content: |
-      What a nice bibliography style!
+
 
 # Describe what should be reported on the console
 outputs:
@@ -82,4 +77,4 @@ outputs:
   - file: main.tex
     line: 5
     column: 1
-    code: \bibliographystyle{my-style}
+    code: \bibliographystyle{unsrt}

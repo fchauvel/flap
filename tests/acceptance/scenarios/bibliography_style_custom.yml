@@ -15,7 +15,7 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-name: bibliography style custom
+name: bibliography custom style
 description: >
    Test that FLaP does move around bibliography style, if a custom one is
    defined locally.
@@ -28,7 +28,7 @@ project:
 
       \begin{document}
       This is an example with a citation \cite{BA1991}
-      \bibliographystyle{unsrt}
+      \bibliographystyle{my-style}
       \bibliography{my-bib}
       \end{document}
 
@@ -43,6 +43,11 @@ project:
          Pages                    = {509-512},
          Volume                   = {286},
       }
+
+  - path: my-style.bst
+    content: |
+      What a nice bibliography style!
+
 
 # Describe the LaTeX project, once flattened
 expected:
@@ -66,6 +71,10 @@ expected:
          Pages                    = {509-512},
          Volume                   = {286},
       }
+
+  - path: my-style.bst
+    content: |
+      What a nice bibliography style!
 
 # Describe what should be reported on the console
 outputs:
