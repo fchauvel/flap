@@ -33,8 +33,12 @@ setup.py install`
 
 == Usage Example
 
-Use FLaP in the command line:
+Prior to v0.4.1 (included), we invoke FLaP using:
+----
+$> python -m flap project/main.tex output/directory
+----
 
+For the newest development version, use:
 ----
 $> flap project/main.tex output/directory
 ----
