@@ -20,7 +20,7 @@
 import sys
 import argparse
 
-from flap import __version__, __name__, logger
+from flap import __version__, __tool_name__
 from flap.util.oofs import OSFileSystem
 from flap.engine import Settings
 
@@ -64,7 +64,7 @@ class Display:
         self._output = output
 
     def version(self):
-        self._output.write("%s v%s\n" % (__name__, __version__))
+        self._output.write("%s v%s\n" % (__tool_name__, __version__))
 
     def header(self):
         self._show(self.HEADER)

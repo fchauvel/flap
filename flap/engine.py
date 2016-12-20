@@ -23,6 +23,21 @@ from flap.latex.symbols import SymbolTable
 from flap.latex.parser import Parser, Factory, Context
 
 
+def abbreviate(text, length=40):
+    if len(text) > length:
+        return text[:length-3] + "..."
+    return text
+
+
+def log(invocation, message, **kwargs):
+    data = (invocation.location.source,
+            str(invocation.location.line),
+            str(invocation.location.column),
+            repr(abbreviate(invocation.as_text)),
+            message.format(**kwargs))
+    logger.debug(" ".join(data))
+
+
 class Settings:
 
     def __init__(self, file_system, ui, root_tex_file, output):
@@ -44,7 +59,7 @@ class Settings:
         return self._file_system.open(self.root_tex_file).container()
 
     def record_graphic_path(self, paths, invocation):
-        logger.debug("Updating graphicpath (" + invocation.as_text + ")")
+        log(invocation, "Updating graphicpath to {paths:s}", paths=repr(paths))
         self._show_invocation(invocation)
         self._graphic_directories = [self._file_system.open(self.root_directory._path / each) for each in paths]
 
@@ -92,12 +107,14 @@ class Settings:
                 self._rewrite(file.content(), file.fullname(), symbol_table)
 
             except TexFileNotFound:
-                logger.debug("Could not find class or package '" + dependency + " locally")
+                log(invocation,
+                    "Could not find class or package '{path:s}' locally",
+                    path=dependency)
 
     def content_of(self, location, invocation):
-        logger.debug("Fetching '" + location + "(" + invocation.as_text + ")")
         self._show_invocation(invocation)
         file = self._find(location, [self.root_directory], ["tex"], TexFileNotFound(None))
+        log(invocation, "Fetching content from '{file:s}'", file=file.fullname())
         return file.content()
 
     def update_link(self, path, invocation):
@@ -110,24 +127,25 @@ class Settings:
         try:
             return self._update_link(path, invocation, [self.root_directory], ["bst"], ResourceNotFound(None))
         except ResourceNotFound:
-            logger.debug(
-                "Could not find bibliography style '" + path + " locally")
+            log(invocation,
+                "Could not find bibliography style '{path:s}' locally",
+                path=path)
             return path
 
     def update_link_to_index_style(self, path, invocation):
         return self._update_link(path, invocation, [self.root_directory], ["ist"], ResourceNotFound(path)) + ".ist"
 
     def _update_link(self, path, invocation, location, extensions, error):
-        logger.debug("Updating '" + path + "(" + invocation.as_text + ")")
         self._show_invocation(invocation)
         resource = self._find(path, location, extensions, error)
         new_path = resource._path.relative_to(self.root_directory._path)
         new_file_name = str(new_path).replace("/", "_")
         self._file_system.copy(resource, self.output_directory / new_file_name)
+        log(invocation, "Copying '{source:s}' to '{target:s}'", source=resource.fullname(), target=new_file_name)
         return str(new_path.without_extension()).replace("/", "_")
 
     def include_only(self, selection, invocation):
-        logger.debug("Restrict inclusion to [" + ", ".join(selection) + "] (" + invocation.as_text + ")")
+        log(invocation, "Restricting file inclusions to {files:s}", files=repr(selection))
         self._show_invocation(invocation)
         self._selected_for_inclusion.extend(selection)
 

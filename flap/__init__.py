@@ -17,13 +17,13 @@
 
 from logging import getLogger, FileHandler, Formatter, DEBUG
 
-__name__ = "FLaP"
+__tool_name__ = "FLaP"
 __version__ = "0.4.2"
 
 
 def _configure_logger():
     logger = getLogger(__name__)
-    handler = FileHandler("flap.log")
+    handler = FileHandler("flap.log", "w")
     formatter = Formatter('%(asctime)s %(levelname)s %(message)s')
     handler.setFormatter(formatter)
     logger.addHandler(handler)

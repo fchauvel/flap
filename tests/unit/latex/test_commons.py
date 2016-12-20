@@ -106,7 +106,7 @@ class PositionTest(TestCase):
         self.assertNotEqual(self._position, False)
 
     def test_representation(self):
-        self.assertEqual(Position.REPRESENTATION.format(line=self._line, column=self._column),
+        self.assertEqual(Position.REPRESENTATION.format(source=Position.UNKNOWN, line=self._line, column=self._column),
                          str(self._position))
 
 

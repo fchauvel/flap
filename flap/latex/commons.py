@@ -85,10 +85,11 @@ class Stream:
 
 class Position:
 
-    REPRESENTATION = "@({line}, {column})"
+    UNKNOWN = "Unknown source file"
+    REPRESENTATION = "{source} @({line}, {column})"
 
     def __init__(self, line, column, source=None):
-        self._source = source
+        self._source = source or self.UNKNOWN
         self._line = line
         self._column = column
 
@@ -117,4 +118,4 @@ class Position:
                self._column == other._column
 
     def __repr__(self):
-        return self.REPRESENTATION.format(line=self._line, column=self._column)
+        return self.REPRESENTATION.format(source=self._source, line=self._line, column=self._column)
