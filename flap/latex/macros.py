@@ -70,17 +70,14 @@ class Invocation:
 
     @property
     def as_text(self):
-        text = "".join(str(each) for each in self.name)
+        text = "".join(map(str, self.name))
         for each_argument in self._arguments:
-            text += "".join(str(each) for each in each_argument)
+            text += "".join(map(str, each_argument))
         return text
 
     @property
     def as_tokens(self):
-        tokens = copy(self.name)
-        for each_argument in self._arguments:
-            tokens += each_argument
-        return tokens
+        return sum(self._arguments, copy(self.name))
 
     def substitute(self, argument, value):
         clone = Invocation()
@@ -263,10 +260,11 @@ class MakeIndex(Macro):
     def _capture_arguments(self, parser, invocation):
         invocation.append_argument("options", parser.optional_arguments())
 
-    def _fetch_style_file(self, parser, invocation):
+    @staticmethod
+    def _fetch_style_file(parser, invocation):
         text = parser.evaluate_as_text(invocation.argument("options"))
         for each in text.strip()[1:-1].split(","):
-            key, value = each.split("=")
+            _, value = each.split("=")
             options = re.split("(-\w\s)", value)
             for index in range(len(options)):
                 if "-s" in options[index]:
