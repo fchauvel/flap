@@ -18,22 +18,17 @@
 #
 
 from flap import logger
+from flap.util import truncate
 from flap.util.path import Path
 from flap.latex.symbols import SymbolTable
 from flap.latex.parser import Parser, Factory, Context
-
-
-def abbreviate(text, length=40):
-    if len(text) > length:
-        return text[:length-3] + "..."
-    return text
 
 
 def log(invocation, message, **kwargs):
     data = (invocation.location.source,
             str(invocation.location.line),
             str(invocation.location.column),
-            repr(abbreviate(invocation.as_text)),
+            repr(truncate(invocation.as_text, length=40)),
             message.format(**kwargs))
     logger.debug(" ".join(data))
 

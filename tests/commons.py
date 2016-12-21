@@ -16,9 +16,9 @@
 #
 
 from io import StringIO
-from argparse import Namespace
 
 from flap import __version__
+from flap.util import truncate
 from flap.util.path import Path
 from flap.ui import Display, Controller
 from tests.latex_project import LatexProject
@@ -40,7 +40,7 @@ class EndToEndRunner:
 
     def _tear_down(self, test_case):
         self._output = StringIO()
-        self._display = Display(self._output)
+        self._display = Display(self._output, verbose=True)
         self._controller = Controller(self._file_system, self._display)
         self._file_system.deleteDirectory(self._path_for(test_case))
 
@@ -52,7 +52,7 @@ class EndToEndRunner:
 
     def _execute(self, test_case):
         self._file_system.move_to_directory(self._path_for(test_case))
-        self._controller.run(Namespace(file="./project/main.tex", output="output"))
+        self._controller.run(tex_file="./project/main.tex", output="output")
 
     def _verify(self, test_case):
         self._verify_generated_files(test_case)
@@ -69,6 +69,7 @@ class EndToEndRunner:
         self._verify_shown(self._display._horizontal_line())
         entries = [each.as_dictionary for each in test_case._output]
         for each_entry in entries:
+            each_entry["code"] = truncate(each_entry["code"], self._display.WIDTHS[3])
             self._verify_shown(self._display.ENTRY.format(**each_entry))
         self._verify_shown(self._display.SUMMARY.format(count=len(test_case._output)))
 
