@@ -19,13 +19,12 @@
 
 from flap.latex.commons import Stream, Source
 from flap.latex.lexer import Lexer
-from flap.latex.macros import Macro, all_macros
 
 
 class Context:
 
-    def __init__(self, parent=None):
-        self._definitions = dict()
+    def __init__(self, parent=None, definitions=None):
+        self._definitions = definitions or dict()
         self._parent = parent
 
     def fork(self):
@@ -74,16 +73,10 @@ class Factory:
 
 class Parser:
 
-    def __init__(self, tokens, factory, engine, environment):
+    def __init__(self, tokens, factory, environment):
         self._create = factory
-        self._engine = engine
         self._tokens = self._create.as_stream(tokens)
         self._definitions = environment
-        self._set_builtin_definitions()
-
-    def _set_builtin_definitions(self):
-        for each_macro in all_macros():
-            self._definitions[each_macro.name] = each_macro
 
     def _spawn(self, tokens, environment):
         new_environment = Context(self._definitions)
@@ -91,7 +84,6 @@ class Parser:
         return Parser(
             tokens,
             self._create,
-            self._engine,
             new_environment)
 
     def rewrite(self):
@@ -116,9 +108,8 @@ class Parser:
     def default(self, text):
         return [self._tokens.take()]
 
-    def define_macro(self, name, signature, replacement):
-        self._definitions[name] = Macro(name, signature, replacement)
-        return []
+    def define(self, macro):
+        self._definitions[macro.name] = macro
 
     def _accept(self, as_expected):
         buffer = []

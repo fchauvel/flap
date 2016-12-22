@@ -21,23 +21,6 @@ import re
 from copy import copy
 
 
-def all_macros():
-    return [DocumentClass(),
-            UsePackage(),
-            RequirePackage(),
-            Input(),
-            Include(),
-            IncludeOnly(),
-            Bibliography(),
-            BibliographyStyle(),
-            SubFile(),
-            IncludeGraphics(),
-            GraphicsPath(),
-            Def(),
-            Begin(),
-            MakeIndex()]
-
-
 class Invocation:
     """
     The invocation of a LaTeX command, including the name of the command, and its
@@ -88,13 +71,43 @@ class Invocation:
         return clone
 
 
+class MacroFactory:
+    """
+    Create macros that are associated with a given FLaP backend
+    """
+
+    def __init__(self, flap):
+        self._flap = flap
+        self._macros = [DocumentClass(self._flap),
+                UsePackage(self._flap),
+                RequirePackage(self._flap),
+                Input(self._flap),
+                Include(self._flap),
+                IncludeOnly(self._flap),
+                Bibliography(self._flap),
+                BibliographyStyle(self._flap),
+                SubFile(self._flap),
+                IncludeGraphics(self._flap),
+                GraphicsPath(self._flap),
+                Def(self._flap),
+                Begin(self._flap),
+                MakeIndex(self._flap)]
+
+    def all(self):
+        return {each.name: each for each in self._macros}
+
+    def create(self, name, parameters, body):
+        return Macro(self._flap, name, parameters, body)
+
+
 class Macro:
     """
     A LaTeX macro, including its name (e.g., '\point'), its signature as a list
     of expected tokens (e.g., '(#1,#2)') and the text that should replace it.
     """
 
-    def __init__(self, name, signature, body):
+    def __init__(self, flap, name, signature, body):
+        self._flap = flap
         self._name = name
         self._signature = signature
         self._body = body
@@ -155,8 +168,8 @@ class Begin(Macro):
     A LaTeX environment such as \begin{center} \end{center}.
     """
 
-    def __init__(self):
-        super().__init__(r"\begin", None, None)
+    def __init__(self, flap):
+        super().__init__(flap, r"\begin", None, None)
 
     def _capture_arguments(self, parser, invocation):
         invocation.append_argument("environment", parser._capture_group())
@@ -174,8 +187,8 @@ class DocumentClass(Macro):
     Extract some specific document class, e.g., subfile
     """
 
-    def __init__(self):
-        super().__init__(r"\documentclass", None, None)
+    def __init__(self, flap):
+        super().__init__(flap, r"\documentclass", None, None)
 
     def _capture_arguments(self, parser, invocation):
         invocation.append_argument("options", parser.optional_arguments())
@@ -183,7 +196,7 @@ class DocumentClass(Macro):
 
     def _execute(self, parser, invocation):
         class_name = parser.evaluate_as_text(invocation.argument("class"))
-        parser._engine.relocate_dependency(class_name, invocation)
+        self._flap.relocate_dependency(class_name, invocation)
         if class_name == "subfiles":
             parser._capture_until(r"\begin{document}")
             document = parser._capture_until(r"\end{document}")
@@ -194,8 +207,8 @@ class DocumentClass(Macro):
 
 class Def(Macro):
 
-    def __init__(self):
-        super().__init__(r"\def", None, None)
+    def __init__(self, flap):
+        super().__init__(flap, r"\def", None, None)
 
     def _capture_arguments(self, parser, invocation):
         invocation.append_argument("name", parser._tokens.take())
@@ -203,10 +216,13 @@ class Def(Macro):
         invocation.append_argument("body", parser._capture_group())
 
     def _execute(self, parser, invocation):
-        return parser.define_macro(
+        macro = Macro(
+            self._flap,
             str(invocation.argument("name")),
             invocation.argument("signature"),
             invocation.argument("body"))
+        parser.define(macro)
+        return []
 
 
 class PackageReference(Macro):
@@ -215,8 +231,8 @@ class PackageReference(Macro):
     with LaTeX (e.g., usepackage or RequirePackage).
     """
 
-    def __init__(self, name):
-        super().__init__(name, None, None)
+    def __init__(self, flap, name):
+        super().__init__(flap, name, None, None)
 
     def _capture_arguments(self, parser, invocation):
         invocation.append_argument("options", parser.optional_arguments())
@@ -224,7 +240,7 @@ class PackageReference(Macro):
 
     def _execute(self, parser, invocation):
         package = parser.evaluate_as_text(invocation.argument("package"))
-        parser._engine.relocate_dependency(package, invocation)
+        self._flap.relocate_dependency(package, invocation)
         return invocation.as_tokens
 
 
@@ -234,8 +250,8 @@ class UsePackage(PackageReference):
     defined locally.
     """
 
-    def __init__(self):
-        super().__init__(r"\usepackage")
+    def __init__(self, flap):
+        super().__init__(flap, r"\usepackage")
 
 
 class RequirePackage(PackageReference):
@@ -244,8 +260,8 @@ class RequirePackage(PackageReference):
     defined locally.
     """
 
-    def __init__(self):
-        super().__init__(r"\RequirePackage")
+    def __init__(self, flap):
+        super().__init__(flap, r"\RequirePackage")
 
 
 class MakeIndex(Macro):
@@ -254,8 +270,8 @@ class MakeIndex(Macro):
     if they are it can be found locally.
     """
 
-    def __init__(self):
-        super().__init__(r"\makeindex", None, None)
+    def __init__(self, flap):
+        super().__init__(flap, r"\makeindex", None, None)
 
     def _capture_arguments(self, parser, invocation):
         invocation.append_argument("options", parser.optional_arguments())
@@ -273,21 +289,21 @@ class MakeIndex(Macro):
 
     def _execute(self, parser, invocation):
         style_file = self._fetch_style_file(parser, invocation)
-        new_style_file = parser._engine.update_link_to_index_style(style_file, invocation)
+        new_style_file = self._flap.update_link_to_index_style(style_file, invocation)
         return invocation.as_text.replace(style_file, new_style_file)
 
 
 class TexFileInclusion(Macro):
 
-    def __init__(self, name):
-        super().__init__(name, None, None)
+    def __init__(self, flap, name):
+        super().__init__(flap, name, None, None)
 
     def _capture_arguments(self, parser, invocation):
         invocation.append_argument("link", parser._capture_one())
 
     def _execute(self, parser, invocation):
         link = parser.evaluate_as_text(invocation.argument("link"))
-        content = parser._engine.content_of(link, invocation)
+        content = self._flap.content_of(link, invocation)
         return parser._spawn(parser._create.as_tokens(content, link), dict()).rewrite()
 
 
@@ -296,8 +312,8 @@ class Input(TexFileInclusion):
     Intercept the `\input` directive
     """
 
-    def __init__(self):
-        super().__init__(r"\input")
+    def __init__(self, flap):
+        super().__init__(flap, r"\input")
 
 
 class Include(TexFileInclusion):
@@ -305,12 +321,12 @@ class Include(TexFileInclusion):
     Intercept the `\include` directive
     """
 
-    def __init__(self):
-        super().__init__(r"\include")
+    def __init__(self, flap):
+        super().__init__(flap, r"\include")
 
     def _execute(self, parser, invocation):
         link = parser.evaluate_as_text(invocation.argument("link"))
-        if parser._engine.shall_include(link):
+        if self._flap.shall_include(link):
             result = super()._execute(parser, invocation)
             return result + parser._create.as_list(r"\clearpage")
         return []
@@ -318,8 +334,8 @@ class Include(TexFileInclusion):
 
 class SubFile(TexFileInclusion):
 
-    def __init__(self):
-        super().__init__(r"\subfile")
+    def __init__(self, flap):
+        super().__init__(flap, r"\subfile")
 
 
 class IncludeOnly(Macro):
@@ -327,8 +343,8 @@ class IncludeOnly(Macro):
     Intercept includeonly commands
     """
 
-    def __init__(self):
-        super().__init__(r"\includeonly", None, None)
+    def __init__(self, flap):
+        super().__init__(flap, r"\includeonly", None, None)
 
     def _capture_arguments(self, parser, invocation):
         invocation.append_argument("selection", parser._capture_one())
@@ -336,14 +352,14 @@ class IncludeOnly(Macro):
     def _execute(self, parser, invocation):
         text = parser.evaluate_as_text(invocation.argument("selection"))
         files_to_include = [each.strip() for each in text.split(",")]
-        parser._engine.include_only(files_to_include, invocation)
+        self._flap.include_only(files_to_include, invocation)
         return []
 
 
 class UpdateLink(Macro):
 
-    def __init__(self, name):
-        super().__init__(name, None, None)
+    def __init__(self, flap, name):
+        super().__init__(flap, name, None, None)
 
     @staticmethod
     def _capture_arguments(parser, invocation):
@@ -364,11 +380,11 @@ class IncludeGraphics(UpdateLink):
     Intercept the `\includegraphics` directive
     """
 
-    def __init__(self):
-        super().__init__(r"\includegraphics")
+    def __init__(self, flap):
+        super().__init__(flap, r"\includegraphics")
 
     def update_link(self, parser, link, invocation):
-        return parser._engine.update_link(link, invocation)
+        return self._flap.update_link(link, invocation)
 
 
 class Bibliography(UpdateLink):
@@ -376,11 +392,11 @@ class Bibliography(UpdateLink):
     Intercept the `\bibliography` directive
     """
 
-    def __init__(self):
-        super().__init__(r"\bibliography")
+    def __init__(self, flap):
+        super().__init__(flap, r"\bibliography")
 
     def update_link(self, parser, link, invocation):
-        return parser._engine.update_link_to_bibliography(link, invocation)
+        return self._flap.update_link_to_bibliography(link, invocation)
 
 
 class BibliographyStyle(UpdateLink):
@@ -388,11 +404,11 @@ class BibliographyStyle(UpdateLink):
     Intercept the `\bibliographystyle` directive
     """
 
-    def __init__(self):
-        super().__init__(r"\bibliographystyle")
+    def __init__(self, flap):
+        super().__init__(flap, r"\bibliographystyle")
 
     def update_link(self, parser, link, invocation):
-        return parser._engine.update_link_to_bibliography_style(link, invocation)
+        return self._flap.update_link_to_bibliography_style(link, invocation)
 
 
 class GraphicsPath(Macro):
@@ -400,13 +416,13 @@ class GraphicsPath(Macro):
     Intercept the `\graphicspath` directive
     """
 
-    def __init__(self):
-        super().__init__(r"\graphicspath", None, None)
+    def __init__(self, flap):
+        super().__init__(flap, r"\graphicspath", None, None)
 
     def _capture_arguments(self, parser, invocation):
         invocation.append_argument("paths", parser._capture_group())
 
     def _execute(self, parser, invocation):
         paths = parser.evaluate_as_text(invocation.argument("paths"))
-        parser._engine.record_graphic_path([each.strip() for each in paths.split(",")], invocation)
+        self._flap.record_graphic_path([each.strip() for each in paths.split(",")], invocation)
         return invocation.as_tokens

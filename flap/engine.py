@@ -21,6 +21,7 @@ from flap import logger
 from flap.util import truncate
 from flap.util.path import Path
 from flap.latex.symbols import SymbolTable
+from flap.latex.macros import MacroFactory
 from flap.latex.parser import Parser, Factory, Context
 
 
@@ -80,8 +81,10 @@ class Settings:
 
     def _rewrite(self, text, source, symbol_table=SymbolTable.default()):
         factory = Factory(symbol_table)
+        macros = MacroFactory(self)
         parser = Parser(factory.as_tokens(text, source),
-                        factory, self, Context())
+                        factory,
+                        Context(definitions=macros.all()))
         return parser.rewrite()
 
     def _write(self, tokens):

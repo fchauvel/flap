@@ -22,7 +22,8 @@ from unittest.mock import MagicMock, ANY
 
 from flap.latex.symbols import SymbolTable
 from flap.latex.tokens import TokenFactory
-from flap.latex.parser import Parser, Macro, Context, Factory
+from flap.latex.macros import MacroFactory
+from flap.latex.parser import Parser, Context, Factory
 
 
 class ContextTest(TestCase):
@@ -65,10 +66,11 @@ class ParserTests(TestCase):
 
     def setUp(self):
         self._engine = MagicMock()
+        self._macros = MacroFactory(self._engine)
         self._symbols = SymbolTable.default()
         self._tokens = TokenFactory(self._symbols)
         self._factory = Factory(self._symbols)
-        self._environment = Context()
+        self._environment = Context(definitions=self._macros.all())
         self._lexer = None
         self._parser = None
 
@@ -76,7 +78,7 @@ class ParserTests(TestCase):
         self._do_test_with("hello", "hello")
 
     def _do_test_with(self, input, output):
-        parser = Parser(self._factory.as_tokens(input, "Unknown"), self._factory, self._engine, self._environment)
+        parser = Parser(self._factory.as_tokens(input, "Unknown"), self._factory, self._environment)
         tokens = parser.rewrite()
         self._verify_output_is(output, tokens)
 
@@ -128,7 +130,7 @@ class ParserTests(TestCase):
         self._environment[name] = macro
 
     def _macro(self, name, parameters, body):
-        return Macro(name, self._factory.as_list(parameters), self._factory.as_list(body))
+        return self._macros.create(name, self._factory.as_list(parameters), self._factory.as_list(body))
 
     def test_invoking_a_macro_where_one_argument_is_a_group(self):
         self._define_macro(r"\foo", "(#1)", "{Text: #1}")
