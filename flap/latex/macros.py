@@ -24,7 +24,7 @@ from copy import copy
 class Invocation:
     """
     The invocation of a LaTeX command, including the name of the command, and its
-    parameters indexed by name.
+    parameters indexed by name as sequences of tokens.
     """
 
     def __init__(self):
@@ -78,20 +78,21 @@ class MacroFactory:
 
     def __init__(self, flap):
         self._flap = flap
-        self._macros = [DocumentClass(self._flap),
-                UsePackage(self._flap),
-                RequirePackage(self._flap),
-                Input(self._flap),
-                Include(self._flap),
-                IncludeOnly(self._flap),
-                Bibliography(self._flap),
-                BibliographyStyle(self._flap),
-                SubFile(self._flap),
-                IncludeGraphics(self._flap),
-                GraphicsPath(self._flap),
-                Def(self._flap),
-                Begin(self._flap),
-                MakeIndex(self._flap)]
+        self._macros = [
+            DocumentClass(self._flap),
+            UsePackage(self._flap),
+            RequirePackage(self._flap),
+            Input(self._flap),
+            Include(self._flap),
+            IncludeOnly(self._flap),
+            Bibliography(self._flap),
+            BibliographyStyle(self._flap),
+            SubFile(self._flap),
+            IncludeGraphics(self._flap),
+            GraphicsPath(self._flap),
+            Def(self._flap),
+            Begin(self._flap),
+            MakeIndex(self._flap)]
 
     def all(self):
         return {each.name: each for each in self._macros}
@@ -127,9 +128,8 @@ class Macro:
         return invocation
 
     def _capture_name(self, invocation, parser):
-        invocation.name = parser._accept(lambda token: token.is_a_command and token.has_text(self._name))
-        extra_spaces = parser._tokens.take_while(lambda c: c.is_ignored)
-        invocation.append(extra_spaces)
+        invocation.name = parser.capture_macro_name(self._name)
+        invocation.append(parser.capture_ignored())
 
     def _capture_arguments(self, parser, invocation):
         for index, any_token in enumerate(self._signature):
@@ -157,9 +157,9 @@ class Macro:
     def __repr__(self):
         signature, body = "", ""
         if signature:
-            signature = "".join(str(each_token) for each_token in self._signature)
+            signature = "".join(map(str, self._signature))
         if body:
-            body = "".join(str(each_token) for each_token in self._body)
+            body = "".join(map(str, self._body))
         return r"\def" + self._name + signature + body
 
 
@@ -172,12 +172,12 @@ class Begin(Macro):
         super().__init__(flap, r"\begin", None, None)
 
     def _capture_arguments(self, parser, invocation):
-        invocation.append_argument("environment", parser._capture_group())
+        invocation.append_argument("environment", parser.capture_group())
 
     def _execute(self, parser, invocation):
         environment = parser.evaluate_as_text(invocation.argument("environment"))
         if environment == "verbatim":
-            return parser._create.as_list(r"\begin{verbatim}") + parser._capture_until(r"\end{verbatim}")
+            return parser._create.as_list(r"\begin{verbatim}") + parser.capture_until_text(r"\end{verbatim}")
         else:
             return invocation.as_tokens
 
@@ -191,15 +191,15 @@ class DocumentClass(Macro):
         super().__init__(flap, r"\documentclass", None, None)
 
     def _capture_arguments(self, parser, invocation):
-        invocation.append_argument("options", parser.optional_arguments())
-        invocation.append_argument("class", parser._capture_group())
+        invocation.append_argument("options", parser.capture_options())
+        invocation.append_argument("class", parser.capture_group())
 
     def _execute(self, parser, invocation):
         class_name = parser.evaluate_as_text(invocation.argument("class"))
         self._flap.relocate_dependency(class_name, invocation)
         if class_name == "subfiles":
-            parser._capture_until(r"\begin{document}")
-            document = parser._capture_until(r"\end{document}")
+            parser.capture_until_text(r"\begin{document}")
+            document = parser.capture_until_text(r"\end{document}")
             return parser._spawn(document[:-11], dict()).rewrite()
         else:
             return invocation.as_tokens
@@ -211,14 +211,14 @@ class Def(Macro):
         super().__init__(flap, r"\def", None, None)
 
     def _capture_arguments(self, parser, invocation):
-        invocation.append_argument("name", parser._tokens.take())
-        invocation.append_argument("signature", parser._tokens.take_while(lambda t: not t.begins_a_group))
-        invocation.append_argument("body", parser._capture_group())
+        invocation.append_argument("name", parser.capture_macro_name())
+        invocation.append_argument("signature", parser.capture_until_group())
+        invocation.append_argument("body", parser.capture_group())
 
     def _execute(self, parser, invocation):
         macro = Macro(
             self._flap,
-            str(invocation.argument("name")),
+            "".join(map(str, invocation.argument("name"))),
             invocation.argument("signature"),
             invocation.argument("body"))
         parser.define(macro)
@@ -235,8 +235,8 @@ class PackageReference(Macro):
         super().__init__(flap, name, None, None)
 
     def _capture_arguments(self, parser, invocation):
-        invocation.append_argument("options", parser.optional_arguments())
-        invocation.append_argument("package", parser._capture_one())
+        invocation.append_argument("options", parser.capture_options())
+        invocation.append_argument("package", parser.capture_one())
 
     def _execute(self, parser, invocation):
         package = parser.evaluate_as_text(invocation.argument("package"))
@@ -274,7 +274,12 @@ class MakeIndex(Macro):
         super().__init__(flap, r"\makeindex", None, None)
 
     def _capture_arguments(self, parser, invocation):
-        invocation.append_argument("options", parser.optional_arguments())
+        invocation.append_argument("options", parser.capture_options())
+
+    def _execute(self, parser, invocation):
+        style_file = self._fetch_style_file(parser, invocation)
+        new_style_file = self._flap.update_link_to_index_style(style_file, invocation)
+        return invocation.as_text.replace(style_file, new_style_file)
 
     @staticmethod
     def _fetch_style_file(parser, invocation):
@@ -287,11 +292,6 @@ class MakeIndex(Macro):
                     return options[index+1]
         return None
 
-    def _execute(self, parser, invocation):
-        style_file = self._fetch_style_file(parser, invocation)
-        new_style_file = self._flap.update_link_to_index_style(style_file, invocation)
-        return invocation.as_text.replace(style_file, new_style_file)
-
 
 class TexFileInclusion(Macro):
 
@@ -299,7 +299,7 @@ class TexFileInclusion(Macro):
         super().__init__(flap, name, None, None)
 
     def _capture_arguments(self, parser, invocation):
-        invocation.append_argument("link", parser._capture_one())
+        invocation.append_argument("link", parser.capture_one())
 
     def _execute(self, parser, invocation):
         link = parser.evaluate_as_text(invocation.argument("link"))
@@ -347,11 +347,11 @@ class IncludeOnly(Macro):
         super().__init__(flap, r"\includeonly", None, None)
 
     def _capture_arguments(self, parser, invocation):
-        invocation.append_argument("selection", parser._capture_one())
+        invocation.append_argument("selection", parser.capture_one())
 
     def _execute(self, parser, invocation):
         text = parser.evaluate_as_text(invocation.argument("selection"))
-        files_to_include = [each.strip() for each in text.split(",")]
+        files_to_include = list(map(str.strip, text.split(",")))
         self._flap.include_only(files_to_include, invocation)
         return []
 
@@ -363,8 +363,8 @@ class UpdateLink(Macro):
 
     @staticmethod
     def _capture_arguments(parser, invocation):
-        invocation.append_argument("options", parser.optional_arguments())
-        invocation.append_argument("link", parser._capture_group())
+        invocation.append_argument("options", parser.capture_options())
+        invocation.append_argument("link", parser.capture_group())
 
     def _execute(self, parser, invocation):
         link = parser.evaluate_as_text(invocation.argument("link"))
@@ -420,9 +420,10 @@ class GraphicsPath(Macro):
         super().__init__(flap, r"\graphicspath", None, None)
 
     def _capture_arguments(self, parser, invocation):
-        invocation.append_argument("paths", parser._capture_group())
+        invocation.append_argument("paths", parser.capture_group())
 
     def _execute(self, parser, invocation):
-        paths = parser.evaluate_as_text(invocation.argument("paths"))
-        self._flap.record_graphic_path([each.strip() for each in paths.split(",")], invocation)
+        argument = parser.evaluate_as_text(invocation.argument("paths"))
+        paths = list(map(str.strip, argument.split(",")))
+        self._flap.record_graphic_path(paths, invocation)
         return invocation.as_tokens

@@ -27,19 +27,6 @@ class Context:
         self._definitions = definitions or dict()
         self._parent = parent
 
-    def fork(self):
-        return Context(self)
-
-    def extend_with(self, other):
-        if isinstance(other, dict):
-            for key, value in other.items():
-                self._definitions[key] = value
-        elif isinstance(other, Context):
-            for key, value in other._definitions.items():
-                self._definitions[key] = value
-        else:
-            raise ValueError("Expecting either 'Context' or a 'dict', but found a '%s' instead." % type(other))
-
     def items(self):
         return self._definitions.items()
 
@@ -79,8 +66,7 @@ class Parser:
         self._definitions = environment
 
     def _spawn(self, tokens, environment):
-        new_environment = Context(self._definitions)
-        new_environment.extend_with(environment)
+        new_environment = Context(self._definitions, definitions=environment)
         return Parser(
             tokens,
             self._create,
@@ -95,7 +81,7 @@ class Parser:
     def _rewrite_one(self):
         self._abort_on_end_of_text()
         if self._next_token.begins_a_group:
-            return self._capture_group()
+            return self.capture_group()
         elif self._next_token.is_a_command:
             return self._evaluate_one()
         else:
@@ -112,12 +98,13 @@ class Parser:
         self._definitions[macro.name] = macro
 
     def _accept(self, as_expected):
-        buffer = []
-        while self._next_token.is_ignored:
-            buffer.append(self._tokens.take())
+        buffer = self.capture_ignored()
         if as_expected(self._next_token):
             buffer.append(self._tokens.take())
             return buffer
+        self._raise_unexpected_token()
+
+    def _raise_unexpected_token(self):
         error = "Unexpected {} '{}' in file {} (line {}, column {}).".format(
             self._next_token._category.name,
             self._next_token,
@@ -157,23 +144,22 @@ class Parser:
         return tokens
 
     def _evaluate_until(self, is_excluded):
-        result = []
+        tokens = []
         while not is_excluded(self._next_token):
-            result += self._evaluate_one()
-        return result
+            tokens += self._evaluate_one()
+        return tokens
 
     def _abort_on_end_of_text(self):
         if self._tokens.is_empty:
             raise ValueError("Unexpected end of text!")
 
     def evaluate_command(self, command):
-        if command in self._definitions:
-            macro = self._definitions[command]
-            return macro.invoke(self)
-        else:
+        if command not in self._definitions:
             return self.default(command)
+        macro = self._definitions[command]
+        return macro.invoke(self)
 
-    def optional_arguments(self, start="[", end="]"):
+    def capture_options(self, start="[", end="]"):
         result = []
         if self._next_token.has_text(start):
             result += self._accept(lambda token: token.has_text(start))
@@ -182,30 +168,48 @@ class Parser:
             result += self._tokens.take_while(lambda c: c.is_ignored)
         return result
 
-    def _capture_until(self, expected_text):
-        read = []
-        while self._next_token:
-            read.append(self._tokens.take())
-            text_read = "".join(str(token) for token in read)
-            if text_read.endswith(expected_text):
-                break
-        return read
+    def capture_macro_name(self, name=None):
+        tokens = self._accept(lambda token: token.is_a_command)
+        if name and not tokens[-1].has_text(name):
+            self._raise_unexpected_token()
+        return tokens
 
-    def _capture_group(self):
+    def capture_ignored(self):
+        tokens = []
+        while self._next_token and self._next_token.is_ignored:
+            tokens.append(self._tokens.take())
+        return tokens
+
+    def capture_until_text(self, marker):
+        tokens, text = [], ""
+        while self._next_token:
+            text += str(self._next_token)
+            tokens.append(self._tokens.take())
+            if text.endswith(marker):
+                break
+        return tokens
+
+    def capture_until_group(self):
+        tokens = []
+        while not self._next_token.begins_a_group:
+            tokens += self.capture_one()
+        return tokens
+
+    def capture_group(self):
         tokens = self._accept(lambda token: token.begins_a_group)
         while not self._next_token.ends_a_group:
-            tokens += self._capture_one()
+            tokens += self.capture_one()
         tokens += self._accept(lambda token: token.ends_a_group)
         return tokens
 
-    def _capture_one(self):
+    def capture_one(self):
         self._abort_on_end_of_text()
         if self._next_token.begins_a_group:
-            return self._capture_group()
+            return self.capture_group()
         else:
             return [self._tokens.take()]
 
     @staticmethod
     def _as_text(tokens):
-        return "".join(str(each) for each in tokens)
+        return "".join(map(str, tokens))
 

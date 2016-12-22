@@ -49,18 +49,6 @@ class ContextTest(TestCase):
             self.assertTrue(key in self._environment)
             self.assertEqual(value, self._environment[key])
 
-    def test_fork_and_look_up_key_defined_in_the_parent(self):
-        fork = self._environment.fork()
-        for key, value in self._data.items():
-            self.assertTrue(key in fork)
-            self.assertEqual(value, fork[key])
-
-    def test_fork_and_redefine_key(self):
-        fork = self._environment.fork()
-        fork["Z"] = 2
-        self.assertEqual(2, fork["Z"])
-        self.assertEqual(1, self._environment["Z"])
-
 
 class ParserTests(TestCase):
 
