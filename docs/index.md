@@ -32,7 +32,7 @@ in a flat directory. Images, bibliography and others resources are moved around 
 
 ## Use
 
-	$> python3 -m flap my/project/main.tex my/output
+	$> flap my/project/main.tex my/output
 	
 ## Contact Us
 

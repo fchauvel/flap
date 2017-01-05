@@ -14,9 +14,9 @@ configuration (see file `tox.ini`) will run the test suite using Python 3.2, 3.3
 
 ## Acceptance Tests
 
-FLaP also includes a few "acceptance tests" that check various types of 
+FLaP also includes a few acceptance tests that verify its behaviour on various types of
 LaTeX projects. Theses acceptance tests are end-to-end tests that trigger
-FLaP from the outset.
+FLaP from the outset, in verbose mode (`-v` option).
 
 Each acceptance test in described in a separate YAML file, as shown in 
 the example below, where we describe a single-file project and the content
@@ -25,6 +25,7 @@ expected once it is flattened.
 ```yaml
 # Some metadata about the test
 name: nothing_to_flatten
+skipped: False
 description: >
   Test that FLaP does not change anything in projects where nothing
   needs to be flatten
@@ -46,13 +47,26 @@ expected:
       \begin{document}
       This is a simple LaTeX document!
       \end{document}
+
+```
+
+Note here that in the test above, we do not expect any output in verbose
+mode. If we expect some, we can complement the tests with something like:
+
+```yaml
+# Describe what should be reported in verbose mode
+outputs:
+  - file: main.tex
+    line: 5
+    column: 1
+    code: \includegraphics[width=7cm]{my-image}
 ```
 
 By convention, such LaTeX project must have their root file named `main.tex`, at
 its top level. Similarly, FLaP will be invoked with its default options,
 and will therefore generate a file named `merged.tex`.
 
-By convention, the acceptance tests are located in `tests/acceptance/tests`
+By convention also, the acceptance tests are located in `tests/acceptance/scenarios`
 and we can organise them into subdirectories as need be. 
 
 All the YAML tests are automatically detected and bundled into a single Python class `YAMLAcceptanceTests` ( 
