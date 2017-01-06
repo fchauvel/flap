@@ -27,6 +27,8 @@ in a flat directory. Images, bibliography and others resources are moved around 
    `\graphicspath` and `\includeonly` and only merge TeX files, without moving graphics around (except for `texdirflatten`).
 
 ## Install
+FLaP requires Python 3.3, 3.4, 3.5 or 3.6. Not that it does not work with
+Python 3.2.
 
 	$> pip install flap
 
