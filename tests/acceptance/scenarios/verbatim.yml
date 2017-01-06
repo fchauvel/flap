@@ -1,0 +1,53 @@
+#
+# This file is part of Flap.
+#
+# Flap is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Flap is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Flap.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+name: verbatim
+skipped: False
+description: >
+   Test how FLaP handles verbatim directive. It should not match anything inside.
+
+# Describe the LaTeX projects, as found on the disk
+project:
+  - path: main.tex
+    content: |
+      \documentclass{article}
+
+      \begin{document}
+      Here is how we input another \TeX file:
+      \begin{verbatim}
+        \input{result}
+      \end{verbatim}
+      \end{document}
+
+  - path: result.tex
+    content: |
+      Here come the results!
+      \input  {extra/result.tex}
+
+# Describe the LaTeX project, once flattened
+expected:
+  - path: merged.tex
+    content: |
+      \documentclass{article}
+
+      \begin{document}
+      Here is how we input another \TeX file:
+      \begin{verbatim}
+        \input{result}
+      \end{verbatim}
+      \end{document}
+
