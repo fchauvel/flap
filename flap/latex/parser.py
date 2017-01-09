@@ -97,6 +97,10 @@ class Parser:
     def define(self, macro):
         self._definitions[macro.name] = macro
 
+    def flush(self, source_name):
+        while self._next_token and self._next_token.location.source == source_name:
+            self._tokens.take()
+
     def _accept(self, as_expected):
         buffer = self.capture_ignored()
         if as_expected(self._next_token):

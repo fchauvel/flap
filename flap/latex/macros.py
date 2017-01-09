@@ -350,8 +350,7 @@ class EndInput(Macro):
     def _execute(self, parser, invocation):
         source = invocation.name[0].location.source
         self._flap.end_of_input(source, invocation)
-        while parser._next_token and parser._next_token.location.source == source:
-            parser._tokens.take()
+        parser.flush(source)
         return []
 
 
