@@ -1,0 +1,61 @@
+#
+# This file is part of Flap.
+#
+# Flap is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Flap is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Flap.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+name: endinput
+description: >
+   Test that FLaP handles the \endinput macro properly.
+
+# Describe the LaTeX projects, as found on the disk
+project:
+  - path: main.tex
+    content: |
+      \documentclass{article}
+
+      \begin{document}
+      Here is some nice text, powered by \LaTeX.
+      \input{extra}
+      Some concluding words ...
+      \end{document}
+
+  - path: extra.tex
+    content: |
+      This is some extra text to be included.
+      \endinput
+      This line, however, shall not be included
+
+# Describe the LaTeX project, once flattened
+expected:
+  - path: merged.tex
+    content: |
+      \documentclass{article}
+
+      \begin{document}
+      Here is some nice text, powered by \LaTeX.
+      This is some extra text to be included.
+
+      Some concluding words ...
+      \end{document}
+
+outputs:
+  - file: main.tex
+    line: 5
+    column: 1
+    code: \input{extra}
+  - file: extra.tex
+    line: 2
+    column: 1
+    code: \endinput
