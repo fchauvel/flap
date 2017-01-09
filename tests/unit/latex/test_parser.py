@@ -292,6 +292,12 @@ class ParserTests(TestCase):
 
         self._engine.update_link_to_index_style.assert_called_once_with("my-style.ist", ANY)
 
+    def test_rewriting_endinput(self):
+        self._do_test_with(
+            r"foo \endinput bar",
+            r"foo ")
+        self._engine.end_of_input.assert_called_once_with("Unknown", ANY)
+
 
 if __name__ == '__main__':
     main()

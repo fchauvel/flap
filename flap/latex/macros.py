@@ -79,20 +79,22 @@ class MacroFactory:
     def __init__(self, flap):
         self._flap = flap
         self._macros = [
-            DocumentClass(self._flap),
-            UsePackage(self._flap),
-            RequirePackage(self._flap),
-            Input(self._flap),
-            Include(self._flap),
-            IncludeOnly(self._flap),
+            Begin(self._flap),
             Bibliography(self._flap),
             BibliographyStyle(self._flap),
-            SubFile(self._flap),
-            IncludeGraphics(self._flap),
-            GraphicsPath(self._flap),
             Def(self._flap),
-            Begin(self._flap),
-            MakeIndex(self._flap)]
+            DocumentClass(self._flap),
+            EndInput(self._flap),
+            GraphicsPath(self._flap),
+            IncludeGraphics(self._flap),
+            IncludeOnly(self._flap),
+            Input(self._flap),
+            Include(self._flap),
+            MakeIndex(self._flap),
+            RequirePackage(self._flap),
+            UsePackage(self._flap),
+            SubFile(self._flap)
+        ]
 
     def all(self):
         return {each.name: each for each in self._macros}
@@ -110,8 +112,8 @@ class Macro:
     def __init__(self, flap, name, signature, body):
         self._flap = flap
         self._name = name
-        self._signature = signature
-        self._body = body
+        self._signature = signature or []
+        self._body = body or iter([])
 
     @property
     def name(self):
@@ -304,6 +306,8 @@ class TexFileInclusion(Macro):
     def _execute(self, parser, invocation):
         link = parser.evaluate_as_text(invocation.argument("link"))
         content = self._flap.content_of(link, invocation)
+        if not link.endswith(".tex"):
+            link += ".tex"
         return parser._spawn(parser._create.as_tokens(content, link), dict()).rewrite()
 
 
@@ -336,6 +340,19 @@ class SubFile(TexFileInclusion):
 
     def __init__(self, flap):
         super().__init__(flap, r"\subfile")
+
+
+class EndInput(Macro):
+
+    def __init__(self, flap):
+        super().__init__(flap, r"\endinput", None, None)
+
+    def _execute(self, parser, invocation):
+        source = invocation.name[0].location.source
+        self._flap.end_of_input(source, invocation)
+        while parser._next_token and parser._next_token.location.source == source:
+            parser._tokens.take()
+        return []
 
 
 class IncludeOnly(Macro):

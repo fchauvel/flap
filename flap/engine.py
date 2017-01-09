@@ -91,6 +91,9 @@ class Settings:
         latex_code = "".join(str(each_token) for each_token in tokens)
         self._file_system.create_file(self.flattened, latex_code)
 
+    def end_of_input(self, source, invocation):
+        self._show_invocation(invocation)
+
     def relocate_dependency(self, dependency, invocation):
         if dependency not in self._analysed_dependencies:
             self._analysed_dependencies.append(dependency)
