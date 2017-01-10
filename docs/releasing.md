@@ -28,7 +28,7 @@ Below is the reminder of the steps to follows, and the associated shell commands
    to easily back-off if the release process fails.
 
 1. Create a new release, specifying the tag and upload the appropriate binaries
-   from `./dist` on the [GitHub release page](https://github.com/fchauvel/flap/releases)
+   from `./dist` on the [GitHub release page](https://github.com/fchauvel/flap/releases). Note that Git can provide you with a summary of the changes made since the last release: `git log --online --decorate v0.4.1..HEAD`
 
 ## Publishing the Documentation
 
