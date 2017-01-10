@@ -18,7 +18,7 @@
 from logging import getLogger, FileHandler, Formatter, DEBUG
 
 __tool_name__ = "FLaP"
-__version__ = "0.4.2"
+__version__ = "0.5.0"
 
 
 def _configure_logger():
