@@ -298,6 +298,12 @@ class ParserTests(TestCase):
             r"foo ")
         self._engine.end_of_input.assert_called_once_with("Unknown", ANY)
 
+    def test_rewriting_overpic(self):
+        self._engine.update_link.return_value = "img_result"
+        self._do_test_with(r"\begin{overpic}{img/result}blabla\end{overpic}",
+                           r"\begin{overpic}{img_result}blabla\end{overpic}")
+        self._engine.update_link.assert_called_once_with("img/result", ANY)
+
 
 if __name__ == '__main__':
     main()

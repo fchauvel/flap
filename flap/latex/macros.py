@@ -180,6 +180,12 @@ class Begin(Macro):
         environment = parser.evaluate_as_text(invocation.argument("environment"))
         if environment == "verbatim":
             return parser._create.as_list(r"\begin{verbatim}") + parser.capture_until_text(r"\end{verbatim}")
+        elif environment == "overpic":
+            invocation.append_argument("options", parser.capture_options())
+            invocation.append_argument("link", parser.capture_one())
+            link = parser.evaluate_as_text(invocation.argument("link"))
+            new_link = self._flap.update_link(link, invocation)
+            return invocation.substitute("link", parser._create.as_list("{" + new_link + "}")).as_tokens
         else:
             return invocation.as_tokens
 
