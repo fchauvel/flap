@@ -93,6 +93,7 @@ class Settings:
 
     def end_of_input(self, source, invocation):
         self._show_invocation(invocation)
+        log(invocation, "Skipping the rest of '{source}'", source=source)
 
     def relocate_dependency(self, dependency, invocation):
         if dependency not in self._analysed_dependencies:
