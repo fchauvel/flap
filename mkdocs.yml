@@ -13,4 +13,5 @@ pages:
    - "Coding": getting_ready.md
    - "Testing": testing.md
    - "Releasing": releasing.md
+ - "Versions": changelog.md
 theme: flatly
