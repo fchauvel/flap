@@ -29,8 +29,8 @@ project:
       \begin{document}
       This is an example of graphic inclusion:
       \includegraphics  % Blabla
-      [width=3cm] %
-      {figure1}
+      [width=3cm]{%
+      figure1}
       \end{document}
   - path: figure1.pdf
     content: |
@@ -44,8 +44,7 @@ expected:
       \begin{document}
       This is an example of graphic inclusion:
       \includegraphics  % Blabla
-      [width=3cm] %
-      {figure1}
+      [width=3cm]{figure1}
       \end{document}
   - path: figure1.pdf
     content: |

@@ -132,6 +132,9 @@ class Parser:
 
     def _evaluate_one(self):
         self._abort_on_end_of_text()
+        if self._next_token.is_a_comment:
+            self._tokens.take()
+            return []
         if self._next_token.begins_a_group:
             return self._evaluate_group()
         elif self._next_token.is_a_command:
