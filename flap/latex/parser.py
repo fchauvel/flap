@@ -64,6 +64,7 @@ class Parser:
         self._create = factory
         self._tokens = self._create.as_stream(tokens)
         self._definitions = environment
+        self.expand_user_macros = False
 
     def _spawn(self, tokens, environment):
         new_environment = Context(self._definitions, definitions=environment)
@@ -83,9 +84,16 @@ class Parser:
         if self._next_token.begins_a_group:
             return self.capture_group()
         elif self._next_token.is_a_command:
-            return self._evaluate_one()
+            return self._rewrite_command()
         else:
             return [self._tokens.take()]
+
+    def _rewrite_command(self):
+        command = str(self._next_token)
+        if command not in self._definitions:
+            return self.default(command)
+        macro = self._definitions[command]
+        return macro.rewrite(self)
 
     @property
     def _next_token(self):
@@ -164,7 +172,7 @@ class Parser:
         if command not in self._definitions:
             return self.default(command)
         macro = self._definitions[command]
-        return macro.invoke(self)
+        return macro.evaluate(self)
 
     def capture_options(self, start="[", end="]"):
         result = []

@@ -119,7 +119,11 @@ class Macro:
     def name(self):
         return self._name
 
-    def invoke(self, parser):
+    def rewrite(self, parser):
+        invocation = self._parse(parser)
+        return self._execute(parser, invocation)
+
+    def evaluate(self, parser):
         invocation = self._parse(parser)
         return self._execute(parser, invocation)
 
@@ -149,6 +153,7 @@ class Macro:
     def _execute(self, parser, invocation):
         return parser._spawn(self._body, invocation.arguments)._evaluate_group()
 
+
     def __eq__(self, other):
         if not isinstance(other, Macro):
             return False
@@ -163,6 +168,18 @@ class Macro:
         if body:
             body = "".join(map(str, self._body))
         return r"\def" + self._name + signature + body
+
+
+class UserDefinedMacro(Macro):
+
+    def __init__(self, flap, name, signature, body):
+        super().__init__(flap, name, signature, body)
+
+    def rewrite(self, parser):
+        invocation = self._parse(parser)
+        if parser.expand_user_macros:
+            return super()._execute(parser, invocation)
+        return invocation.as_tokens
 
 
 class Begin(Macro):
@@ -218,13 +235,18 @@ class Def(Macro):
     def __init__(self, flap):
         super().__init__(flap, r"\def", None, None)
 
+    def rewrite(self, parser):
+        invocation = self._parse(parser)
+        self._execute(parser, invocation)
+        return invocation.as_tokens
+
     def _capture_arguments(self, parser, invocation):
         invocation.append_argument("name", parser.capture_macro_name())
         invocation.append_argument("signature", parser.capture_until_group())
         invocation.append_argument("body", parser.capture_group())
 
     def _execute(self, parser, invocation):
-        macro = Macro(
+        macro = UserDefinedMacro(
             self._flap,
             "".join(map(str, invocation.argument("name"))),
             invocation.argument("signature"),

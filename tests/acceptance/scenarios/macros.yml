@@ -16,7 +16,7 @@
 #
 
 name: macros
-skipped: True
+skipped: False
 description: >
    Test how FLaP handles macro definitions such as \def or \newcommand.
 
