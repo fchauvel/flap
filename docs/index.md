@@ -40,7 +40,3 @@ Python 3.2.
 
 If you give FLaP a try, please [report any bugs, issues or feature request](reporting_issues.md) using the
 [issue tracker](https://github.com/fchauvel/flap/issues).
-
-Feel free to share any question or comment on our [FLaP mailing list](mailto:flap-general@freelists.org). Note that you must
-subscribe first by sending an email to 'flap-general-request@freelists.org' with 'subscribe' in the Subject field OR by
-visiting [our subscription page](http://www.freelists.org/list/flap-general).

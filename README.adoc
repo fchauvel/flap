@@ -49,8 +49,4 @@ See also the link:https://pythonhosted.org/FLaP/[online FLaP documentation].
 If you give FLaP a try, please report any bugs, issues or feature request using the
 link:https://github.com/fchauvel/flap/issues[issue tracker].
 
-Feel free to share any question or comment on our mailto:flap-general@freelists.org[FLaP mailing list]. Note that you must
-subscribe first by sending an email to 'flap-general-request@freelists.org' with 'subscribe' in the Subject field OR by
-visiting link:http://www.freelists.org/list/flap-general[our subscription page].
-
 
