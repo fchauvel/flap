@@ -141,10 +141,14 @@ class Settings:
         self._show_invocation(invocation)
         resource = self._find(path, location, extensions, error)
         new_path = resource._path.relative_to(self.root_directory._path)
-        new_file_name = str(new_path).replace("/", "_")
+        new_file_name = self._as_file_name(new_path)
         self._file_system.copy(resource, self.output_directory / new_file_name)
         log(invocation, "Copying '{source:s}' to '{target:s}'", source=resource.fullname(), target=new_file_name)
-        return str(new_path.without_extension()).replace("/", "_")
+        return self._as_file_name(new_path.without_extension())
+
+    @staticmethod
+    def _as_file_name(path):
+        return str(path).replace("../", "").replace("/", "_")
 
     def include_only(self, selection, invocation):
         log(invocation, "Restricting file inclusions to {files:s}", files=repr(selection))
