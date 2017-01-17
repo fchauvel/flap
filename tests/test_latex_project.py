@@ -19,7 +19,7 @@ from unittest import TestCase
 
 from flap.util.oofs import InMemoryFileSystem
 from flap.util.path import Path
-from tests.latex_project import Fragment, LatexProject, LatexProjectBuilder, TexFile, a_project
+from tests.latex_project import Fragment, LatexProject, LatexProjectBuilder, TexFile, a_project, Invocation
 
 
 class TexFileTest(TestCase):
@@ -274,3 +274,26 @@ class FragmentTest(TestCase):
     def test_differs_when_code_varies(self):
         other = self._make_fragment(self._file, self._line, self._column, self._code + "blabla")
         self.assertNotEqual(self._fragment, other)
+
+
+class InvocationTests(TestCase):
+
+    def setUp(self):
+        self._tex_file = "foo.tex"
+        self._invocation = Invocation(self._tex_file)
+
+    def test_default_tex_file(self):
+        invocation = Invocation()
+        self.assertEqual(Invocation.DEFAULT_TEX_FILE, invocation.tex_file)
+
+    def test_setting_tex_file(self):
+        self.assertEqual(self._tex_file, self._invocation.tex_file)
+
+    def test_equals_itself(self):
+        self.assertEqual(self._invocation, self._invocation)
+
+    def test_equals_similar_invocation(self):
+        self.assertEqual(Invocation(self._tex_file), self._invocation)
+
+    def test_differs_from_a_different_invocation(self):
+        self.assertNotEquals(Invocation("bar.tex"), self._invocation)

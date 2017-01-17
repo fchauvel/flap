@@ -17,7 +17,7 @@
 
 import yaml
 from io import StringIO
-from tests.latex_project import LatexProject, TexFile, FlapTestCase, Fragment
+from tests.latex_project import LatexProject, TexFile, FlapTestCase, Fragment, Invocation
 
 
 class YamlCodec:
@@ -34,6 +34,8 @@ class YamlCodec:
     PATH_KEY = "path"
     CONTENT_KEY = "content"
     SKIPPED_KEY = "skipped"
+    INVOCATION_KEY = "invocation"
+    TEX_FILE_KEY = "tex-file"
 
     KEY_OUTPUTS = "outputs"
     KEY_FILE = "file"
@@ -49,6 +51,7 @@ class YamlCodec:
         arguments = [self._extract_name_from(content),
                      self._extract_project_from(content),
                      self._extract_expected_from(content),
+                     self._extract_invocation_from(content),
                      self._extract_is_skipped_from(content),
                      self._extract_outputs(content)]
         return FlapTestCase(*arguments)
@@ -90,6 +93,13 @@ class YamlCodec:
         if self.CONTENT_KEY not in entry:
             self._handle_missing_key(self.CONTENT_KEY)
         return entry[self.CONTENT_KEY].strip()
+
+    def _extract_invocation_from(self, project):
+        if self.INVOCATION_KEY in project:
+            invocation = project[self.INVOCATION_KEY]
+            if self.TEX_FILE_KEY in invocation:
+                return Invocation(invocation[self.TEX_FILE_KEY])
+        return Invocation()
 
     def _extract_is_skipped_from(self, content):
         if self.SKIPPED_KEY not in content:

@@ -20,7 +20,7 @@ from unittest import TestCase
 from flap.util.oofs import InMemoryFileSystem
 from flap.util.path import Path
 from unittest.mock import MagicMock
-from tests.latex_project import Fragment, a_project, FlapTestCase
+from tests.latex_project import Fragment, a_project, FlapTestCase, Invocation
 from tests.acceptance.yaml import FileBasedTestRepository, YamlCodec, InvalidYamlTestCase
 
 
@@ -31,7 +31,7 @@ class FlapTestCaseTests(TestCase):
         self.expected = a_project().with_merged_file("blabla").build()
         self.test_case_name = "foo"
         self.output = [Fragment("test.tex", 1, 1, r"\input{foo}")]
-        self.test_case = FlapTestCase(self.test_case_name, self.project, self.expected, False, self.output)
+        self.test_case = FlapTestCase(self.test_case_name, self.project, self.expected, None, False, self.output)
 
     def test_is_not_skipped(self):
         self.assertFalse(self.test_case.is_skipped)
@@ -58,6 +58,18 @@ class FlapTestCaseTests(TestCase):
                 "foo",
                 a_project().with_main_file("blabla").build(),
                 a_project().with_merged_file("blabla").build(),
+                None,
+                False,
+                [Fragment("test.tex", 1, 1, r"\input{foo}")]),
+            self.test_case)
+
+    def test_differs_from_a_project_with_another_invocation(self):
+        self.assertNotEqual(
+            FlapTestCase(
+                "foo",
+                a_project().with_main_file("blabla").build(),
+                a_project().with_merged_file("something different").build(),
+                Invocation("foo.tex"),
                 False,
                 [Fragment("test.tex", 1, 1, r"\input{foo}")]),
             self.test_case)
@@ -68,6 +80,7 @@ class FlapTestCaseTests(TestCase):
                 "foo",
                 a_project().with_main_file("blabla").build(),
                 a_project().with_merged_file("something different").build(),
+                None,
                 False,
                 [Fragment("test.tex", 1, 1, r"\input{foo}")]),
             self.test_case)
@@ -78,6 +91,7 @@ class FlapTestCaseTests(TestCase):
                 "foo",
                 a_project().with_main_file("blabla").build(),
                 a_project().with_merged_file("blabla").build(),
+                None,
                 True,
                 [Fragment("test.tex", 1, 1, r"\input{foo}")]),
             self.test_case)
@@ -103,7 +117,7 @@ class TestSkippedFlapTestCase(TestCase):
         self.project = a_project().with_main_file("blabla").build()
         self.expected = a_project().with_merged_file("blabla").build()
         self.test_case_name = "foo"
-        self.test_case = FlapTestCase(self.test_case_name, self.project, self.expected, True)
+        self.test_case = FlapTestCase(self.test_case_name, self.project, self.expected, skipped=True)
 
     def test_is_skipped(self):
         self.assertTrue(self.test_case.is_skipped)
@@ -139,7 +153,20 @@ class TestYamlCodec(TestCase):
                         "Test 1",
                         a_project().with_main_file("blabla").build(),
                         a_project().with_merged_file("blabla").build(),
-                        True)
+                        skipped=True)
+
+        self.assertEqual(expected, test_case)
+
+    def test_parsing_a_test_case_with_invocation(self):
+        yaml_file = self._create_file(YamlTest.that_includes_invocation("Test 1"))
+        test_case = self._read_test_case_from(yaml_file)
+
+        expected = FlapTestCase(
+                        "Test 1",
+                        a_project().with_main_file("blabla").build(),
+                        a_project().with_merged_file("blabla").build(),
+                        Invocation(tex_file="foo.tex"),
+                        skipped=False)
 
         self.assertEqual(expected, test_case)
 
@@ -151,6 +178,7 @@ class TestYamlCodec(TestCase):
                         "Test 1",
                         a_project().with_main_file("blabla").build(),
                         a_project().with_merged_file("blabla").build(),
+                        None,
                         False,
                         [Fragment("main.tex", 1, 1, "\\input{result}")])
 
@@ -331,6 +359,18 @@ class YamlTest:
                  "    line: 1\n"
                  "    column: 1\n"
                  "    code: \\input{result}\n")
+
+    @staticmethod
+    def that_includes_invocation(name):
+         return ("name: {name}\n".format(name=name) +
+                 "project:\n"
+                 " - path: main.tex\n"
+                 "   content: blabla\n"
+                 "expected:\n"
+                 "  - path: merged.tex\n"
+                 "    content: blabla\n"
+                 "invocation: \n"
+                 "  tex-file: foo.tex")
 
     @staticmethod
     def that_passes(test_case_name):

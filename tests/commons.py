@@ -52,7 +52,7 @@ class EndToEndRunner:
 
     def _execute(self, test_case):
         self._file_system.move_to_directory(self._path_for(test_case))
-        self._controller.run(tex_file="./project/main.tex", output="output")
+        self._controller.run(tex_file="./project/" + test_case._invocation.tex_file, output="output")
 
     def _verify(self, test_case):
         self._verify_generated_files(test_case)

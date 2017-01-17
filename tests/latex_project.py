@@ -168,12 +168,13 @@ class Fragment:
 
 class FlapTestCase:
 
-    def __init__(self, name, project, expected, skipped=False, output=None):
+    def __init__(self, name, project, expected, invocation=None, skipped=False, output=None):
         if not len or len(name) == 0:
             raise ValueError("Invalid test case name (found '%s')" % name)
         self._name = name
         self._project = project
         self._expected = expected
+        self._invocation = invocation or Invocation()
         self._is_skipped = skipped
         self._output = output or []
 
@@ -209,5 +210,26 @@ class FlapTestCase:
         return self._name == other._name and \
                self._project == other._project and \
                self._expected == other._expected and \
+               self._invocation == other._invocation and \
                self._is_skipped == other._is_skipped and \
                self._output == other._output
+
+
+class Invocation:
+    """
+    Capture the parameters that can be passed to FLaP via the command line
+    """
+
+    DEFAULT_TEX_FILE = "main.tex"
+
+    def __init__(self, tex_file=None):
+        self._tex_file = tex_file or str(self.DEFAULT_TEX_FILE)
+
+    @property
+    def tex_file(self):
+        return self._tex_file
+
+    def __eq__(self, other):
+        if not isinstance(other, Invocation):
+            return False
+        return self._tex_file == other._tex_file
