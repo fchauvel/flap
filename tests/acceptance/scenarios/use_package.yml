@@ -16,6 +16,7 @@
 #
 
 name: use packages
+skipped: True
 description: >
    Test that FLaP does copy local packages that are refered by the main LaTeX
    file
@@ -27,6 +28,7 @@ project:
       \documentclass{article}
 
       \usepackage{my-package}
+      \usepackage{style/my-other-package}
 
       \begin{document}
       This is an example of \LaTeX document that uses a special command from a
@@ -36,6 +38,11 @@ project:
   - path: my-package.sty
     content: |
       This is a wonderful package!
+
+  - path: style/my-other-package.sty
+    content: |
+      This is another wonderful package!
+
 
 # Describe the LaTeX project, once flattened
 expected:
@@ -44,6 +51,7 @@ expected:
       \documentclass{article}
 
       \usepackage{my-package}
+      \usepackage{my-other-package}
 
       \begin{document}
       This is an example of \LaTeX document that uses a special command from a
@@ -54,9 +62,18 @@ expected:
     content: |
       This is a wonderful package!
 
+  - path: my-other-package.sty
+    content: |
+      This is another wonderful package!
+
 # Describe what should be reported on the console
 outputs:
   - file: main.tex
     line: 3
     column: 1
     code: \usepackage{my-package}
+
+  - file: main.tex
+    line: 4
+    column: 1
+    code: \usepackage{my-other-package}
