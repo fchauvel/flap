@@ -16,7 +16,7 @@
 #
 
 name: use packages
-skipped: True
+skipped: False
 description: >
    Test that FLaP does copy local packages that are refered by the main LaTeX
    file
@@ -51,7 +51,7 @@ expected:
       \documentclass{article}
 
       \usepackage{my-package}
-      \usepackage{my-other-package}
+      \usepackage{style_my-other-package}
 
       \begin{document}
       This is an example of \LaTeX document that uses a special command from a
@@ -62,7 +62,7 @@ expected:
     content: |
       This is a wonderful package!
 
-  - path: my-other-package.sty
+  - path: style_my-other-package.sty
     content: |
       This is another wonderful package!
 
@@ -76,4 +76,4 @@ outputs:
   - file: main.tex
     line: 4
     column: 1
-    code: \usepackage{my-other-package}
+    code: \usepackage{style/my-other-package}

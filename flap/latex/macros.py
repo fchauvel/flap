@@ -270,7 +270,9 @@ class PackageReference(Macro):
 
     def _execute(self, parser, invocation):
         package = parser.evaluate_as_text(invocation.argument("package"))
-        self._flap.relocate_dependency(package, invocation)
+        new_link = self._flap.relocate_dependency(package, invocation)
+        if new_link:
+            return invocation.substitute("package", parser._create.as_list("{" + new_link + "}")).as_tokens
         return invocation.as_tokens
 
 

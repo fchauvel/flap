@@ -271,12 +271,21 @@ class ParserTests(TestCase):
         self._engine.relocate_dependency.assert_called_once_with("article", ANY)
 
     def test_rewriting_usepackage(self):
+        self._engine.relocate_dependency.return_value = None
         self._do_test_with(r"\usepackage{my-package}",
                            r"\usepackage{my-package}")
 
         self._engine.relocate_dependency.assert_called_once_with("my-package", ANY)
 
+    def test_rewriting_usepackage_that_exist_locally(self):
+        self._engine.relocate_dependency.return_value = "style_my-package"
+        self._do_test_with(r"\usepackage{style/my-package}",
+                           r"\usepackage{style_my-package}")
+
+        self._engine.relocate_dependency.assert_called_once_with("style/my-package", ANY)
+
     def test_rewriting_usepackage_with_options(self):
+        self._engine.relocate_dependency.return_value = None
         self._do_test_with(r"\usepackage[length=3cm,width=2cm]{my-package}",
                            r"\usepackage[length=3cm,width=2cm]{my-package}")
 

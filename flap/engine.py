@@ -100,18 +100,19 @@ class Settings:
             self._analysed_dependencies.append(dependency)
             try:
                 file = self._find(dependency, [self.root_directory], ["sty", "cls"], TexFileNotFound(None))
-                self._file_system.copy(file,
-                                       self.output_directory / file.fullname())
+                new_path = self._move(file, invocation)
 
                 self._show_invocation(invocation)
                 symbol_table = SymbolTable.default()
                 symbol_table.CHARACTER += '@'
                 self._rewrite(file.content(), file.fullname(), symbol_table)
+                return self._as_file_name(new_path.without_extension())
 
             except TexFileNotFound:
                 log(invocation,
                     "Could not find class or package '{path:s}' locally",
                     path=dependency)
+                return None
 
     def content_of(self, location, invocation):
         self._show_invocation(invocation)
@@ -140,11 +141,15 @@ class Settings:
     def _update_link(self, path, invocation, location, extensions, error):
         self._show_invocation(invocation)
         resource = self._find(path, location, extensions, error)
-        new_path = resource._path.relative_to(self.root_directory._path)
-        new_file_name = self._as_file_name(new_path)
-        self._file_system.copy(resource, self.output_directory / new_file_name)
-        log(invocation, "Copying '{source:s}' to '{target:s}'", source=resource.fullname(), target=new_file_name)
+        new_path = self._move(resource, invocation)
         return self._as_file_name(new_path.without_extension())
+
+    def _move(self, file, invocation):
+        new_path = file._path.relative_to(self.root_directory._path)
+        new_file_name = self._as_file_name(new_path)
+        self._file_system.copy(file, self.output_directory / new_file_name)
+        log(invocation, "Copying '{source:s}' to '{target:s}'", source=file.fullname(), target=new_file_name)
+        return new_path
 
     @staticmethod
     def _as_file_name(path):
