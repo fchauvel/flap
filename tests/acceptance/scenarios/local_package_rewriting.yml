@@ -15,10 +15,10 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-name: local package rewritting
+name: local package rewriting
 skipped: False
 description: >
-   Test that FLaP properly rewritte local packages, as they may include local
+   Test that FLaP properly rewrite local packages, as they may include local
    graphics for instance.
 
 # Describe the LaTeX projects, as found on the disk

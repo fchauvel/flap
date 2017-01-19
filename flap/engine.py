@@ -76,8 +76,8 @@ class Settings:
         return self.output_directory / "merged.tex"
 
     def execute(self):
-        flattened = self._rewrite(self.read_root_tex, str(self.root_tex_file.resource()))
-        self._write(flattened)
+        tokens = self._rewrite(self.read_root_tex, str(self.root_tex_file.resource()))
+        self._write(tokens, self.flattened)
 
     def _rewrite(self, text, source, symbol_table=SymbolTable.default()):
         factory = Factory(symbol_table)
@@ -87,9 +87,9 @@ class Settings:
                         Context(definitions=macros.all()))
         return parser.rewrite()
 
-    def _write(self, tokens):
+    def _write(self, tokens, destination):
         latex_code = "".join(str(each_token) for each_token in tokens)
-        self._file_system.create_file(self.flattened, latex_code)
+        self._file_system.create_file(destination, latex_code)
 
     def end_of_input(self, source, invocation):
         self._show_invocation(invocation)
@@ -100,12 +100,12 @@ class Settings:
             self._analysed_dependencies.append(dependency)
             try:
                 file = self._find(dependency, [self.root_directory], ["sty", "cls"], TexFileNotFound(None))
-                new_path = self._move(file, invocation)
-
+                new_path = file._path.relative_to(self.root_directory._path)
                 self._show_invocation(invocation)
                 symbol_table = SymbolTable.default()
                 symbol_table.CHARACTER += '@'
-                self._rewrite(file.content(), file.fullname(), symbol_table)
+                tokens = self._rewrite(file.content(), file.fullname(), symbol_table)
+                self._write(tokens, self.output_directory / self._as_file_name(new_path))
                 return self._as_file_name(new_path.without_extension())
 
             except TexFileNotFound:
