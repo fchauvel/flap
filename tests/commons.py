@@ -61,7 +61,7 @@ class EndToEndRunner:
     def _verify_generated_files(self, test_case):
         location = self._file_system.open(Path.fromText("output"))
         actual = LatexProject.extract_from_directory(location)
-        actual.assert_is_equivalent_to(test_case._expected)
+        test_case._expected.assert_is_equivalent_to(actual)
 
     def _verify_console_output(self, test_case):
         self._verify_shown(__version__)
