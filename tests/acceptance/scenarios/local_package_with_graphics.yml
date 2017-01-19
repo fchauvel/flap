@@ -1,0 +1,73 @@
+#
+# This file is part of Flap.
+#
+# Flap is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Flap is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Flap.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+name: local package rewritting
+skipped: True
+description: >
+   Test that FLaP properly rewritte local packages, as they may include local
+   graphics for instance.
+
+# Describe the LaTeX projects, as found on the disk
+project:
+  - path: main.tex
+    content: |
+      \documentclass{article}
+
+      \usepackage{my-style}
+
+      \begin{document}
+      Here is some nice text, powered by \LaTeX.
+      \end{document}
+
+  - path: my-style.sty
+    content:
+      \includegraphics[width=7cm]{images/logo}
+
+  - path: images/logo.pdf
+    content: |
+      SOME PDF DATA
+
+
+# Describe the LaTeX project, once flattened
+expected:
+  - path: merged.tex
+    content: |
+      \documentclass{article}
+
+      \usepackage{my-style}
+
+      \begin{document}
+      Here is some nice text, powered by \LaTeX.
+      \end{document}
+
+  - path: my-style.sty
+    content:
+      \includegraphics[width=7cm]{images_logo}
+
+  - path: images_logo.pdf
+    content: |
+      SOME PDF DATA
+
+outputs:
+  - file: main.tex
+    line: 3
+    column: 1
+    code: \usepackage{my-style}
+  - file: my-style.sty
+    line: 1
+    column: 1
+    code: \includegraphics[width=7cm]{logo}
