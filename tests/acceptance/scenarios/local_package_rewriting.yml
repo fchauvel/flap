@@ -16,7 +16,7 @@
 #
 
 name: local package rewritting
-skipped: True
+skipped: False
 description: >
    Test that FLaP properly rewritte local packages, as they may include local
    graphics for instance.
@@ -70,4 +70,4 @@ outputs:
   - file: my-style.sty
     line: 1
     column: 1
-    code: \includegraphics[width=7cm]{logo}
+    code: \includegraphics[width=7cm]{images/logo}

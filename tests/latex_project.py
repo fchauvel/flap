@@ -54,26 +54,26 @@ class LatexProject:
             location = anchor / path
             file_system.create_file(location, file.content)
 
-    def assert_is_equivalent_to(self, expectation):
-        self._verify_missing_files(expectation)
-        self._verify_extraneous_files(expectation)
-        self._verify_different_files(expectation)
+    def assert_is_equivalent_to(self, actual):
+        self._verify_missing_files(actual)
+        self._verify_extraneous_files(actual)
+        self._verify_different_files(actual)
 
-    def _verify_different_files(self, expectation):
+    def _verify_different_files(self, actual):
         for (path, file) in self.files.items():
-            assert path in expectation.files and file == expectation.files[path], \
-                self.CONTENT_MISMATCH.format(file=path, expected=expectation.files[path].content, actual=file.content)
+            assert path in actual.files and file == actual.files[path], \
+                self.CONTENT_MISMATCH.format(file=path, actual=actual.files[path].content, expected=file.content)
 
     CONTENT_MISMATCH = "Content mismatch for {file}\nExpected:\n'{expected}'\nbut found:\n'{actual}'"
 
-    def _verify_missing_files(self, other):
+    def _verify_missing_files(self, actual):
         for path in self.files:
-            assert path in other.files, self.MISSING_FILE.format(file=path)
+            assert path in actual.files, self.MISSING_FILE.format(file=path)
 
     MISSING_FILE = "Missing file '{file}'!"
 
-    def _verify_extraneous_files(self, other):
-        for path in other.files:
+    def _verify_extraneous_files(self, actual):
+        for path in actual.files:
             assert path in self.files, self.UNEXPECTED_FILE.format(file=path)
 
     UNEXPECTED_FILE = "Unexpected file '{file}'!"

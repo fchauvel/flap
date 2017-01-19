@@ -101,7 +101,7 @@ class LatexProjectTests(TestCase):
             self.fail("Exception expected")
 
         except AssertionError as error:
-            self.assertEqual(LatexProject.CONTENT_MISMATCH.format(file="main.tex", expected=content, actual="blabla"),
+            self.assertEqual(LatexProject.CONTENT_MISMATCH.format(file="main.tex", actual=content, expected="blabla"),
                              str(error))
 
 
