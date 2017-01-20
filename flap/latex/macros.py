@@ -19,6 +19,7 @@
 
 import re
 from copy import copy
+from flap.latex.errors import UnknownSymbol
 
 
 class Invocation:
@@ -142,7 +143,8 @@ class Macro:
             if any_token.is_a_parameter:
                 parameter = str(any_token)
                 if index == len(self._signature)-1:
-                    invocation.append_argument(parameter, parser._evaluate_one())
+                    expression = parser.capture_one()
+                    invocation.append_argument(parameter, parser._spawn(expression, dict()).evaluate())
                 else:
                     next_token = self._signature[index + 1]
                     value = parser._evaluate_until(lambda token: token.has_text(next_token._text))
@@ -238,7 +240,7 @@ class Def(Macro):
     def rewrite(self, parser):
         invocation = self._parse(parser)
         self._execute(parser, invocation)
-        return invocation.as_tokens
+        return invocation.substitute("body", self._rewritten_body).as_tokens
 
     def _capture_arguments(self, parser, invocation):
         invocation.append_argument("name", parser.capture_macro_name())
@@ -246,11 +248,17 @@ class Def(Macro):
         invocation.append_argument("body", parser.capture_group())
 
     def _execute(self, parser, invocation):
+        body = invocation.argument("body")
+        try:
+            self._rewritten_body = parser._spawn(body, dict()).rewrite()
+        except UnknownSymbol:
+            self._rewritten_body = body
+
         macro = UserDefinedMacro(
             self._flap,
             "".join(map(str, invocation.argument("name"))),
             invocation.argument("signature"),
-            invocation.argument("body"))
+            self._rewritten_body)
         parser.define(macro)
         return []
 
@@ -413,9 +421,12 @@ class UpdateLink(Macro):
         invocation.append_argument("link", parser.capture_group())
 
     def _execute(self, parser, invocation):
-        link = parser.evaluate_as_text(invocation.argument("link"))
-        new_link = self.update_link(parser, link, invocation)
-        return invocation.substitute("link", parser._create.as_list("{" + new_link + "}")).as_tokens
+        try:
+            link = parser.evaluate_as_text(invocation.argument("link"))
+            new_link = self.update_link(parser, link, invocation)
+            return invocation.substitute("link", parser._create.as_list("{" + new_link + "}")).as_tokens
+        except UnknownSymbol:
+            return invocation.as_tokens
 
     def update_link(self, parser, link, invocation):
         pass

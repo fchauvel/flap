@@ -16,3 +16,15 @@
 # You should have received a copy of the GNU General Public License
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
+
+
+class UnknownSymbol(Exception):
+    """
+    Thrown when the parser meets a symbol that it does not know about
+    """
+
+    def __init__(self, symbol):
+        self._symbol = symbol
+
+    def __repr__(self):
+        return "Unknown symbol '{}'".format(self._symbol)

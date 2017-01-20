@@ -16,7 +16,7 @@
 #
 
 name: macros with rewriting
-skipped: True
+skipped: False
 description: >
    Test how FLaP handles macro definitions that use directives that FLaP
    must rewrite.
@@ -28,14 +28,15 @@ project:
       \documentclass{article}
 
       \def\logo{\includegraphics{images/logo}}
+      \def\photo#1{\includegraphics{#1}}
 
       \begin{document}
-      Here is my logo: \logo
+      \logo
       \end{document}
 
   - path: images/logo.pdf
     content: |
-      PDF DATA
+      PDF DATA 1
 
 # Describe the LaTeX project, once flattened
 expected:
@@ -44,14 +45,15 @@ expected:
       \documentclass{article}
 
       \def\logo{\includegraphics{images_logo}}
+      \def\photo#1{\includegraphics{#1}}
 
       \begin{document}
-      Here is my logo: \logo
+      \logo
       \end{document}
 
   - path: images_logo.pdf
     content: |
-      PDF DATA
+      PDF DATA 1
 
 outputs:
   - file: main.tex

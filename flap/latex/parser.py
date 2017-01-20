@@ -19,6 +19,7 @@
 
 from flap.latex.commons import Stream, Source
 from flap.latex.lexer import Lexer
+from flap.latex.errors import UnknownSymbol
 
 
 class Context:
@@ -82,11 +83,18 @@ class Parser:
     def _rewrite_one(self):
         self._abort_on_end_of_text()
         if self._next_token.begins_a_group:
-            return self.capture_group()
+            return self._rewrite_group()
         elif self._next_token.is_a_command:
             return self._rewrite_command()
         else:
             return [self._tokens.take()]
+
+    def _rewrite_group(self):
+        tokens = self._accept(lambda token: token.begins_a_group)
+        while not self._next_token.ends_a_group:
+            tokens += self._rewrite_one()
+        tokens += self._accept(lambda token: token.ends_a_group)
+        return tokens
 
     def _rewrite_command(self):
         command = str(self._next_token)
@@ -127,6 +135,8 @@ class Parser:
 
     def evaluate_parameter(self, parameter):
         self._tokens.take()
+        if parameter not in self._definitions:
+            raise UnknownSymbol(parameter)
         return self._definitions[parameter]
 
     def evaluate_as_text(self, tokens):
@@ -148,7 +158,10 @@ class Parser:
         elif self._next_token.is_a_command:
             return self.evaluate_command(str(self._next_token))
         elif self._next_token.is_a_parameter:
-            return self._definitions[str(self._tokens.take())]
+            parameter = str(self._tokens.take())
+            if parameter in self._definitions:
+                return self._definitions[parameter]
+            raise UnknownSymbol(parameter)
         else:
             return [self._tokens.take()]
 
@@ -227,4 +240,5 @@ class Parser:
     @staticmethod
     def _as_text(tokens):
         return "".join(map(str, tokens))
+
 
