@@ -65,14 +65,14 @@ class Parser:
         self._create = factory
         self._tokens = self._create.as_stream(tokens)
         self._definitions = environment
-        self.expand_user_macros = False
 
     def _spawn(self, tokens, environment):
         new_environment = Context(self._definitions, definitions=environment)
-        return Parser(
+        parser = Parser(
             tokens,
             self._create,
             new_environment)
+        return parser
 
     def rewrite(self):
         result = []
@@ -241,4 +241,14 @@ class Parser:
     def _as_text(tokens):
         return "".join(map(str, tokens))
 
-
+    def shall_expand(self):
+        result = False
+        for _, any_macro in self._definitions.items():
+            was_called = getattr(any_macro, "was_called", None)
+            if was_called and any_macro.was_called and any_macro.requires_expansion:
+                result = True
+        for _, any_macro in self._definitions.items():
+            was_called = getattr(any_macro, "was_called", None)
+            if was_called:
+                any_macro._called = False
+        return result

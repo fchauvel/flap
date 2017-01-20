@@ -28,7 +28,6 @@ project:
       \documentclass{article}
 
       \def\logo{\includegraphics{images/logo}}
-      \def\photo#1{\includegraphics{#1}}
 
       \begin{document}
       \logo
@@ -45,7 +44,6 @@ expected:
       \documentclass{article}
 
       \def\logo{\includegraphics{images_logo}}
-      \def\photo#1{\includegraphics{#1}}
 
       \begin{document}
       \logo
@@ -56,6 +54,10 @@ expected:
       PDF DATA 1
 
 outputs:
+  - file: main.tex
+    line: 3
+    column: 11
+    code: \includegraphics{images/logo}
   - file: main.tex
     line: 3
     column: 11

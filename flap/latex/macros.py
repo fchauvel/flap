@@ -115,6 +115,16 @@ class Macro:
         self._name = name
         self._signature = signature or []
         self._body = body or iter([])
+        self._called = False
+        self._requires_expansion = False
+
+    @property
+    def requires_expansion(self):
+        return self._requires_expansion
+
+    @property
+    def was_called(self):
+        return self._called
 
     @property
     def name(self):
@@ -125,6 +135,7 @@ class Macro:
         return self._execute(parser, invocation)
 
     def evaluate(self, parser):
+        self._called = True
         invocation = self._parse(parser)
         return self._execute(parser, invocation)
 
@@ -144,7 +155,7 @@ class Macro:
                 parameter = str(any_token)
                 if index == len(self._signature)-1:
                     expression = parser.capture_one()
-                    invocation.append_argument(parameter, parser._spawn(expression, dict()).evaluate())
+                    invocation.append_argument(parameter, expression)
                 else:
                     next_token = self._signature[index + 1]
                     value = parser._evaluate_until(lambda token: token.has_text(next_token._text))
@@ -153,7 +164,8 @@ class Macro:
                 invocation.append(parser._accept(lambda token: True))
 
     def _execute(self, parser, invocation):
-        return parser._spawn(self._body, invocation.arguments)._evaluate_group()
+        arguments = { parameter: parser._spawn(argument, dict()).evaluate() for parameter, argument in invocation.arguments.items() }
+        return parser._spawn(self._body, arguments)._evaluate_group()
 
 
     def __eq__(self, other):
@@ -179,8 +191,10 @@ class UserDefinedMacro(Macro):
 
     def rewrite(self, parser):
         invocation = self._parse(parser)
-        if parser.expand_user_macros:
-            return super()._execute(parser, invocation)
+        expansion = super()._execute(parser, invocation)
+        #if parser.shall_expand() or parser.expand_user_macros:
+        if parser.shall_expand():
+            return expansion
         return invocation.as_tokens
 
 
@@ -258,7 +272,7 @@ class Def(Macro):
             self._flap,
             "".join(map(str, invocation.argument("name"))),
             invocation.argument("signature"),
-            self._rewritten_body)
+            body)
         parser.define(macro)
         return []
 
@@ -337,6 +351,7 @@ class TexFileInclusion(Macro):
 
     def __init__(self, flap, name):
         super().__init__(flap, name, None, None)
+        self._requires_expansion = True
 
     def _capture_arguments(self, parser, invocation):
         invocation.append_argument("link", parser.capture_one())

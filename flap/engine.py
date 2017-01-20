@@ -121,14 +121,14 @@ class Settings:
         return file.content()
 
     def update_link(self, path, invocation):
-        return self._update_link(path, invocation, self.graphics_directory, ["pdf", "png", "jpeg", "jpg", "ps", "eps"], GraphicNotFound(None))
+        return self._update_link(path, invocation, self.graphics_directory, ["pdf", "png", "jpeg", "jpg", "ps", "eps"], GraphicNotFound(path))
 
     def update_link_to_bibliography(self, path, invocation):
-        return self._update_link(path, invocation, [self.root_directory], ["bib"], ResourceNotFound(None))
+        return self._update_link(path, invocation, [self.root_directory], ["bib"], ResourceNotFound(path))
 
     def update_link_to_bibliography_style(self, path, invocation):
         try:
-            return self._update_link(path, invocation, [self.root_directory], ["bst"], ResourceNotFound(None))
+            return self._update_link(path, invocation, [self.root_directory], ["bst"], ResourceNotFound(path))
         except ResourceNotFound:
             log(invocation,
                 "Could not find bibliography style '{path:s}' locally",

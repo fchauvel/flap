@@ -67,7 +67,6 @@ class ParserTests(TestCase):
 
     def _do_test_with(self, input, output):
         parser = Parser(self._factory.as_tokens(input, "Unknown"), self._factory, self._environment)
-        parser.expand_user_macros = True
         tokens = parser.rewrite()
         self._verify_output_is(output, tokens)
 
@@ -121,25 +120,12 @@ class ParserTests(TestCase):
     def _macro(self, name, parameters, body):
         return self._macros.create(name, self._factory.as_list(parameters), self._factory.as_list(body))
 
-    def test_invoking_a_macro_where_one_argument_is_a_group(self):
-        self._define_macro(r"\foo", "(#1)", "{Text: #1}")
-        self._do_test_with(r"\foo({bar!})",
-                           r"Text: bar!")
-
-    def test_invoking_a_macro_with_two_parameters(self):
-        self._define_macro(r"\point", "(#1,#2)", "{X=#1 and Y=#2}")
-        self._do_test_with(r"\point(12,{3 point 5})", "X=12 and Y=3 point 5")
 
     def test_defining_a_macro_without_parameter(self):
         self._do_test_with(r"\def\foo{X}",
                            r"\def\foo{X}")
         self.assertEqual(self._macro(r"\foo", "", "{X}"), self._environment[r"\foo"])
 
-    def test_defining_internal_macro(self):
-        self._symbols.CHARACTER += "@"
-        self._do_test_with(r"\def\internal@foo{\internal@bar} \internal@foo",
-                           r"\def\internal@foo{\internal@bar} \internal@bar")
-        self.assertEqual(self._macro(r"\internal@foo", "", r"{\internal@bar}"), self._environment[r"\internal@foo"])
 
     def test_defining_a_macro_with_one_parameter(self):
         self._do_test_with(r"\def\foo#1{X}",
@@ -152,45 +138,12 @@ class ParserTests(TestCase):
         self.assertEqual(self._macro(r"\point", "(#1,#2,#3)", "{X}"),
                          self._environment[r"\point"])
 
-    def test_macro(self):
-        self._do_test_with(r"\def\foo{X}\foo",
-                           r"\def\foo{X}X")
-
-    def test_macro_with_one_parameter(self):
-        self._do_test_with(r"\def\foo#1{x=#1}\foo{2}",
-                           r"\def\foo#1{x=#1}x=2")
-
-    def test_macro_with_inner_macro(self):
-        self._do_test_with(r"\def\foo#1{\def\bar#1{X #1} \bar{#1}} \foo{Y}",
-                           r"\def\foo#1{\def\bar#1{X #1} \bar{#1}}  X Y")
-
-    def test_macro_with_parameter_scope(self):
-        self._do_test_with(r"\def\foo(#1,#2){"
-                           r"\def\bar#1{Bar=#1}"
-                           r"\bar{#2} ; #1"
-                           r"}"
-                           r"\foo(2,3)",
-                           r"\def\foo(#1,#2){"
-                           r"\def\bar#1{Bar=#1}"
-                           r"\bar{#2} ; #1"
-                           r"}"
-                           r"Bar=3 ; 2")
-
     def test_parsing_input(self):
         self._engine.content_of.return_value = "File content"
         self._do_test_with(r"\input{my-file}",
                            r"File content")
         self._engine.content_of.assert_called_once_with("my-file", ANY)
 
-    def test_macro_with_inner_redefinition_of_input(self):
-        self._engine.content_of.return_value = "File content"
-        self._do_test_with(r"\def\foo#1{\def\input#1{File: #1} \input{#1}} \foo{test.tex}",
-                           r"\def\foo#1{\def\input#1{File: #1} \input{#1}}  File: test.tex")
-
-    def test_macro_with_inner_use_of_input(self):
-        self._engine.content_of.return_value = "blabla"
-        self._do_test_with(r"\def\foo#1{File: \input{#1}} \foo{test.tex}",
-                           r"\def\foo#1{File: \input{#1}} File: blabla")
 
     def test_rewriting_multiline_commands(self):
         self._engine.update_link.return_value = "img_result"
@@ -317,6 +270,15 @@ class ParserTests(TestCase):
                            r"\begin{overpic}{img_result}blabla\end{overpic}")
         self._engine.update_link.assert_called_once_with("img/result", ANY)
 
+
+    def test_expanding_macros(self):
+        self._engine.update_link.return_value = "images_logo"
+        self._do_test_with(
+            r"\def\logo{\includegraphics{images/logo}}"
+            r"\logo",
+            r"\def\logo{\includegraphics{images_logo}}"
+            r"\logo"
+        )
 
 if __name__ == '__main__':
     main()

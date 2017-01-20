@@ -16,7 +16,7 @@
 #
 
 name: macros expansion
-skipped: True
+skipped: False
 description: >
    Test how FLaP handles macro definitions that use directives that FLaP
    must then expand.
@@ -52,5 +52,5 @@ expected:
 outputs:
   - file: main.tex
     line: 3
-    column: 11
+    column: 23
     code: \input{#1}
