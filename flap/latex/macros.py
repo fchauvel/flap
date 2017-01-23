@@ -20,6 +20,7 @@
 import re
 from copy import copy
 from flap.latex.errors import UnknownSymbol
+from flap.latex.environments import Overpic, Verbatim
 
 
 class Invocation:
@@ -77,6 +78,10 @@ class MacroFactory:
     Create macros that are associated with a given FLaP backend
     """
 
+    @staticmethod
+    def mark_as_environment(name):
+        return "E%" + name
+
     def __init__(self, flap):
         self._flap = flap
         self._macros = [
@@ -96,9 +101,21 @@ class MacroFactory:
             UsePackage(self._flap),
             SubFile(self._flap)
         ]
+        self._environments = [
+            Overpic(flap),
+            Verbatim(flap)
+        ]
 
     def all(self):
-        return {each.name: each for each in self._macros}
+        definitions = {}
+        for each_macro in self._macros:
+            definitions[each_macro.name] = each_macro
+        for each_environment in self._environments:
+            definitions[self.mark_as_environment(each_environment.name)] = each_environment
+        return definitions
+
+    def all_environments(self):
+        return {each.name: each for each in self._environments}
 
     def create(self, name, parameters, body):
         return Macro(self._flap, name, parameters, body)
@@ -192,7 +209,6 @@ class UserDefinedMacro(Macro):
     def rewrite(self, parser):
         invocation = self._parse(parser)
         expansion = super()._execute(parser, invocation)
-        #if parser.shall_expand() or parser.expand_user_macros:
         if parser.shall_expand():
             return expansion
         return invocation.as_tokens
@@ -211,22 +227,17 @@ class Begin(Macro):
 
     def _execute(self, parser, invocation):
         environment = parser.evaluate_as_text(invocation.argument("environment"))
-        if environment == "verbatim":
-            return parser._create.as_list(r"\begin{verbatim}") + parser.capture_until_text(r"\end{verbatim}")
-        elif environment == "overpic":
-            invocation.append_argument("options", parser.capture_options())
-            invocation.append_argument("link", parser.capture_one())
-            link = parser.evaluate_as_text(invocation.argument("link"))
-            new_link = self._flap.update_link(link, invocation)
-            return invocation.substitute("link", parser._create.as_list("{" + new_link + "}")).as_tokens
-        else:
-            return invocation.as_tokens
+        env = parser._definitions.look_up(MacroFactory.mark_as_environment(environment))
+        if env:
+            return env.execute(parser, invocation)
+        return invocation.as_tokens
 
 
 class DocumentClass(Macro):
     """
     Extract some specific document class, e.g., subfile
     """
+
 
     def __init__(self, flap):
         super().__init__(flap, r"\documentclass", None, None)

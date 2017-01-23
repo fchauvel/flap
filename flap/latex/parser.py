@@ -17,6 +17,7 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+
 from flap.latex.commons import Stream, Source
 from flap.latex.lexer import Lexer
 from flap.latex.errors import UnknownSymbol
@@ -27,6 +28,12 @@ class Context:
     def __init__(self, parent=None, definitions=None):
         self._definitions = definitions or dict()
         self._parent = parent
+
+    def look_up(self, symbol):
+        result = self._definitions.get(symbol, None)
+        if not result and self._parent:
+            return self._parent.look_up(symbol)
+        return result
 
     def items(self):
         return self._definitions.items()
@@ -73,6 +80,9 @@ class Parser:
             self._create,
             new_environment)
         return parser
+
+    def look_up(self, symbol):
+        return self._definitions.look_up(symbol)
 
     def rewrite(self):
         result = []
