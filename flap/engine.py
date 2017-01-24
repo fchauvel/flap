@@ -21,7 +21,7 @@ from flap import logger
 from flap.util import truncate
 from flap.util.path import Path
 from flap.latex.symbols import SymbolTable
-from flap.latex.macros import MacroFactory
+from flap.latex.macros.factory import MacroFactory
 from flap.latex.parser import Parser, Factory, Context
 
 

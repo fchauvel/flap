@@ -19,7 +19,7 @@
 
 from unittest import TestCase, main
 
-from flap.latex.macros import Invocation
+from flap.latex.macros.commons import Invocation
 
 
 class InvocationTests(TestCase):

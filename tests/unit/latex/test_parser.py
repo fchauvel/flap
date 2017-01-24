@@ -22,7 +22,7 @@ from unittest.mock import MagicMock, ANY
 
 from flap.latex.symbols import SymbolTable
 from flap.latex.tokens import TokenFactory
-from flap.latex.macros import MacroFactory
+from flap.latex.macros.factory import MacroFactory
 from flap.latex.parser import Parser, Context, Factory
 
 

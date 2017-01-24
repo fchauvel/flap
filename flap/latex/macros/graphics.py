@@ -17,25 +17,43 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from flap.latex.macros.commons import Macro, UpdateLink, Environment
 
-class Environment:
+
+class GraphicsPath(Macro):
     """
-    Represent LaTeX environments, such as \begin{center} for instance.
+    Intercept the `\graphicspath` directive
     """
 
-    def __init__(self, flap, name):
-        self._flap = flap
-        self._name = name
+    def __init__(self, flap):
+        super().__init__(flap, r"\graphicspath", None, None)
 
-    @property
-    def name(self):
-        return self._name
+    def _capture_arguments(self, parser, invocation):
+        invocation.append_argument("paths", parser.capture_group())
 
-    def execute(self, parser, invocation):
-        return None
+    def _execute(self, parser, invocation):
+        argument = parser.evaluate_as_text(invocation.argument("paths"))
+        paths = list(map(str.strip, argument.split(",")))
+        self._flap.record_graphic_path(paths, invocation)
+        return invocation.as_tokens
+
+
+class IncludeGraphics(UpdateLink):
+    """
+    Intercept the `\includegraphics` directive
+    """
+
+    def __init__(self, flap):
+        super().__init__(flap, r"\includegraphics")
+
+    def update_link(self, parser, link, invocation):
+        return self._flap.update_link(link, invocation)
 
 
 class Overpic(Environment):
+    """
+    Intercept the \begin{overpic} environment
+    """
 
     def __init__(self, flap):
         super().__init__(flap, "overpic")
@@ -48,15 +66,3 @@ class Overpic(Environment):
         return invocation.substitute("link", parser._create.as_list(
             "{" + new_link + "}")).as_tokens
 
-
-class Verbatim(Environment):
-    """
-
-    """
-
-    def __init__(self, flap):
-        super().__init__(flap, "verbatim")
-
-    def execute(self, parser, invocation):
-        return parser._create.as_list(
-            r"\begin{verbatim}") + parser.capture_until_text(r"\end{verbatim}")
