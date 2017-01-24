@@ -85,7 +85,6 @@ class Macro:
         arguments = { parameter: parser._spawn(argument, dict()).evaluate() for parameter, argument in invocation.arguments.items() }
         return parser._spawn(self._body, arguments)._evaluate_group()
 
-
     def __eq__(self, other):
         if not isinstance(other, Macro):
             return False
@@ -137,7 +136,6 @@ class UpdateLink(Macro):
         pass
 
 
-
 class Environment:
     """
     Represent LaTeX environments, such as \begin{center} for instance.
@@ -151,8 +149,9 @@ class Environment:
     def name(self):
         return self._name
 
+    @staticmethod
     def execute(self, parser, invocation):
-        return None
+        return []
 
 
 class Invocation:

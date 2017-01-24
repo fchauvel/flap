@@ -71,7 +71,7 @@ class MakeIndex(Macro):
         for each in text.strip()[1:-1].split(","):
             _, value = each.split("=")
             options = re.split("(-\w\s)", value)
-            for index in range(len(options)):
+            for index, _ in enumerate(options):
                 if "-s" in options[index]:
                     return options[index+1]
         return None
