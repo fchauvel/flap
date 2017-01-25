@@ -50,6 +50,18 @@ class IncludeGraphics(UpdateLink):
         return self._flap.update_link(link, invocation)
 
 
+class IncludeSVG(UpdateLink):
+    """
+    Intercept the `\includegraphics` directive
+    """
+
+    def __init__(self, flap):
+        super().__init__(flap, r"\includesvg")
+
+    def update_link(self, parser, link, invocation):
+        return self._flap.update_link(link, invocation)
+
+
 class Overpic(Environment):
     """
     Intercept the \begin{overpic} environment

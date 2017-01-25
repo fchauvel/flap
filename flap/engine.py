@@ -121,7 +121,7 @@ class Settings:
         return file.content()
 
     def update_link(self, path, invocation):
-        return self._update_link(path, invocation, self.graphics_directory, ["pdf", "png", "jpeg", "jpg", "ps", "eps"], GraphicNotFound(path))
+        return self._update_link(path, invocation, self.graphics_directory, ["pdf", "png", "jpeg", "jpg", "ps", "eps", "svg"], GraphicNotFound(path))
 
     def update_link_to_bibliography(self, path, invocation):
         return self._update_link(path, invocation, [self.root_directory], ["bib"], ResourceNotFound(path))

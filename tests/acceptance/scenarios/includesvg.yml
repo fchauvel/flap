@@ -1,0 +1,55 @@
+#
+# This file is part of Flap.
+#
+# Flap is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Flap is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Flap.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+name: \includesvg
+description: >
+   Test that FLaP does properly flatten SVG inclusions that use
+   the 'svg' package.
+
+# Describe the LaTeX projects, as found on the disk
+project:
+  - path: main.tex
+    content: |
+      \documentclass{article}
+      \usepackage{svg}
+      \begin{document}
+         \includesvg{graphics/svg/picture}
+         %\includesvg[svgpath=./svg/graphics]{picture}
+      \end{document}
+  - path: graphics/svg/picture.svg
+    content: |
+      This is a SVG image!
+
+# Describe the LaTeX project, once flattened
+expected:
+  - path: merged.tex
+    content: |
+      \documentclass{article}
+      \usepackage{svg}
+      \begin{document}
+         \includesvg{graphics_svg_picture}
+         %\includesvg[svgpath=./svg/graphics]{picture}
+      \end{document}
+  - path: graphics_svg_picture.svg
+    content: |
+      This is a SVG image!
+
+outputs:
+  - file: main.tex
+    line: 4
+    column: 4
+    code: \includesvg{graphics/svg/picture}

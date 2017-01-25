@@ -42,6 +42,7 @@ class MacroFactory:
             GraphicsPath(self._flap),
             IncludeGraphics(self._flap),
             IncludeOnly(self._flap),
+            IncludeSVG(self._flap),
             Input(self._flap),
             Include(self._flap),
             MakeIndex(self._flap),
