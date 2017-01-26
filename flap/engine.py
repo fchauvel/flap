@@ -116,7 +116,7 @@ class Settings:
 
     def content_of(self, location, invocation):
         self._show_invocation(invocation)
-        file = self._find(location, [self.root_directory], ["tex"], TexFileNotFound(None))
+        file = self._find(location, [self.root_directory], ["tex"], TexFileNotFound(location))
         log(invocation, "Fetching content from '{file:s}'", file=file.fullname())
         return file.content()
 
