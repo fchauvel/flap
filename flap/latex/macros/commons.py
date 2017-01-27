@@ -150,7 +150,7 @@ class Environment:
         return self._name
 
     @staticmethod
-    def execute(self, parser, invocation):
+    def execute(parser, invocation):
         return []
 
 

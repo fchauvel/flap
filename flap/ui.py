@@ -104,4 +104,4 @@ def main(tex_file, output, verbose):
 
 # For compatibility with versions prior to 0.2.3
 if __name__ == "__main__":
-    main()
+    main(*sys.argv)
