@@ -20,6 +20,7 @@
 from flap.latex.macros.commons import Macro, UpdateLink, Environment
 
 
+
 class GraphicsPath(Macro):
     """
     Intercept the `\graphicspath` directive
@@ -28,8 +29,10 @@ class GraphicsPath(Macro):
     def __init__(self, flap):
         super().__init__(flap, r"\graphicspath", None, None)
 
+
     def _capture_arguments(self, parser, invocation):
-        invocation.append_argument("paths", parser.capture_group())
+        invocation.append_argument(
+            "paths", parser.capture_group())
 
     def _execute(self, parser, invocation):
         argument = parser.evaluate_as_text(invocation.argument("paths"))
@@ -52,7 +55,7 @@ class IncludeGraphics(UpdateLink):
 
 class IncludeSVG(UpdateLink):
     """
-    Intercept the `\includegraphics` directive
+    Intercept the r`\includegraphics` directive
     """
 
     def __init__(self, flap):
@@ -77,4 +80,3 @@ class Overpic(Environment):
         new_link = self._flap.update_link(link, invocation)
         return invocation.substitute("link", parser._create.as_list(
             "{" + new_link + "}")).as_tokens
-
