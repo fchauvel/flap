@@ -22,14 +22,10 @@ from setuptools import setup, find_packages
 
 
 test_dependencies = [
-    "virtualenv==15.1.0",
-    "green==2.15.0",
-    "mock==2.0.0",
-    "coverage==4.5.3",
-    "codecov==2.0.5",
-    "coverage==4.2",
-    "mkdocs==0.14.0",
-    "mock==1.3.0",
+    "green==3.2.5",
+    "coverage==5.5",
+    "mkdocs==1.1.2",
+    "mock==4.0.3",
 ]
 
 
@@ -57,9 +53,9 @@ setup(name='FLaP',
           "Programming Language :: Python :: 3.6",
       ],
       install_requires=[
-          "PyYAML==5.1",
-          "click==6.6",
-          "enum34==1.1.6",
+          "PyYAML==5.4.1",
+          "click==7.1.2",
+          "enum34==1.1.10",
       ],
       tests_require=test_dependencies,
       extras_require={

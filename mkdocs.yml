@@ -14,4 +14,4 @@ pages:
    - "Testing": testing.md
    - "Releasing": releasing.md
  - "Versions": changelog.md
-theme: flatly
+theme: mkdocs
