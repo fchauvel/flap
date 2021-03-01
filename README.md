@@ -26,8 +26,7 @@ merged it into a vulgar single LaTeX file in a 'flat' directory.
 
 ## Installation 
 
-FLaP *requires* Python 3 (3.3, 3.4, 3.5 and 3.6 are tested).  Python
-3.2 is not compatible anymore. The easiest way to install latest
+FLaP *requires* Python 3 (3.6, 3.6, 3.8 and 3.9 are tested). The easiest way to install latest
 official release is to use pip using: 
 ```shell-session
 $ pip install flap
@@ -58,7 +57,7 @@ Prior to v0.4.1 (included), we invoke FLaP using:
 $ python -m flap project/main.tex output/directory
 ```
 
-See also the [online documentation](http://fchauvel.github.io/flap/).
+See also the [online documentation](http://fchauvel.github.io/flap/index.html).
 
 # Contact Us
 
