@@ -6,15 +6,18 @@ Let's consider the sample LaTeX project, whose source is broken in broken down i
 LaTeX files each contains a section. In addition, the `project/img` directory contains the graphic files to be included, 
 for instance `img/screenshot.pdf`. The tree-structure of the project directory follows:
 
-	/home/me/project/
-	   ├ main.tex
-	   ├ part1.tex
-	   └ img/
-	     └ screenshot.pdf
+```shell-session
+$ tree
+    /home/me/project/
+       ├ main.tex
+       ├ part1.tex
+       └ img/
+         └ screenshot.pdf
+```
 
 The main LaTeX document `project/main.tex` contains the following code:
 
-```tex
+```latex
 \documentclass{article}
 
 \begin{document}
@@ -23,7 +26,7 @@ The main LaTeX document `project/main.tex` contains the following code:
 ```
 
 The second LaTeX file `project/part1.tex` contains an graphic inclusion directive as follows:
-```tex
+```latex
 Here is some additional text, and a graphics.
 
 \begin{center}
@@ -36,9 +39,11 @@ Followed by some explanation about what to see on this screenshot.
 ## Running FLaP
 FLaP can merge this LaTeX project into a single LaTeX file, and adjusts the graphics inclusion directives.
 To do so, we invoke FLaP as follows:
-
-	$> cd /home/me
-	$> flap project/main.tex output_dir
+  
+```shell-session
+$ cd /home/me
+$ flap project/main.tex output_dir
+```
 
 > Prior to version 0.5, FLaP was invoked using `python3 -m flap main.tex output_dir`
 
@@ -49,15 +54,15 @@ To do so, we invoke FLaP as follows:
 ## Checking out the Results
 The above command creates a directory `output_dir`, with the following project structure:
 
-	/home/me
-	 ├ project/
+    /home/me
+     ├ project/
      │  ├ main.tex
-	 │  ├ part1.tex
-	 │  └ img/
-	 │     └ screenshot.pdf
-	 └ output_dir/
-	   ├ merged.tex
-	   └ screenshot.pdf
+     │  ├ part1.tex
+     │  └ img/
+     │     └ screenshot.pdf
+     └ output_dir/
+       ├ merged.tex
+       └ screenshot.pdf
 
 where the LaTeX code resulting from the merge is:
 
@@ -68,7 +73,7 @@ where the LaTeX code resulting from the merge is:
     Here is some additional text, and a graphics.
 
 \begin{center}
-	\includegraphics[width=\textwidth]{screenshot}
+    \includegraphics[width=\textwidth]{screenshot}
 \end{center}
 
 Followed by some explanation about what to see on this screenshot.

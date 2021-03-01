@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>FLaP &mdash; Flat LaTeX Projects</title>
+    <link rel="stylesheet" href="https://unpkg.com/docute@4/dist/docute.css">
+  </head>
+  <body>
+    <div id="docute"></div>
+    <script src="https://unpkg.com/docute@4/dist/docute.js"></script>
+    <script>
+      new Docute({
+          target: '#docute',
+          title: "FLaP: Flat LaTeX Projects",
+          editLinkBase: "https://github.com/fchauvel/flap/blob/master/docs",
+          versions:  {
+              "development": {link: "/"},
+              "0.5.0": {link: "./versions/0.5.0/"}
+          },
+          nav: [
+              {
+                  title: 'Home',
+                  link: '/'
+              },
+              {
+                  title: 'GitHub',
+                  link: 'https://github.com/fchauvel/flap'
+              }
+          ],
+          sidebar: [
+              {
+                  title: "How to Install ''FLaP'''?",
+                  link: "./installation.md"
+              },
+              {
+                  title: "A simple example",
+                  link: "./example.md"
+              },
+              {
+                  title: "Known Limitations",
+                  link: "./caveats.md"
+              },
+
+              {
+                  title: "Having Issues?",
+                  link: "./reporting_issues.md"
+              },
+              {
+                  title: "Contribute",
+                  collapsable: true,
+                  children: [
+                      {
+                          title: "Getting setup",
+                          link: "./getting_ready.md"
+                      },
+                      {
+                          title: "Testing",
+                          link: "./testing.md"
+                      },
+                      {
+                          title: "Release",
+                          link: "./releasing.md"
+                      }
+                  ]
+              },
+              {
+                  title: "Change Log",
+                  link: "CHANGELOG.md"
+              }
+          ],
+          routes: {
+              "/README.md": {
+                  file: "https://github.com/fchauvel/flap/raw/master/README.md?sanitize=true"
+              },
+              "/CHANGELOG.md": {
+                  file: "https://github.com/fchauvel/flap/raw/master/CHANGELOG.md?sanitize=true"
+              }
+          },
+          highlight: [
+              'typescript',
+              'bash',
+              'shell-session',
+              'yaml'
+          ]
+      });
+    </script>
+  </body>
+</html>

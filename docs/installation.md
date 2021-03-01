@@ -6,9 +6,12 @@ longer compatible.
 FLaP is a simple python utility available on the PyPi repository. The simplest way to install it, is to use `pip`,
 as follows:
 
-	$> pip install flap
-	
+```shell-session
+$ pip install flap
+```
+
 Alternatively, you may download a source distribution from GitHub, and install it using:
 
-	$> python setup.py install
-
+```shell
+$ python setup.py install
+```
