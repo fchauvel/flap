@@ -58,7 +58,7 @@ Prior to v0.4.1 (included), we invoke FLaP using:
 $ python -m flap project/main.tex output/directory
 ```
 
-See also the [online documentation](https://pythonhosted.org/FLaP/).
+See also the [online documentation](http://fchauvel.github.io/flap/).
 
 # Contact Us
 
