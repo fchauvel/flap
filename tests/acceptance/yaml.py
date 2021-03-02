@@ -17,7 +17,8 @@
 
 import yaml
 from io import StringIO
-from tests.latex_project import LatexProject, TexFile, FlapTestCase, Fragment, Invocation
+from tests.latex_project import LatexProject, TexFile, FlapTestCase, \
+    Fragment, Invocation
 
 
 class YamlCodec:
@@ -47,7 +48,7 @@ class YamlCodec:
         return file.has_extension_from(self.YAML_EXTENSIONS)
 
     def extract_from(self, file):
-        content = yaml.load(StringIO(file.content()))
+        content = yaml.safe_load(StringIO(file.content()))
         arguments = [self._extract_name_from(content),
                      self._extract_project_from(content),
                      self._extract_expected_from(content),
