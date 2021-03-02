@@ -16,6 +16,9 @@ Here is the list of LaTeX commands or environments that FLaP detects and/or adju
  * Beamer directives:
     * `\begin{overpic}`;
     * `\endinput`.
+ * Bibliography Management
+    * `\bibliography`
+    * Biblatex `\addbibresource` (since 0.5.1)
     
 Note the [FLaP limitations](caveats): FLaP will not process properly any
 of these commands if they are used within a used-defined command.

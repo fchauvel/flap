@@ -27,7 +27,6 @@ test_dependencies = [
     "mock==4.0.3",
 ]
 
-
 setup(name='FLaP',
       version=flap.__version__,
       description='Flat LaTeX Projects',
