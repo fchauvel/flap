@@ -23,6 +23,8 @@ from flap.latex.macros.graphics import *
 from flap.latex.macros.bibliography import *
 from flap.latex.macros.inlining import *
 from flap.latex.macros.listings import *
+from flap.latex.macros.biblatex import AddBibResource
+
 
 
 class MacroFactory:
@@ -36,6 +38,7 @@ class MacroFactory:
             Begin(self._flap),
             Bibliography(self._flap),
             BibliographyStyle(self._flap),
+            AddBibResource(self._flap),
             Def(self._flap),
             DocumentClass(self._flap),
             EndInput(self._flap),

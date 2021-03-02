@@ -121,14 +121,32 @@ class Settings:
         return file.content()
 
     def update_link(self, path, invocation):
-        return self._update_link(path, invocation, self.graphics_directory, ["pdf", "png", "jpeg", "jpg", "ps", "eps", "svg"], GraphicNotFound(path))
+        extensions = ["pdf", "png", "jpeg", "jpg", "ps", "eps", "svg"]
+        return self._update_link(path,
+                                 invocation,
+                                 self.graphics_directory,
+                                 extensions,
+                                 GraphicNotFound(path))
 
-    def update_link_to_bibliography(self, path, invocation):
-        return self._update_link(path, invocation, [self.root_directory], ["bib"], ResourceNotFound(path))
+    def update_link_to_bibliography(self,
+                                    path,
+                                    invocation,
+                                    keep_file_extension=False):
+        return self._update_link(path,
+                                 invocation,
+                                 [self.root_directory],
+                                 ["bib"],
+                                 ResourceNotFound(path),
+                                 keep_file_extension)
 
     def update_link_to_bibliography_style(self, path, invocation):
         try:
-            return self._update_link(path, invocation, [self.root_directory], ["bst"], ResourceNotFound(path))
+            return self._update_link(path,
+                                     invocation,
+                                     [self.root_directory],
+                                     ["bst"],
+                                     ResourceNotFound(path))
+
         except ResourceNotFound:
             log(invocation,
                 "Could not find bibliography style '{path:s}' locally",
@@ -136,19 +154,33 @@ class Settings:
             return path
 
     def update_link_to_index_style(self, path, invocation):
-        return self._update_link(path, invocation, [self.root_directory], ["ist"], ResourceNotFound(path)) + ".ist"
+        return self._update_link(path,
+                                 invocation,
+                                 [self.root_directory],
+                                 ["ist"], ResourceNotFound(path)) + ".ist"
 
-    def _update_link(self, path, invocation, location, extensions, error):
+    def _update_link(self,
+                     path,
+                     invocation,
+                     location,
+                     extensions,
+                     error,
+                     keep_file_extension=False
+                     ):
         self._show_invocation(invocation)
         resource = self._find(path, location, extensions, error)
         new_path = self._move(resource, invocation)
-        return self._as_file_name(new_path.without_extension())
+        if keep_file_extension:
+            return self._as_file_name(new_path)
+        else:
+            return self._as_file_name(new_path.without_extension())
 
     def _move(self, file, invocation):
         new_path = file._path.relative_to(self.root_directory._path)
         new_file_name = self._as_file_name(new_path)
         self._file_system.copy(file, self.output_directory / new_file_name)
-        log(invocation, "Copying '{source:s}' to '{target:s}'", source=file.fullname(), target=new_file_name)
+        log(invocation, "Copying '{source:s}' to '{target:s}'",
+            source=file.fullname(), target=new_file_name)
         return new_path
 
     @staticmethod
@@ -197,6 +229,7 @@ class GraphicNotFound(ResourceNotFound):
     """
     Exception thrown when a graphic file cannot be found
     """
+
     def __init__(self, fragment):
         super().__init__(fragment)
 
