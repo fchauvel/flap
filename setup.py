@@ -24,7 +24,6 @@ from setuptools import setup, find_packages
 test_dependencies = [
     "green==3.2.5",
     "coverage==5.5",
-    "mkdocs==1.1.2",
     "mock==4.0.3",
 ]
 
