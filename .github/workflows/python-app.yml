@@ -13,8 +13,8 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-16.04]
-        python-version: [ 3.6, 3.7, 3.8, 3.9 ]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: [ 3.6, 3.7, 3.8, 3.9 ]2
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
@@ -26,7 +26,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install .[test]
-    - name: Run all tests
+    - name: Run all unit tests
       run: |
         green -r tests
     - name: Upload coverage to Codecov.io
@@ -52,12 +52,22 @@ jobs:
         pip install .[test]
     - name: Build distribution
       run: |
-        python setup.py sdist
-    - name: Publish on PyPI 
-      uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        user: __token__
-        password: ${{ secrets.PYPI_API_TOKEN }}
-        verbose: true
-          
+        python setup.py sdist bdist_wheel
+    - name: Publish on Test PyPI 
+      env:
+        TWINE_USER: "__token__"
+        TWINE_PASSWORD: ${{ secrets.PYPI_TEST_TOKEN }}
+        TWINE_REPOSITORY_URL: "https://test.pypi.org/legacy/"
+      run: |
+        pip install twine
+        twine check dist/*
+        twine upload dist/*
+    - name: Publish on PyPI
+      env:
+        TWINE_USER: "__token__"
+        TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        TWINE_REPOSITORY_URL: "https://upload.pypi.org/legacy/"
+      run: |
+        twine upload dist/*
+
           

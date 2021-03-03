@@ -27,9 +27,17 @@ test_dependencies = [
     "mock==4.0.3",
 ]
 
+
+def fetch_readme():
+    with open('README.md') as f:
+        return f.read()
+
+
 setup(name='FLaP',
       version=flap.__version__,
       description='Flat LaTeX Projects',
+      long_description=fetch_readme(),
+      long_description_content_type='text/markdown',
       author='Franck Chauvel',
       author_email='franck.chauvel@gmail.com',
       license="GPLv3",
