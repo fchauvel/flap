@@ -29,6 +29,9 @@ jobs:
     - name: Run all unit tests
       run: |
         coverage run -m pytest tests
+    - name: Run all acceptance tests
+      run: |
+        coverage run -a -m unittest tests.acceptance
     - name: Upload coverage to Codecov.io
       uses: codecov/codecov-action@v1
       with:
