@@ -22,7 +22,7 @@ from setuptools import setup, find_packages
 
 
 test_dependencies = [
-    "green==3.2.5",
+    "pytest==6.2.2",
     "coverage==5.5",
     "mock==4.0.3",
 ]
