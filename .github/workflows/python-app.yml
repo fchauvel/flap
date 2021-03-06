@@ -28,7 +28,7 @@ jobs:
         pip install .[test]
     - name: Run all unit tests
       run: |
-        pytest tests
+        coverage run -m pytest tests
     - name: Upload coverage to Codecov.io
       uses: codecov/codecov-action@v1
       with:
