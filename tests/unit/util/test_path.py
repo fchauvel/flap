@@ -18,7 +18,7 @@
 import unittest
 
 from flap.util.path import Path, ROOT, TEMP, CURRENT_DIRECTORY
-from tempfile import gettempdir, tempdir
+from tempfile import gettempdir
 
 
 class PathTests(unittest.TestCase):
