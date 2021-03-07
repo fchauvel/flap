@@ -50,7 +50,10 @@ class Display:
 
     VERSION = "{name} {version}\n"
     ENTRY = "{file:<%d} {line:>%d} {column:>%d} {code:<%d}\n" % WIDTHS
-    HEADER = ENTRY.format(file="File", line="Line", column="Column", code="LaTeX Command")
+    HEADER = ENTRY.format(file="File",
+                          line="Line",
+                          column="Column",
+                          code="LaTeX Command")
     SUMMARY = "{count} modification(s)\n"
     CLOSING = "Check out your flattened project in '{directory}'.\n"
 
@@ -68,8 +71,12 @@ class Display:
 
     def entry(self, file, line, column, code):
         if self._verbose:
-            escaped_code = truncate(code.strip().replace("\n", r"\n"), length=self.WIDTHS[3])
-            self._show(self.ENTRY, file=file, line=line, column=column, code=escaped_code)
+            escaped_code = truncate(code.strip().replace("\n", r"\n"),
+                                    length=self.WIDTHS[3])
+            self._show(self.ENTRY, file=file,
+                       line=line,
+                       column=column,
+                       code=escaped_code)
 
     def footer(self, count, output):
         if self._verbose:
@@ -85,21 +92,29 @@ class Display:
 
 
 @click.command()
-@click.argument('tex_file', type=click.Path(exists=True, file_okay=True, dir_okay=False))
-@click.argument('output', type=click.Path(file_okay=False, dir_okay=True))
-@click.option("-v", "--verbose", is_flag=True, help='Details what FLaP is doing')
+@click.argument('tex_file',
+                type=click.Path(exists=True,
+                                file_okay=True,
+                                dir_okay=False))
+@click.argument('output',
+                type=click.Path(file_okay=False, dir_okay=True))
+@click.option("-v",
+              "--verbose",
+              is_flag=True,
+              help='Details what FLaP is doing')
 def main(tex_file, output, verbose):
-    """
-    FLaP merges your LaTeX projects into a single LaTeX file that
+    """FLaP merges your LaTeX projects into a single LaTeX file that
     refers to images in the same directory.
 
-    It reads the given root TEX_FILE and generates a flatten version in the
-    given OUTPUT directory. It inlines the content of any TeX files refered by
-    \\input or \\include but also copies resources such as images (JPG, EPS,
-    PDF, etc.) as well as other resources (class and package definitions,
-    BibTeX files, etc.).
+    It reads the given root TEX_FILE and generates a flatten version
+    in the given OUTPUT directory. It inlines the content of any TeX
+    files refered by \\input or \\include but also copies resources
+    such as images (JPG, EPS, PDF, etc.) as well as other resources
+    (class and package definitions, BibTeX files, etc.).
+
     """
-    Controller(OSFileSystem(), Display(sys.stdout, verbose)).run(tex_file, output)
+    Controller(OSFileSystem(), Display(sys.stdout, verbose))\
+        .run(tex_file, output)
 
 
 # For compatibility with versions prior to 0.2.3

@@ -34,8 +34,6 @@ class Bibliography(UpdateLink):
         return self._flap.update_link_to_bibliography(link, invocation)
 
 
-
-
 class BibliographyStyle(UpdateLink):
     """
     Intercept the `\bibliographystyle` directive
@@ -70,7 +68,7 @@ class MakeIndex(Macro):
         text = parser.evaluate_as_text(invocation.argument("options"))
         for each in text.strip()[1:-1].split(","):
             _, value = each.split("=")
-            options = re.split("(-\w\s)", value)
+            options = re.split(r"(-\w\s)", value)
             for index, _ in enumerate(options):
                 if "-s" in options[index]:
                     return options[index+1]

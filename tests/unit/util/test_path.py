@@ -65,14 +65,16 @@ class PathTests(unittest.TestCase):
 
         absolute_path = path.absolute_from(Path.fromText("/home/franck"))
 
-        self.assertEqual(absolute_path, Path.fromText("/home/franck/test/foo.txt"))
+        self.assertEqual(absolute_path,
+                         Path.fromText("/home/franck/test/foo.txt"))
 
     def test_as_absolute_with_implicit_current(self):
         path = Path.fromText("test/foo.txt")
 
         absolute_path = path.absolute_from(Path.fromText("/home/franck"))
 
-        self.assertEqual(absolute_path, Path.fromText("/home/franck/test/foo.txt"))
+        self.assertEqual(absolute_path,
+                         Path.fromText("/home/franck/test/foo.txt"))
 
     def test_as_absolute_with_parent(self):
         path = Path.fromText("../test/foo.txt")
@@ -113,7 +115,7 @@ class PathTests(unittest.TestCase):
         path = Path.fromText("/home/test/foo.txt")
 
         self.assertEqual(path.without_extension(),
-                          Path.fromText("/home/test/foo"))
+                         Path.fromText("/home/test/foo"))
 
     def test_container(self):
         path = ROOT / "foo.tex"

@@ -132,7 +132,9 @@ class Settings:
                           [self.root_directory],
                           ["tex"],
                           TexFileNotFound(location))
-        log(invocation, "Fetching content from '{file:s}'", file=file.fullname())
+        log(invocation,
+            "Fetching content from '{file:s}'",
+            file=file.fullname())
         return file.content()
 
     def update_link(self, path, invocation):

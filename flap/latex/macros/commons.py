@@ -24,8 +24,9 @@ from flap.latex.errors import UnknownSymbol
 
 class Macro:
     """
-    A LaTeX macro, including its name (e.g., '\point'), its signature as a list
-    of expected tokens (e.g., '(#1,#2)') and the text that should replace it.
+    A LaTeX macro, including its name (e.g., '\point'), its signature
+    as a list of expected tokens (e.g., '(#1,#2)') and the text that
+    should replace it.
     """
 
     def __init__(self, flap, name, signature, body):
@@ -76,21 +77,22 @@ class Macro:
                     invocation.append_argument(parameter, expression)
                 else:
                     next_token = self._signature[index + 1]
-                    value = parser._evaluate_until(lambda token: token.has_text(next_token._text))
+                    value = parser._evaluate_until(
+                        lambda token: token.has_text(next_token._text))
                     invocation.append_argument(parameter, value)
             else:
                 invocation.append(parser._accept(lambda token: True))
 
     def _execute(self, parser, invocation):
-        arguments = { parameter: parser._spawn(argument, dict()).evaluate() for parameter, argument in invocation.arguments.items() }
+        arguments = {parameter: parser._spawn(argument, dict()).evaluate()                      for parameter, argument in invocation.arguments.items()}
         return parser._spawn(self._body, arguments)._evaluate_group()
 
     def __eq__(self, other):
         if not isinstance(other, Macro):
             return False
         return self._name == other._name and \
-               self._signature == other._signature and \
-               self._body == other._body
+            self._signature == other._signature and \
+            self._body == other._body
 
     def __repr__(self):
         signature, body = "", ""
@@ -128,7 +130,10 @@ class UpdateLink(Macro):
         try:
             link = parser.evaluate_as_text(invocation.argument("link"))
             new_link = self.update_link(parser, link, invocation)
-            return invocation.substitute("link", parser._create.as_list("{" + new_link + "}")).as_tokens
+            return invocation\
+                .substitute("link",
+                            parser._create.as_list("{" + new_link + "}"))\
+                .as_tokens
         except UnknownSymbol:
             return invocation.as_tokens
 
@@ -155,9 +160,9 @@ class Environment:
 
 
 class Invocation:
-    """
-    The invocation of a LaTeX command, including the name of the command, and its
-    parameters indexed by name as sequences of tokens.
+    """ The invocation of a LaTeX command, including the name of the
+    command, and its parameters indexed by name as sequences of
+    tokens.
     """
 
     def __init__(self):
@@ -177,12 +182,14 @@ class Invocation:
 
     @property
     def location(self):
-        assert self.as_tokens, "Could not fetch invocation's position '%s'" % self.as_text
+        assert self.as_tokens, \
+            "Could not fetch invocation's position '%s'" % self.as_text
         return self.as_tokens[0].location
 
     @property
     def arguments(self):
-        return {key:self._arguments[value] for (key, value) in self._keys.items()}
+        return {key: self._arguments[value]
+                for (key, value) in self._keys.items()}
 
     @property
     def as_text(self):
