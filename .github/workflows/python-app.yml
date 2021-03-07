@@ -44,15 +44,7 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
         fail_ci_if_error: true
         verbose: true
-    - name: Debug publish on Test PyPI
-      env:
-        PYPI_TEST_TOKEN: ${{ secrets.PYPI_TEST_TOKEN }}
-        CODECOV: ${{ secrets.CODECOV_TOKEN }}
-      run: |
-        echo "TEST_VAR = '${PYPI_TEST_TOKEN}'"
-        echo "CODECOV: $CODECOV"
-        
-      
+              
   publish:
     needs: build
     runs-on: ubuntu-latest
@@ -70,22 +62,12 @@ jobs:
     - name: Build distribution
       run: |
         python setup.py sdist bdist_wheel
-    - name: Publish on Test PyPI 
-      env:
-        TWINE_USERNAME: __token__
-        TWINE_PASSWORD: ${{ secrets.PYPI_TEST_TOKEN }}
-        TWINE_REPOSITORY_URL: "https://test.pypi.org/legacy/"
-      run: |
-        echo "$TWINE_PASSWORD"
-        pip install twine
-        twine check dist/*
-        twine upload dist/*
-    - name: Publish on PyPI
-      env:
-        TWINE_USERNAME: __token__
-        TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        TWINE_REPOSITORY_URL: "https://upload.pypi.org/legacy/"
-      run: |
-        twine upload dist/*
-
-          
+    - name: Publish to Test PyPI
+      uses: pypa/gh-action-pypi-publish@master
+      with:
+        password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+        repository_url: https://test.pypi.org/legacy/
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@master
+      with:
+        password: ${{ secrets.PYPI_API_TOKEN }}          
