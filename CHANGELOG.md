@@ -1,6 +1,6 @@
 # Versions History
 
-## FLaP v0.5.1 (under development)
+## Next Release (under development)
 
 * New Features:
   * Support for [biblatex](https://ctan.org/pkg/biblatex?lang=en) and
