@@ -38,11 +38,14 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
         fail_ci_if_error: true
         verbose: true
-
+    - name: Show the GitHub ref
+      run: |
+        echo "Current tag is: '${{ github.ref }}'"
+      
   publish:
     needs: build
-    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python 3.8
