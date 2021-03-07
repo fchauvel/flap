@@ -65,7 +65,7 @@ jobs:
         python setup.py sdist bdist_wheel
     - name: Publish on Test PyPI 
       env:
-        TWINE_USER: "__token__"
+        TWINE_USERNAME: "__token__"
         TWINE_PASSWORD: ${{ secrets.PYPI_TEST_TOKEN }}
         TWINE_REPOSITORY_URL: "https://test.pypi.org/legacy/"
       run: |
@@ -74,7 +74,7 @@ jobs:
         twine upload dist/*
     - name: Publish on PyPI
       env:
-        TWINE_USER: "__token__"
+        TWINE_USERNAME: "__token__"
         TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
         TWINE_REPOSITORY_URL: "https://upload.pypi.org/legacy/"
       run: |
