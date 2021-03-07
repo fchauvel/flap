@@ -44,9 +44,7 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
         fail_ci_if_error: true
         verbose: true
-    - name: Show the GitHub ref
-      run: |
-        echo "Current tag is: '${{ github.ref }}'"
+
       
   publish:
     needs: build

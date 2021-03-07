@@ -25,6 +25,8 @@ test_dependencies = [
     "pytest==6.2.2",
     "coverage==5.5",
     "mock==4.0.3",
+    "wheel==0.36.2"
+    "twine==3.3.0"
 ]
 
 
