@@ -49,6 +49,7 @@ jobs:
         PYPI_TEST_TOKEN: ${{ secrets.PYPI_TEST_TOKEN }}
       run: |
         echo "TEST_VAR = '${PYPI_TEST_TOKEN}'"
+        echo "Another try: ${{ secrets.PYPI_TEST_TOKEN }}"
         
       
   publish:
