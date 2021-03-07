@@ -59,7 +59,7 @@ $ python -m flap project/main.tex output/directory
 
 See also the [online documentation](http://fchauvel.github.io/flap/index.html).
 
-# Contact Us
+## Contact Us
 
 If you give FLaP a try, please report any bugs, issues or feature request using the [issue tracker](https://github.com/fchauvel/flap/issues).
 
