@@ -6,8 +6,9 @@ name: run-test
 on:
   push:
     branches: [ master ]
+  create:
     tags:
-      - '*'
+      - 'v*'
   pull_request:
     branches: [ master ]
 
