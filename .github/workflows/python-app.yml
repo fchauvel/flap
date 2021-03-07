@@ -44,7 +44,12 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
         fail_ci_if_error: true
         verbose: true
-
+    - name: Debug publish on Test PyPI 
+      env:
+        TEST_VAR: ${{ secrets.PYPI_TEST_TOKEN }}
+      run: |
+        echo "TEST_VAR = '${TEST_VAR}'"
+        
       
   publish:
     needs: build
