@@ -45,12 +45,10 @@ jobs:
         fail_ci_if_error: true
         verbose: true
     - name: Debug publish on Test PyPI
-      with: 
-        test_var: ${{ secrets.PYPI_TEST_TOKEN }}
       env:
-        TEST_VAR: ${{ secrets.PYPI_TEST_TOKEN }}
+        PYPI_TEST_TOKEN: ${{ secrets.PYPI_TEST_TOKEN }}
       run: |
-        echo "TEST_VAR = '${TEST_VAR}'"
+        echo "TEST_VAR = '${PYPI_TEST_TOKEN}'"
         
       
   publish:
