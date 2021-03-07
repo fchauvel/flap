@@ -19,12 +19,9 @@ from io import StringIO
 
 from flap import __version__
 from flap.util import truncate
-from flap.util.path import Path
+from flap.util.path import Path, TEMP
 from flap.ui import Display, Controller
 from tests.latex_project import LatexProject
-
-
-from flap.util.path import TEMP
 
 
 class EndToEndRunner:
@@ -52,7 +49,8 @@ class EndToEndRunner:
 
     def _execute(self, test_case):
         self._file_system.move_to_directory(self._path_for(test_case))
-        self._controller.run(tex_file="./project/" + test_case._invocation.tex_file, output="output")
+        self._controller.run(tex_file="./project/" +
+                             test_case._invocation.tex_file, output="output")
 
     def _verify(self, test_case):
         self._verify_generated_files(test_case)

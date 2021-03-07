@@ -46,7 +46,8 @@ class Generator:
 
 def load_tests(loader, tests, pattern):
     file_system = OSFileSystem()
-    repository = FileBasedTestRepository(file_system, Path.fromText("tests/acceptance/scenarios"), YamlCodec())
+    repository = FileBasedTestRepository(file_system,
+                                         Path.fromText("tests/acceptance/scenarios"), YamlCodec())
     runner = EndToEndRunner(file_system)
     generate = Generator(repository, runner)
     suite = TestSuite()

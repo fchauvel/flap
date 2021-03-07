@@ -22,7 +22,7 @@ from flap.util.path import TEMP
 
 
 class OSFileSystemTest(TestCase):
-    
+
     def setUp(self):
         self.fileSystem = OSFileSystem()
         self.path = TEMP / "flap_os" / "test.txt"
@@ -30,24 +30,24 @@ class OSFileSystemTest(TestCase):
 
         self.fileSystem.deleteDirectory(TEMP / "flap_os")
         self.fileSystem.deleteDirectory(TEMP / "flatexer_copy")
-    
+
     def createAndOpenTestFile(self):
         self.fileSystem.create_file(self.path, self.content)
         return self.fileSystem.open(self.path)
-    
+
     def testCreateAndOpenFile(self):
         file = self.createAndOpenTestFile()
-        
+
         self.assertEqual(file.content(), self.content)
 
     def testCopyAndOpenFile(self):
         file = self.createAndOpenTestFile()
-        
+
         copyPath = TEMP / "flatexer_copy"
-        
+
         self.fileSystem.copy(file, copyPath)
         copy = self.fileSystem.open(copyPath / "test.txt")
-        
+
         self.assertEqual(copy.content(), self.content)
 
     def test_copyAndRename(self):

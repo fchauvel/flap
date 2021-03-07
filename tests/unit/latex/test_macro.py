@@ -71,7 +71,7 @@ class InvocationTests(TestCase):
     def test_argument(self):
         self._invocation.name = [r"\foo"]
         self._invocation.append_argument("link", ["p1", ",", "p2"])
-        self.assertEquals([r"\foo"], self._invocation.name)
+        self.assertEqual([r"\foo"], self._invocation.name)
 
 
 if __name__ == "__main__":

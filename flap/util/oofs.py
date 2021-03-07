@@ -38,13 +38,13 @@ class File:
     @classmethod
     def exists(cls):
         return True
-    
+
     def is_missing(self):
         return not self.exists()
 
     def contains(self, content):
         return self._content == content
-    
+
     def content(self):
         if not self._content:
             self._content = self.fileSystem.load(self._path)
@@ -55,10 +55,10 @@ class File:
 
     def fullname(self):
         return self._path.fullname()
-    
+
     def basename(self):
         return self._path.basename()
-    
+
     def has_extension(self, extension=None):
         return self._path.has_extension(extension)
 
@@ -69,52 +69,53 @@ class File:
 
     def extension(self):
         return self._path.extension()
-    
+
     def container(self):
         return self.fileSystem.open(self._path.container())
-        
+
     def sibling(self, name):
         return self.fileSystem.open(self._path.container() / name)
 
     @classmethod
     def files(cls):
         return []
-    
+
     def files_that_matches(self, pattern):
         path = Path.fromText(str(self._path) + "/" + str(pattern))
         directory = self.fileSystem.open(path.container())
-        return [ any_file for any_file in directory.files() if str(any_file.path()).startswith(str(path)) ]
+        return [any_file for any_file in directory.files()
+                if str(any_file.path()).startswith(str(path))]
 
     def __repr__(self):
         return str(self.path())
-    
-    
+
+
 class Directory(File):
-    
+
     def __init__(self, file_system, path):
         super().__init__(file_system, path, None)
-             
+
     def is_file(self):
         return False
-    
+
     def content(self):
         return None
 
     def files(self):
         return self.fileSystem.filesIn(self.path())
-     
-    
+
+
 class MissingFile(File):
-    
+
     def __init__(self, path):
         super().__init__(None, path, None)
-        
+
     def exists(self):
         return False
-    
+
     def contains(self, content):
         return False
-    
+
     def content(self):
         return None
 
@@ -124,25 +125,25 @@ class MissingFile(File):
 
 
 class FileSystem:
-    
+
     def create_file(self, path, content):
         pass
-    
+
     def createDirectory(self, path):
         pass
 
     def deleteDirectory(self, path):
         pass
-    
+
     def open(self, path):
         pass
-    
+
     def filesIn(self, path):
         pass
-    
+
     def copy(self, file, destination):
         pass
-    
+
     def load(self, path):
         pass
 
@@ -151,30 +152,31 @@ class FileSystem:
 
 
 class OSFileSystem(FileSystem):
-    
+
     def __init__(self):
         super().__init__()
         self.current_directory = Path.fromText(os.getcwd())
 
     @staticmethod
     def for_OS(path):
-        return os.path.sep.join([eachPart.fullname() for eachPart in path.parts()])
+        return os.path.sep.join([eachPart.fullname()
+                                 for eachPart in path.parts()])
 
     def move_to_directory(self, path):
         os.chdir(self.for_OS(path))
-        
+
     def create_file(self, path, content):
         self._create_path(path)
         os_path = self.for_OS(path)
         with open(os_path, "w") as f:
             f.write(content)
-        
+
     def deleteDirectory(self, path):
         import shutil
         osPath = self.for_OS(path)
         if os.path.exists(osPath):
             shutil.rmtree(osPath)
-    
+
     def open(self, path):
         osPath = self.for_OS(path)
         if os.path.isdir(osPath):
@@ -183,15 +185,17 @@ class OSFileSystem(FileSystem):
             return File(self, path, None)
 
     def filesIn(self, path):
-        return [self.open(path / each) for each in os.listdir(self.for_OS(path))]
+        return [self.open(path / each)
+                for each in os.listdir(self.for_OS(path))]
 
     def copy(self, file, destination):
         import shutil
 
         self._create_path(destination)
-        
+
         source = self.for_OS(file.path())
-        target = destination if destination.has_extension() else destination / file.fullname()
+        target = destination if destination.has_extension() \
+            else destination / file.fullname()
 
         shutil.copyfile(source, self.for_OS(target))
 
@@ -203,7 +207,7 @@ class OSFileSystem(FileSystem):
         os_target = self.for_OS(targetDir)
         if not os.path.exists(os_target):
             os.makedirs(os_target)
-        
+
     def load(self, path):
         assert path, "Invalid path (found '%s')" % path
         os_path = self.for_OS(path)
@@ -212,7 +216,7 @@ class OSFileSystem(FileSystem):
 
 
 class InMemoryFileSystem(FileSystem):
-        
+
     def __init__(self, path_separator=os.path.sep):
         super().__init__()
         self.drive = {}
@@ -225,7 +229,8 @@ class InMemoryFileSystem(FileSystem):
     def createDirectory(self, path):
         if path in self.drive.keys():
             if self.drive[path].is_file():
-                raise ValueError("There is already a resource at '%s'" % path.full())
+                raise ValueError("There is already a resource at '%s'"
+                                 % path.full())
         self.drive[path] = Directory(self, path)
         if not path.isRoot():
             self.createDirectory(path.container())
@@ -236,10 +241,11 @@ class InMemoryFileSystem(FileSystem):
         absolute = path.absolute_from(self._current_directory)
         self.drive[absolute] = File(self, absolute, content)
         self.createDirectory(absolute.container())
-        
+
     def filesIn(self, path):
-        return [ self.drive[p] for p in self.drive.keys() if p in path and len(p.parts()) == len(path.parts()) + 1 ]
-        
+        return [self.drive[p] for p in self.drive.keys()
+                if p in path and len(p.parts()) == len(path.parts()) + 1]
+
     def open(self, path):
         absolute = path.absolute_from(self._current_directory)
         if absolute in self.drive.keys():
@@ -254,4 +260,3 @@ class InMemoryFileSystem(FileSystem):
             path = destination / file.path().fullname()
         absolute = path.absolute_from(self._current_directory)
         self.drive[absolute] = File(self, absolute, file.content())
-

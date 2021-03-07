@@ -20,8 +20,10 @@ from unittest import TestCase
 from flap.util.oofs import InMemoryFileSystem
 from flap.util.path import Path
 from unittest.mock import MagicMock
-from tests.latex_project import Fragment, a_project, FlapTestCase, Invocation
-from tests.acceptance.yaml import FileBasedTestRepository, YamlCodec, InvalidYamlTestCase
+from tests.latex_project import Fragment, a_project, FlapTestCase, \
+    Invocation
+from tests.acceptance.yaml import FileBasedTestRepository, YamlCodec, \
+    InvalidYamlTestCase
 
 
 class FlapTestCaseTests(TestCase):
@@ -50,7 +52,7 @@ class FlapTestCaseTests(TestCase):
         self.assertIs(self.expected, self.test_case.expected)
 
     def test_equals_itself(self):
-        self.assertEquals(self.test_case, self.test_case)
+        self.assertEqual(self.test_case, self.test_case)
 
     def test_equals_a_similar_test_case(self):
         self.assertEqual(

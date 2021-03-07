@@ -55,13 +55,18 @@ class Settings:
         return self._file_system.open(self.root_tex_file).container()
 
     def record_graphic_path(self, paths, invocation):
-        log(invocation, "Updating graphicpath to {paths:s}", paths=repr(paths))
+        log(invocation,
+            "Updating graphicpath to {paths:s}",
+            paths=repr(paths))
         self._show_invocation(invocation)
-        self._graphic_directories = [self._file_system.open(self.root_directory._path / each) for each in paths]
+        self._graphic_directories = \
+            [self._file_system.open(self.root_directory._path / each)
+             for each in paths]
 
     @property
     def graphics_directory(self):
-        return self._graphic_directories if self._graphic_directories else [self.root_directory]
+        return self._graphic_directories \
+            if self._graphic_directories else [self.root_directory]
 
     @property
     def read_root_tex(self):
@@ -76,7 +81,8 @@ class Settings:
         return self.output_directory / "merged.tex"
 
     def execute(self):
-        tokens = self._rewrite(self.read_root_tex, str(self.root_tex_file.resource()))
+        tokens = self._rewrite(self.read_root_tex,
+                               str(self.root_tex_file.resource()))
         self._write(tokens, self.flattened)
 
     def _rewrite(self, text, source, symbol_table=SymbolTable.default()):
@@ -99,13 +105,19 @@ class Settings:
         if dependency not in self._analysed_dependencies:
             self._analysed_dependencies.append(dependency)
             try:
-                file = self._find(dependency, [self.root_directory], ["sty", "cls"], TexFileNotFound(None))
+                file = self._find(dependency,
+                                  [self.root_directory],
+                                  ["sty", "cls"],
+                                  TexFileNotFound(None))
                 new_path = file._path.relative_to(self.root_directory._path)
                 self._show_invocation(invocation)
                 symbol_table = SymbolTable.default()
                 symbol_table.CHARACTER += '@'
-                tokens = self._rewrite(file.content(), file.fullname(), symbol_table)
-                self._write(tokens, self.output_directory / self._as_file_name(new_path))
+                tokens = self._rewrite(file.content(),
+                                       file.fullname(),
+                                       symbol_table)
+                self._write(tokens,
+                            self.output_directory / self._as_file_name(new_path))
                 return self._as_file_name(new_path.without_extension())
 
             except TexFileNotFound:
@@ -116,7 +128,10 @@ class Settings:
 
     def content_of(self, location, invocation):
         self._show_invocation(invocation)
-        file = self._find(location, [self.root_directory], ["tex"], TexFileNotFound(location))
+        file = self._find(location,
+                          [self.root_directory],
+                          ["tex"],
+                          TexFileNotFound(location))
         log(invocation, "Fetching content from '{file:s}'", file=file.fullname())
         return file.content()
 
@@ -165,8 +180,7 @@ class Settings:
                      location,
                      extensions,
                      error,
-                     keep_file_extension=False
-                     ):
+                     keep_file_extension=False):
         self._show_invocation(invocation)
         resource = self._find(path, location, extensions, error)
         new_path = self._move(resource, invocation)
@@ -188,7 +202,9 @@ class Settings:
         return str(path).replace("../", "").replace("/", "_")
 
     def include_only(self, selection, invocation):
-        log(invocation, "Restricting file inclusions to {files:s}", files=repr(selection))
+        log(invocation,
+            "Restricting file inclusions to {files:s}",
+            files=repr(selection))
         self._show_invocation(invocation)
         self._selected_for_inclusion.extend(selection)
 

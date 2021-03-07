@@ -18,7 +18,7 @@
 import unittest
 
 from flap.util.path import Path, ROOT, TEMP, CURRENT_DIRECTORY
-from tempfile import gettempdir
+from tempfile import gettempdir, tempdir
 
 
 class PathTests(unittest.TestCase):
@@ -35,7 +35,7 @@ class PathTests(unittest.TestCase):
     def test_appending_a_path(self):
         path1 = ROOT / "dir/test"
         path2 = ROOT / "dir" / "test"
-        
+
         self.assertEqual(path1, path2)
 
     def test_appending_a_path_that_ends_with_a_slash(self):
@@ -52,12 +52,12 @@ class PathTests(unittest.TestCase):
 
     def test_has_extension(self):
         path = ROOT / "source.tex"
-        
+
         self.assertTrue(path.has_extension())
 
     def test_basename(self):
         path = ROOT / "source.tex"
-        
+
         self.assertEqual(path.basename(), "source")
 
     def test_as_absolute_with_current(self):
@@ -100,44 +100,45 @@ class PathTests(unittest.TestCase):
 
         relative = path.relative_to(Path.fromText("/home"))
 
-        self.assertEquals(relative, Path.fromText("test/foo.txt"))
+        self.assertEqual(relative, Path.fromText("test/foo.txt"))
 
     def test_relative_to_file(self):
         path = Path.fromText("/home/test/foo.txt")
 
         relative = path.relative_to(Path.fromText("/home/test"))
 
-        self.assertEquals(relative, Path.fromText("foo.txt"))
+        self.assertEqual(relative, Path.fromText("foo.txt"))
 
     def test_without_extension(self):
         path = Path.fromText("/home/test/foo.txt")
 
-        self.assertEquals(path.without_extension(), Path.fromText("/home/test/foo"))
+        self.assertEqual(path.without_extension(),
+                          Path.fromText("/home/test/foo"))
 
     def test_container(self):
         path = ROOT / "foo.tex"
-        self.assertEquals(ROOT, path.container())
+        self.assertEqual(ROOT, path.container())
 
     def test_empty_container(self):
         path = Path.fromText("foo.tex")
-        self.assertEquals(CURRENT_DIRECTORY, path.container())
+        self.assertEqual(CURRENT_DIRECTORY, path.container())
 
     def testContainment(self):
         path1 = ROOT / "dir" / "file.txt"
         path2 = ROOT / "dir"
 
         self.assertTrue(path1 in path2)
-        
+
     def testContainmentUnderEquality(self):
         path1 = ROOT / "dir" / "file.txt"
         path2 = ROOT / "dir" / "file.txt"
-        
+
         self.assertFalse(path1 in path2)
         self.assertFalse(path2 in path1)
 
     def testPathBuilding(self):
         path = Path.fromText("\\Users\\franckc\\file.txt")
-        
+
         self.assertEqual(path, ROOT / "Users" / "franckc" / "file.txt")
 
     def test_parsing_directory(self):
@@ -149,7 +150,8 @@ class PathTests(unittest.TestCase):
     def testParts(self):
         path = Path.fromText("C:\\Users\\franckc\\pub\\JOCC\\main.tex")
 
-        self.verify_parts(path, ["C:", "Users", "franckc", "pub", "JOCC", "main.tex"])
+        self.verify_parts(path, ["C:", "Users", "franckc", "pub",
+                                 "JOCC", "main.tex"])
 
     def verify_parts(self, path, expectedParts, ):
         parts = [each.fullname() for each in path.parts()]

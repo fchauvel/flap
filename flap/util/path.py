@@ -25,14 +25,16 @@ class Path:
     def fromText(text):
         pattern = re.compile("[\\\\/]+")
         parts = [Unit(eachPart) for eachPart in pattern.split(text)]
-        if parts[-1].is_root(): # Remove the last one, if it is "" (e.g., in project/img/)
+        # Remove the last one, if it is "" (e.g., in project/img/)
+        if parts[-1].is_root():
             parts = parts[:-1]
         return Path(parts)
 
     def __init__(self, parts):
         if not parts:
             raise ValueError("Invalid path, no part given")
-        self._parts = [part for (index, part) in enumerate(parts) if not (part.is_current_directory() and index > 0)]
+        self._parts = [part for (index, part) in enumerate(parts)
+                       if not (part.is_current_directory() and index > 0)]
 
     def resource(self):
         return self._parts[-1]
@@ -80,7 +82,8 @@ class Path:
 
     def relative_to(self, location):
         position = 0
-        while position < len(location._parts) and self._parts[position] == location._parts[position]:
+        while position < len(location._parts) \
+                and self._parts[position] == location._parts[position]:
             position += 1
         return Path(self._parts[position:])
 
@@ -89,7 +92,7 @@ class Path:
 
     def parts(self):
         return self._parts
-    
+
     def __contains__(self, other):
         return self != other and self.__str__() in other.__str__()
 
@@ -101,7 +104,7 @@ class Path:
 
     def __repr__(self):
         return "/".join([eachPart.fullname() for eachPart in self._parts])
-    
+
     def __str__(self):
         return self.__repr__()
 
@@ -114,11 +117,12 @@ class Path:
 
 class Unit:
     """
-    A fragment of path, such as home, dir amd test.txt in /home/dir/test.txt
+    A fragment of path, such as home, dir amd test.txt in
+    /home/dir/test.txt
     """
 
     NAMES = re.compile("(.+)\\.([^\\.]+)$")
-    DRIVE = re.compile("\\w\:")
+    DRIVE = re.compile("\\w\\:")
 
     def __init__(self, name):
         self._name = name.replace("\n", "").strip()
@@ -141,7 +145,8 @@ class Unit:
         return self._match and not self._match.group(2) is None
 
     def has_extension(self, extension):
-        return self.has_any_extension() and self.extension().lower() == extension.lower()
+        return self.has_any_extension() \
+            and self.extension().lower() == extension.lower()
 
     def is_root(self):
         return re.match(Unit.DRIVE, self._name) or self._name == ""

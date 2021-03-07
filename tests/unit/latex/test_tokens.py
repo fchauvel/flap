@@ -40,7 +40,7 @@ class TokenTests(TestCase):
         self.assertNotEqual(self._tokens.character(Position(1, 1), "b"), self._token)
 
     def test_differs_from_an_object_of_another_type(self):
-        self.assertNotEquals("foo", self._token)
+        self.assertNotEqual("foo", self._token)
 
     def test_print_properly(self):
         self.assertEqual(Token.DISPLAY.format(text="a", category="character", location=Position(1, 1)), repr(self._token))

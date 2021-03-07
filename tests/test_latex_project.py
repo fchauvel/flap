@@ -19,7 +19,8 @@ from unittest import TestCase
 
 from flap.util.oofs import InMemoryFileSystem
 from flap.util.path import Path
-from tests.latex_project import Fragment, LatexProject, LatexProjectBuilder, TexFile, a_project, Invocation
+from tests.latex_project import Fragment, LatexProject, \
+    LatexProjectBuilder, TexFile, a_project, Invocation
 
 
 class TexFileTest(TestCase):
@@ -33,7 +34,7 @@ class TexFileTest(TestCase):
         self.assertEqual(self.path, self.tex_file.path)
 
     def test_content_is_exposed(self):
-        self.assertEquals(self.content, self.tex_file.content)
+        self.assertEqual(self.content, self.tex_file.content)
 
     def test_equals_itself(self):
         self.assertEqual(self.tex_file, self.tex_file)
@@ -58,7 +59,7 @@ class LatexProjectTests(TestCase):
         self.tex = LatexProject(self.file)
 
     def test_files_is_exposed(self):
-        self.assertEquals(self.file, self.tex.files["main.tex"])
+        self.assertEqual(self.file, self.tex.files["main.tex"])
 
     def test_equals_a_project_with_similar_files(self):
         self.assertEqual(LatexProject(TexFile("main.tex", "blabla")),
@@ -296,4 +297,4 @@ class InvocationTests(TestCase):
         self.assertEqual(Invocation(self._tex_file), self._invocation)
 
     def test_differs_from_a_different_invocation(self):
-        self.assertNotEquals(Invocation("bar.tex"), self._invocation)
+        self.assertNotEqual(Invocation("bar.tex"), self._invocation)
