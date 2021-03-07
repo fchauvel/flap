@@ -47,9 +47,10 @@ jobs:
     - name: Debug publish on Test PyPI
       env:
         PYPI_TEST_TOKEN: ${{ secrets.PYPI_TEST_TOKEN }}
+        CODECOV: ${{ secrets.CODECOV_TOKEN }}
       run: |
         echo "TEST_VAR = '${PYPI_TEST_TOKEN}'"
-        echo "Another try: ${{ secrets.PYPI_TEST_TOKEN }}"
+        echo "CODECOV: $CODECOV"
         
       
   publish:
