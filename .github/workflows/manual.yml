@@ -29,10 +29,11 @@ jobs:
     # Runs a single command using the runners shell
     - name: Send greeting
       env:
-        ENV_SECRET: ${{ secrets
+        ENV_SECRET: ${{ secrets.TEST_PYPI_API_TOKEN }}
         SECRET: ${{ secrets.TEST_SECRET }}
       run: |
         echo "My secret is '${SECRET}'"
+        echo "My env-secret is '${ENV_SECRET}'"
         echo "Hello ${{ github.event.inputs.name }}"
         
         
