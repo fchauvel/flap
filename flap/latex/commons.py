@@ -30,7 +30,7 @@ class Source:
     def with_name(text, name):
         return Source(text, name)
 
-    def __init__(self, content, name = "Unknown"):
+    def __init__(self, content, name="Unknown"):
         self.name = name
         self.content = content
 
@@ -39,16 +39,19 @@ class Stream:
     """
     A stream of characters, on which we can peek.
 
-    One can equip a stream with an event handler that gets triggered every times the stream moves
-    forward, that is every time the take method is called, directly or indirectly.
+    One can equip a stream with an event handler that gets triggered
+    every times the stream moves forward, that is every time the take
+    method is called, directly or indirectly.
     """
 
     def __init__(self, iterable, handler=lambda x: None):
         assert hasattr(iterable, "__iter__"), \
-            "Stream requires an iterable, but found an '%s'!" % (type(iterable))
+            "Stream requires an iterable, but found an '%s'!" % (
+                type(iterable))
         self._characters = iter(iterable)
         assert callable(handler), \
-            "Stream expect a callable hanlder, but found a '%s" % (type(handler))
+            "Stream expect a callable hanlder, but found a '%s" % (
+                type(handler))
         self._handler = handler
         self._cache = []
 
@@ -106,16 +109,17 @@ class Position:
         return self._column
 
     def next_line(self):
-        return Position(self._line+1, 0, self._source)
+        return Position(self._line + 1, 0, self._source)
 
     def next_character(self):
-        return Position(self._line, self._column+1, self._source)
+        return Position(self._line, self._column + 1, self._source)
 
     def __eq__(self, other):
         if not isinstance(other, Position):
             return False
         return self._line == other._line and \
-               self._column == other._column
+            self._column == other._column
 
     def __repr__(self):
-        return self.REPRESENTATION.format(source=self._source, line=self._line, column=self._column)
+        return self.REPRESENTATION.format(
+            source=self._source, line=self._line, column=self._column)

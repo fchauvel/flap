@@ -33,7 +33,13 @@ class FlapTestCaseTests(TestCase):
         self.expected = a_project().with_merged_file("blabla").build()
         self.test_case_name = "foo"
         self.output = [Fragment("test.tex", 1, 1, r"\input{foo}")]
-        self.test_case = FlapTestCase(self.test_case_name, self.project, self.expected, None, False, self.output)
+        self.test_case = FlapTestCase(
+            self.test_case_name,
+            self.project,
+            self.expected,
+            None,
+            False,
+            self.output)
 
     def test_is_not_skipped(self):
         self.assertFalse(self.test_case.is_skipped)
@@ -110,7 +116,10 @@ class FlapTestCaseTests(TestCase):
     def test_test_with(self):
         runner = MagicMock()
         self.test_case.run_with(runner)
-        runner.test.assert_called_once_with(self.test_case.name, self.test_case._project, self.test_case._expected)
+        runner.test.assert_called_once_with(
+            self.test_case.name,
+            self.test_case._project,
+            self.test_case._expected)
 
 
 class TestSkippedFlapTestCase(TestCase):
@@ -119,7 +128,11 @@ class TestSkippedFlapTestCase(TestCase):
         self.project = a_project().with_main_file("blabla").build()
         self.expected = a_project().with_merged_file("blabla").build()
         self.test_case_name = "foo"
-        self.test_case = FlapTestCase(self.test_case_name, self.project, self.expected, skipped=True)
+        self.test_case = FlapTestCase(
+            self.test_case_name,
+            self.project,
+            self.expected,
+            skipped=True)
 
     def test_is_skipped(self):
         self.assertTrue(self.test_case.is_skipped)
@@ -141,9 +154,17 @@ class TestYamlCodec(TestCase):
         test_case = self._read_test_case_from(yaml_file)
 
         expected = FlapTestCase(
-                        "test 1",
-                        a_project().with_main_file("\\documentclass{article}\n\\begin{document}\n  This is a simple \\LaTeX document!\n\\end{document}").build(),
-                        a_project().with_merged_file("\\documentclass{article}\n\\begin{document}\n  This is a simple \\LaTeX document!\n\\end{document}").build())
+            "test 1",
+            a_project().with_main_file(
+                ("\\documentclass{article}\n"
+                 "\\begin{document}\n"
+                 "  This is a simple \\LaTeX document!\n"
+                 "\\end{document}")).build(),
+            a_project().with_merged_file(
+                "\\documentclass{article}\n"
+                "\\begin{document}\n"
+                "  This is a simple \\LaTeX document!\n"
+                "\\end{document}").build())
 
         self.assertEqual(expected, test_case)
 
@@ -152,37 +173,39 @@ class TestYamlCodec(TestCase):
         test_case = self._read_test_case_from(yaml_file)
 
         expected = FlapTestCase(
-                        "Test 1",
-                        a_project().with_main_file("blabla").build(),
-                        a_project().with_merged_file("blabla").build(),
-                        skipped=True)
+            "Test 1",
+            a_project().with_main_file("blabla").build(),
+            a_project().with_merged_file("blabla").build(),
+            skipped=True)
 
         self.assertEqual(expected, test_case)
 
     def test_parsing_a_test_case_with_invocation(self):
-        yaml_file = self._create_file(YamlTest.that_includes_invocation("Test 1"))
+        yaml_file = self._create_file(
+            YamlTest.that_includes_invocation("Test 1"))
         test_case = self._read_test_case_from(yaml_file)
 
         expected = FlapTestCase(
-                        "Test 1",
-                        a_project().with_main_file("blabla").build(),
-                        a_project().with_merged_file("blabla").build(),
-                        Invocation(tex_file="foo.tex"),
-                        skipped=False)
+            "Test 1",
+            a_project().with_main_file("blabla").build(),
+            a_project().with_merged_file("blabla").build(),
+            Invocation(tex_file="foo.tex"),
+            skipped=False)
 
         self.assertEqual(expected, test_case)
 
     def test_parsing_a_test_case_with_expected_outputs(self):
-        yaml_file = self._create_file(YamlTest.that_includes_expected_outputs("Test 1"))
+        yaml_file = self._create_file(
+            YamlTest.that_includes_expected_outputs("Test 1"))
         test_case = self._read_test_case_from(yaml_file)
 
         expected = FlapTestCase(
-                        "Test 1",
-                        a_project().with_main_file("blabla").build(),
-                        a_project().with_merged_file("blabla").build(),
-                        None,
-                        False,
-                        [Fragment("main.tex", 1, 1, "\\input{result}")])
+            "Test 1",
+            a_project().with_main_file("blabla").build(),
+            a_project().with_merged_file("blabla").build(),
+            None,
+            False,
+            [Fragment("main.tex", 1, 1, "\\input{result}")])
 
         self.assertEqual(expected, test_case)
 
@@ -249,7 +272,9 @@ class TestRepositoryTest(TestCase):
         self.assertEqual(0, len(test_cases))
 
     def test_spot_files_hidden_in_sub_directories(self):
-        self._create_file("tests/sub_dir/test_2.yml", YamlTest.with_latex_code())
+        self._create_file(
+            "tests/sub_dir/test_2.yml",
+            YamlTest.with_latex_code())
         test_cases = self._fetch_all_tests()
         self._verify(test_cases)
 
@@ -329,50 +354,50 @@ class YamlTest:
 
     @staticmethod
     def with_latex_code():
-        return ( "name: test 1 \n"
-                 "description: >\n"
-                 "  This is a dummy test, for testing purposes\n"
-                 "project:\n"
-                 "  - path: main.tex\n"
-                 "    content: |\n"
-                 "      \\documentclass{article}\n"
-                 "      \\begin{document}\n"
-                 "        This is a simple \\LaTeX document!\n"
-                 "      \\end{document}\n"
-                 "expected:\n"
-                 "  - path: merged.tex\n"
-                 "    content: |\n"
-                 "      \\documentclass{article}\n"
-                 "      \\begin{document}\n"
-                 "        This is a simple \\LaTeX document!\n"
-                 "      \\end{document}\n")
+        return ("name: test 1 \n"
+                "description: >\n"
+                "  This is a dummy test, for testing purposes\n"
+                "project:\n"
+                "  - path: main.tex\n"
+                "    content: |\n"
+                "      \\documentclass{article}\n"
+                "      \\begin{document}\n"
+                "        This is a simple \\LaTeX document!\n"
+                "      \\end{document}\n"
+                "expected:\n"
+                "  - path: merged.tex\n"
+                "    content: |\n"
+                "      \\documentclass{article}\n"
+                "      \\begin{document}\n"
+                "        This is a simple \\LaTeX document!\n"
+                "      \\end{document}\n")
 
     @staticmethod
     def that_includes_expected_outputs(name):
-         return ("name: {name}\n".format(name=name) +
-                 "project:\n"
-                 " - path: main.tex\n"
-                 "   content: blabla\n"
-                 "expected:\n"
-                 "  - path: merged.tex\n"
-                 "    content: blabla\n"
-                 "outputs:\n"
-                 "  - file: main.tex\n"
-                 "    line: 1\n"
-                 "    column: 1\n"
-                 "    code: \\input{result}\n")
+        return ("name: {name}\n".format(name=name) +
+                "project:\n"
+                " - path: main.tex\n"
+                "   content: blabla\n"
+                "expected:\n"
+                "  - path: merged.tex\n"
+                "    content: blabla\n"
+                "outputs:\n"
+                "  - file: main.tex\n"
+                "    line: 1\n"
+                "    column: 1\n"
+                "    code: \\input{result}\n")
 
     @staticmethod
     def that_includes_invocation(name):
-         return ("name: {name}\n".format(name=name) +
-                 "project:\n"
-                 " - path: main.tex\n"
-                 "   content: blabla\n"
-                 "expected:\n"
-                 "  - path: merged.tex\n"
-                 "    content: blabla\n"
-                 "invocation: \n"
-                 "  tex-file: foo.tex")
+        return ("name: {name}\n".format(name=name) +
+                "project:\n"
+                " - path: main.tex\n"
+                "   content: blabla\n"
+                "expected:\n"
+                "  - path: merged.tex\n"
+                "    content: blabla\n"
+                "invocation: \n"
+                "  tex-file: foo.tex")
 
     @staticmethod
     def that_passes(test_case_name):
@@ -402,7 +427,8 @@ class YamlTest:
                 "   content: blabla\n"
                 "expected:\n"
                 "  - path: merged.tex\n"
-                "    content: something not expected!\n").format(name=test_name)
+                "    content: something not expected!\n")\
+                .format(name=test_name)
 
     @staticmethod
     def that_fails_because_of_unexpected_file(test_name):

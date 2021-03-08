@@ -24,7 +24,7 @@ from flap.latex.errors import UnknownSymbol
 
 class Macro:
     """
-    A LaTeX macro, including its name (e.g., '\point'), its signature
+    A LaTeX macro, including its name (e.g., '\\point'), its signature
     as a list of expected tokens (e.g., '(#1,#2)') and the text that
     should replace it.
     """
@@ -72,7 +72,7 @@ class Macro:
         for index, any_token in enumerate(self._signature):
             if any_token.is_a_parameter:
                 parameter = str(any_token)
-                if index == len(self._signature)-1:
+                if index == len(self._signature) - 1:
                     expression = parser.capture_one()
                     invocation.append_argument(parameter, expression)
                 else:
@@ -84,7 +84,11 @@ class Macro:
                 invocation.append(parser._accept(lambda token: True))
 
     def _execute(self, parser, invocation):
-        arguments = {parameter: parser._spawn(argument, dict()).evaluate()                      for parameter, argument in invocation.arguments.items()}
+        arguments = {
+            parameter: parser._spawn(
+                argument,
+                dict()).evaluate() for parameter,
+            argument in invocation.arguments.items()}
         return parser._spawn(self._body, arguments)._evaluate_group()
 
     def __eq__(self, other):

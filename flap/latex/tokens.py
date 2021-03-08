@@ -36,7 +36,8 @@ class Token:
         return self._location
 
     def satisfies(self, predicate):
-        return predicate.evaluate_on(self._text, self._category, self._location)
+        return predicate.evaluate_on(
+            self._text, self._category, self._location)
 
     def is_a(self, category):
         return self._category == category
@@ -88,7 +89,7 @@ class Token:
         if not isinstance(other_token, Token):
             return False
         return self._text == other_token._text \
-               and self._category == other_token._category
+            and self._category == other_token._category
 
     def __repr__(self):
         return self.DISPLAY.format(

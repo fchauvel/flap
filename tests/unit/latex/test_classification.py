@@ -62,11 +62,11 @@ class ClassificationTests(TestCase):
                          self._classify(invocation))
 
     def _define(self, name, parameters, body):
-            macro = self._macros.create(
-                name,
-                self._factory.as_list(parameters),
-                self._factory.as_list(body))
-            self._environment[name] = macro
+        macro = self._macros.create(
+            name,
+            self._factory.as_list(parameters),
+            self._factory.as_list(body))
+        self._environment[name] = macro
 
     def _classify(self, expression):
         parser = Parser(self._factory.as_tokens(expression, "Unknown"),

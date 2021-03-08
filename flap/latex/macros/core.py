@@ -55,7 +55,7 @@ class Def(Macro):
 
 class Begin(Macro):
     """
-    A LaTeX environment such as \begin{center} \end{center}.
+    A LaTeX environment such as \begin{center} \\end{center}.
     """
 
     def __init__(self, flap):
@@ -65,7 +65,8 @@ class Begin(Macro):
         invocation.append_argument("environment", parser.capture_group())
 
     def _execute(self, parser, invocation):
-        environment = parser.evaluate_as_text(invocation.argument("environment"))
+        environment = parser.evaluate_as_text(
+            invocation.argument("environment"))
         env = parser._definitions.look_up(environment)
         if env:
             return env.execute(parser, invocation)
@@ -76,7 +77,6 @@ class DocumentClass(Macro):
     """
     Extract some specific document class, e.g., subfile
     """
-
 
     def __init__(self, flap):
         super().__init__(flap, r"\documentclass", None, None)
@@ -97,9 +97,8 @@ class DocumentClass(Macro):
 
 
 class PackageReference(Macro):
-    """
-    Abstract commands that load a package, either locally or from those installed
-    with LaTeX (e.g., usepackage or RequirePackage).
+    """Abstract commands that load a package, either locally or from
+    those installed with LaTeX (e.g., usepackage or RequirePackage).
     """
 
     def __init__(self, flap, name):
@@ -113,14 +112,17 @@ class PackageReference(Macro):
         package = parser.evaluate_as_text(invocation.argument("package"))
         new_link = self._flap.relocate_dependency(package, invocation)
         if new_link:
-            return invocation.substitute("package", parser._create.as_list("{" + new_link + "}")).as_tokens
+            return invocation.substitute(
+                "package",
+                parser._create.as_list("{" + new_link + "}")
+            ).as_tokens
         return invocation.as_tokens
 
 
 class UsePackage(PackageReference):
     """
-    Intercept 'usepackage' commands. It triggers copying the package, if it is
-    defined locally.
+    Intercept 'usepackage' commands. It triggers copying the package,
+    if it is defined locally.
     """
 
     def __init__(self, flap):
@@ -129,8 +131,8 @@ class UsePackage(PackageReference):
 
 class RequirePackage(PackageReference):
     """
-    Intercept 'RequirePackage' commands. It triggers copying the package, if it is
-    defined locally.
+    Intercept 'RequirePackage' commands. It triggers copying the
+    package, if it is defined locally.
     """
 
     def __init__(self, flap):

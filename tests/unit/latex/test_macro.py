@@ -38,16 +38,22 @@ class InvocationTests(TestCase):
 
     def test_as_text(self):
         self._invocation.name = [r"\foo"]
-        self._invocation.append_argument("options", [each for each in "[this is a text]"])
+        self._invocation.append_argument(
+            "options", [each for each in "[this is a text]"])
         self._invocation.append(["-", "---"])
-        self._invocation.append_argument("link", [each for each in "{link/to/a/file.tex}"])
-        self.assertEqual(r"\foo[this is a text]----{link/to/a/file.tex}", self._invocation.as_text)
+        self._invocation.append_argument(
+            "link", [each for each in "{link/to/a/file.tex}"])
+        self.assertEqual(
+            r"\foo[this is a text]----{link/to/a/file.tex}",
+            self._invocation.as_text)
 
     def test_conversion_to_token_list(self):
         self._invocation.name = [r"\foo"]
-        self._invocation.append_argument("options", [each for each in "[this is a text]"])
+        self._invocation.append_argument(
+            "options", [each for each in "[this is a text]"])
         self._invocation.append([each for each in "----"])
-        self._invocation.append_argument("link", [each for each in "{link/to/a/file.tex}"])
+        self._invocation.append_argument(
+            "link", [each for each in "{link/to/a/file.tex}"])
         self.assertEqual([r"\foo"] +
                          [each for each in "[this is a text]"] +
                          [each for each in "----"] +
@@ -66,7 +72,9 @@ class InvocationTests(TestCase):
     def test_argument_substitution(self):
         self._invocation.name = r"\foo"
         self._invocation.append_argument("text", ["z", "y", "x"])
-        self.assertEqual("bar", self._invocation.substitute("text", "bar").arguments["text"])
+        self.assertEqual(
+            "bar", self._invocation.substitute(
+                "text", "bar").arguments["text"])
 
     def test_argument(self):
         self._invocation.name = [r"\foo"]

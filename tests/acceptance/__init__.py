@@ -33,21 +33,26 @@ class Generator:
     def create_execution(self, test_case):
         def run(this):
             if test_case.is_skipped:
-                this.skipTest("Test skipped, according to its YAML description")
+                this.skipTest(
+                    "Test skipped, according to its YAML description")
             else:
                 test_case.run_with2(self._runner)
         return run
 
     def test_class(self):
         test_cases = self._repository.fetch_all()
-        methods = {"test " + each_case.name: self.create_execution(each_case) for each_case in test_cases}
+        methods = {
+            "test " +
+            each_case.name:
+            self.create_execution(each_case) for each_case in test_cases}
         return type("YAMLParserTests", (TestCase,), methods)
 
 
 def load_tests(loader, tests, pattern):
     file_system = OSFileSystem()
-    repository = FileBasedTestRepository(file_system,
-                                         Path.fromText("tests/acceptance/scenarios"), YamlCodec())
+    repository = FileBasedTestRepository(
+        file_system,
+        Path.fromText("tests/acceptance/scenarios"), YamlCodec())
     runner = EndToEndRunner(file_system)
     generate = Generator(repository, runner)
     suite = TestSuite()

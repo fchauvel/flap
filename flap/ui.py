@@ -85,7 +85,7 @@ class Display:
         self._show(self.CLOSING, directory=output)
 
     def _horizontal_line(self):
-        return "-" * (sum(self.WIDTHS) + len(self.WIDTHS)-1) + "\n"
+        return "-" * (sum(self.WIDTHS) + len(self.WIDTHS) - 1) + "\n"
 
     def _show(self, template, **values):
         self._output.write(template.format(**values))

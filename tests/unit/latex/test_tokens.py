@@ -21,7 +21,7 @@
 from unittest import TestCase, main
 
 from flap.latex.commons import Position
-from flap.latex.tokens import *
+from flap.latex.tokens import SymbolTable, Token, TokenFactory
 
 
 class TokenTests(TestCase):
@@ -34,16 +34,32 @@ class TokenTests(TestCase):
         self.assertEqual(self._token, self._token)
 
     def test_equals_a_similar_tokens(self):
-        self.assertEqual(self._tokens.character(Position(1, 1), "a"), self._token)
+        self.assertEqual(
+            self._tokens.character(
+                Position(
+                    1,
+                    1),
+                "a"),
+            self._token)
 
     def test_differs_from_a_different_character(self):
-        self.assertNotEqual(self._tokens.character(Position(1, 1), "b"), self._token)
+        self.assertNotEqual(
+            self._tokens.character(
+                Position(
+                    1,
+                    1),
+                "b"),
+            self._token)
 
     def test_differs_from_an_object_of_another_type(self):
         self.assertNotEqual("foo", self._token)
 
     def test_print_properly(self):
-        self.assertEqual(Token.DISPLAY.format(text="a", category="character", location=Position(1, 1)), repr(self._token))
+        self.assertEqual(
+            Token.DISPLAY.format(
+                text="a", category="character", location=Position(
+                    1, 1)), repr(
+                self._token))
 
 
 if __name__ == '__main__':

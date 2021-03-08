@@ -179,5 +179,6 @@ class PathTests(unittest.TestCase):
         path = Path.fromText("franck/test.tex")
         self.assertFalse(path.is_absolute())
 
+
 if __name__ == "__main__":
     unittest.main()

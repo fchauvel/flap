@@ -40,18 +40,20 @@ class Symbol(Enum):
 
 class SymbolTable:
     """
-    Characters recognised by (La)TeX, augmented with some relevant for parsing such new lines.
+    Characters recognised by (La)TeX, augmented with some relevant for
+    parsing such new lines.
     """
 
     @staticmethod
     def character_range(start, end):
-        return [chr(code) for code in range(ord(start), ord(end)+1)]
+        return [chr(code) for code in range(ord(start), ord(end) + 1)]
 
     @staticmethod
     def default():
         return SymbolTable({
             Symbol.BEGIN_GROUP: ["{"],
-            Symbol.CHARACTER: SymbolTable.character_range('a', 'z') + SymbolTable.character_range('A', 'Z'),
+            Symbol.CHARACTER: SymbolTable.character_range('a', 'z') +
+            SymbolTable.character_range('A', 'Z'),
             Symbol.COMMENT: ["%"],
             Symbol.CONTROL: ["\\"],
             Symbol.END_GROUP: ["}"],
@@ -68,11 +70,13 @@ class SymbolTable:
         self._symbols = symbols
 
     def __getitem__(self, key):
-        assert key in list(Symbol), "Symbol table only maps symbol categories to symbol lists"
+        assert key in list(
+            Symbol), "Symbol table only maps symbol categories to symbol lists"
         return self._symbols[key]
 
     def __setitem__(self, key, value):
-        assert key in list(Symbol), "Symbol table only maps symbol categories to symbol lists"
+        assert key in list(
+            Symbol), "Symbol table only maps symbol categories to symbol lists"
         self._symbols[key] = value
 
     def match(self, character, category):
@@ -105,6 +109,3 @@ class SymbolTable:
         if item in [each.name for each in list(Symbol)]:
             return self._symbols[Symbol[item]]
         return self.__getattribute__(item)
-
-
-

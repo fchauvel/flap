@@ -20,15 +20,13 @@
 from flap.latex.macros.commons import Macro, UpdateLink, Environment
 
 
-
 class GraphicsPath(Macro):
     """
-    Intercept the `\graphicspath` directive
+    Intercept the `\\graphicspath` directive
     """
 
     def __init__(self, flap):
         super().__init__(flap, r"\graphicspath", None, None)
-
 
     def _capture_arguments(self, parser, invocation):
         invocation.append_argument(
@@ -43,7 +41,7 @@ class GraphicsPath(Macro):
 
 class IncludeGraphics(UpdateLink):
     """
-    Intercept the `\includegraphics` directive
+    Intercept the `\\includegraphics` directive
     """
 
     def __init__(self, flap):
@@ -55,7 +53,7 @@ class IncludeGraphics(UpdateLink):
 
 class IncludeSVG(UpdateLink):
     """
-    Intercept the r`\includegraphics` directive
+    Intercept the r`\\includegraphics` directive
     """
 
     def __init__(self, flap):

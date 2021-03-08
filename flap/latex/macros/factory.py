@@ -18,13 +18,16 @@
 #
 
 
-from flap.latex.macros.core import *
-from flap.latex.macros.graphics import *
-from flap.latex.macros.bibliography import *
-from flap.latex.macros.inlining import *
-from flap.latex.macros.listings import *
+from flap.latex.macros.core import Begin, Def, DocumentClass, \
+    Macro, RequirePackage, UsePackage
+from flap.latex.macros.graphics import IncludeGraphics, IncludeSVG, \
+    GraphicsPath, Overpic
+from flap.latex.macros.bibliography import Bibliography, \
+    BibliographyStyle, MakeIndex
+from flap.latex.macros.inlining import EndInput, Include, IncludeOnly, \
+    Input, SubFile
+from flap.latex.macros.listings import Verbatim
 from flap.latex.macros.biblatex import AddBibResource
-
 
 
 class MacroFactory:

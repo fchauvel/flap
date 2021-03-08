@@ -48,8 +48,9 @@ class TexFileTest(TestCase):
                             self.tex_file)
 
     def test_does_not_equals_tex_file_with_a_different_content(self):
-        self.assertNotEqual(TexFile(self.path, self.content + "blablabla"),
-                            self.tex_file)
+        self.assertNotEqual(
+            TexFile(self.path, self.content + "blablabla"),
+            self.tex_file)
 
 
 class LatexProjectTests(TestCase):
@@ -66,12 +67,14 @@ class LatexProjectTests(TestCase):
                          self.tex)
 
     def test_differ_when_file_content_differ(self):
-        self.assertNotEqual(LatexProject(TexFile("main.tex", "THIS IS DIFFERENT!")),
-                         self.tex)
+        self.assertNotEqual(
+            LatexProject(TexFile("main.tex", "THIS IS DIFFERENT!")),
+            self.tex)
 
     def test_differ_when_file_path_differ(self):
-        self.assertNotEqual(LatexProject(TexFile("a/different/path.tex", "blabla")),
-                         self.tex)
+        self.assertNotEqual(
+            LatexProject(TexFile("a/different/path.tex", "blabla")),
+            self.tex)
 
     def test_difference_with_itself(self):
         self.tex.assert_is_equivalent_to(self.tex)
@@ -88,22 +91,29 @@ class LatexProjectTests(TestCase):
     def test_difference_with_a_project_with_an_extra_file(self):
         try:
             extra_file = TexFile("extra/file.tex", "Extra blabla")
-            self.tex.assert_is_equivalent_to(LatexProject(self.file, extra_file))
+            self.tex.assert_is_equivalent_to(
+                LatexProject(self.file, extra_file))
             self.fail("Exception expected")
 
         except AssertionError as error:
-            self.assertEqual(LatexProject.UNEXPECTED_FILE.format(file=extra_file.path),
-                             str(error))
+            self.assertEqual(
+                LatexProject.UNEXPECTED_FILE.format(file=extra_file.path),
+                str(error))
 
     def test_difference_with_a_project_whose_file_content_differs(self):
         try:
             content = "something different"
-            self.tex.assert_is_equivalent_to(LatexProject(TexFile("main.tex", content)))
+            self.tex.assert_is_equivalent_to(
+                LatexProject(TexFile("main.tex", content)))
             self.fail("Exception expected")
 
         except AssertionError as error:
-            self.assertEqual(LatexProject.CONTENT_MISMATCH.format(file="main.tex", actual=content, expected="blabla"),
-                             str(error))
+            self.assertEqual(
+                LatexProject.CONTENT_MISMATCH.format(
+                    file="main.tex",
+                    actual=content,
+                    expected="blabla"),
+                str(error))
 
 
 class LatexProjectGenerationTests(TestCase):
@@ -137,7 +147,8 @@ class LatexProjectGenerationTests(TestCase):
 
     def _verify(self, project):
         for (path, file) in project.files.items():
-            file_on_disk = self._file_system.open(Path.fromText(self._directory) / path)
+            file_on_disk = self._file_system.open(
+                Path.fromText(self._directory) / path)
             self.assertEqual(file.content, file_on_disk.content())
 
 
@@ -213,20 +224,34 @@ class BuilderTests(TestCase):
         project = a_project()\
             .with_main_file("foo")\
             .build()
-        self.assertEqual(LatexProject(TexFile(LatexProjectBuilder.MAIN_FILE, "foo")), project)
+        self.assertEqual(
+            LatexProject(
+                TexFile(
+                    LatexProjectBuilder.MAIN_FILE,
+                    "foo")),
+            project)
 
     def test_build_a_merged_file_project(self):
         project = a_project()\
             .with_merged_file("foo")\
             .build()
-        self.assertEqual(LatexProject(TexFile(LatexProjectBuilder.MERGED_FILE, "foo")), project)
+        self.assertEqual(
+            LatexProject(
+                TexFile(
+                    LatexProjectBuilder.MERGED_FILE,
+                    "foo")),
+            project)
 
     def test_build_project_with_image(self):
         project = a_project()\
             .with_image("img/result.pdf")\
             .build()
         self.assertEqual(
-            LatexProject(TexFile("img/result.pdf", LatexProjectBuilder.IMAGE_CONTENT.format(key="img_result.pdf"))),
+            LatexProject(
+                TexFile(
+                    "img/result.pdf",
+                    LatexProjectBuilder.IMAGE_CONTENT.format(
+                        key="img_result.pdf"))),
             project)
 
 
@@ -237,7 +262,8 @@ class FragmentTest(TestCase):
         self._line = 1
         self._column = 2
         self._code = r"\input{file.tex}"
-        self._fragment = self._make_fragment(self._file, self._line, self._column, self._code)
+        self._fragment = self._make_fragment(
+            self._file, self._line, self._column, self._code)
 
     @staticmethod
     def _make_fragment(file, line, column, code):
@@ -246,7 +272,7 @@ class FragmentTest(TestCase):
     def test_conversion_to_dictionary(self):
         expected = {Fragment.KEY_FILE: self._file,
                     Fragment.KEY_LINE: self._line,
-                    Fragment.KEY_COLUMN : self._column,
+                    Fragment.KEY_COLUMN: self._column,
                     Fragment.KEY_CODE: self._code}
         self.assertEqual(expected, self._fragment.as_dictionary)
 
@@ -254,26 +280,44 @@ class FragmentTest(TestCase):
         self.assertEqual(self._fragment, self._fragment)
 
     def test_equals_a_similar_fragment(self):
-        clone = self._make_fragment(self._file, self._line, self._column, self._code)
+        clone = self._make_fragment(
+            self._file, self._line, self._column, self._code)
         self.assertEqual(clone, self._fragment)
 
     def test_differs_from_a_random_object(self):
         self.assertNotEqual(self._fragment, [])
 
     def test_differs_when_filename_varies(self):
-        other = self._make_fragment(self._file + "xxx", self._line, self._column, self._code)
+        other = self._make_fragment(
+            self._file + "xxx",
+            self._line,
+            self._column,
+            self._code)
         self.assertNotEqual(self._fragment, other)
 
     def test_differs_when_line_varies(self):
-        other = self._make_fragment(self._file, self._line + 1, self._column, self._code)
+        other = self._make_fragment(
+            self._file,
+            self._line + 1,
+            self._column,
+            self._code)
         self.assertNotEqual(self._fragment, other)
 
     def test_differs_when_column_varies(self):
-        other = self._make_fragment(self._file, self._line, self._column + 1, self._code)
+        other = self._make_fragment(
+            self._file,
+            self._line,
+            self._column + 1,
+            self._code)
         self.assertNotEqual(self._fragment, other)
 
     def test_differs_when_code_varies(self):
-        other = self._make_fragment(self._file, self._line, self._column, self._code + "blabla")
+        other = self._make_fragment(
+            self._file,
+            self._line,
+            self._column,
+            self._code +
+            "blabla")
         self.assertNotEqual(self._fragment, other)
 
 

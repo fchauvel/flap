@@ -1,4 +1,4 @@
-    #
+#
 # This file is part of Flap.
 #
 # Flap is free software: you can redistribute it and/or modify
@@ -42,7 +42,10 @@ class EndToEndRunner:
         self._file_system.deleteDirectory(self._path_for(test_case))
 
     def _setup(self, test_case):
-        test_case._project.setup(self._file_system, self._path_for(test_case) / "project")
+        test_case._project.setup(
+            self._file_system,
+            self._path_for(test_case) /
+            "project")
 
     def _path_for(self, test_case):
         return TEMP / "flap" / "acceptance" / test_case.escaped_name
@@ -67,9 +70,13 @@ class EndToEndRunner:
         self._verify_shown(self._display._horizontal_line())
         entries = [each.as_dictionary for each in test_case._output]
         for each_entry in entries:
-            each_entry["code"] = truncate(each_entry["code"], self._display.WIDTHS[3])
+            each_entry["code"] = truncate(
+                each_entry["code"], self._display.WIDTHS[3])
             self._verify_shown(self._display.ENTRY.format(**each_entry))
-        self._verify_shown(self._display.SUMMARY.format(count=len(test_case._output)))
+        self._verify_shown(
+            self._display.SUMMARY.format(
+                count=len(
+                    test_case._output)))
 
     def _verify_shown(self, text):
         message = "Could not find the following text:\n" \
@@ -78,4 +85,7 @@ class EndToEndRunner:
                   "The output was:\n" \
                   "{output}\n"
         if text not in self._output.getvalue():
-            raise AssertionError(message.format(pattern=text, output=self._output.getvalue()))
+            raise AssertionError(
+                message.format(
+                    pattern=text,
+                    output=self._output.getvalue()))

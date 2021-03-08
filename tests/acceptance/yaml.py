@@ -83,7 +83,7 @@ class YamlCodec:
         return LatexProject(*project_files)
 
     def _extract_tex_file(self, entry):
-        return TexFile(self._extract_path(entry),self._extract_content(entry))
+        return TexFile(self._extract_path(entry), self._extract_content(entry))
 
     def _extract_path(self, entry):
         if self.PATH_KEY not in entry:
@@ -139,7 +139,7 @@ class YamlCodec:
             self._handle_missing_key(self.KEY_LINE)
         return int(entry[self.KEY_LINE])
 
-    def  _extract_column_number(self, entry):
+    def _extract_column_number(self, entry):
         if self.KEY_COLUMN not in entry:
             self._handle_missing_key(self.KEY_COLUMN)
         return int(entry[self.KEY_COLUMN])

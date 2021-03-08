@@ -60,7 +60,8 @@ class MakeIndex(Macro):
 
     def _execute(self, parser, invocation):
         style_file = self._fetch_style_file(parser, invocation)
-        new_style_file = self._flap.update_link_to_index_style(style_file, invocation)
+        new_style_file = self._flap.update_link_to_index_style(
+            style_file, invocation)
         return invocation.as_text.replace(style_file, new_style_file)
 
     @staticmethod
@@ -71,5 +72,5 @@ class MakeIndex(Macro):
             options = re.split(r"(-\w\s)", value)
             for index, _ in enumerate(options):
                 if "-s" in options[index]:
-                    return options[index+1]
+                    return options[index + 1]
         return None

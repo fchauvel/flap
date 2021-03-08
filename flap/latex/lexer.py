@@ -23,8 +23,10 @@ from flap.latex.tokens import TokenFactory
 
 class Lexer:
     """
-    Scan a stream of character and yields a stream of token. The lexer shall define handler for each category of symbols.
-    These handlers are automatically selected using reflection: each handler shall be named "_read_category".
+    Scan a stream of character and yields a stream of token. The lexer
+    shall define handler for each category of symbols.  These handlers
+    are automatically selected using reflection: each handler shall be
+    named "_read_category".
     """
 
     def __init__(self, symbols, source):
@@ -80,7 +82,7 @@ class Lexer:
         marker = self._take()
         location = self._position
         assert marker in self._symbols.CONTROL
-        if not self._next in self._symbols.CHARACTER:
+        if self._next not in self._symbols.CHARACTER:
             name = self._take()
         else:
             name = self._take_while(lambda c: c in self._symbols.CHARACTER)
@@ -154,5 +156,5 @@ class Lexer:
     def _read_others(self):
         marker = self._input.take()
         location = self._position
-        #assert marker in self._symbols.OTHERS
+        # assert marker in self._symbols.OTHERS
         return self._tokens.others(location, marker)

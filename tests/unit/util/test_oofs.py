@@ -30,9 +30,9 @@ class InMemoryFileSystemTest(unittest.TestCase):
     def test_file_creation(self):
         path = Path.fromText("dir/test/source.tex")
         self.fileSystem.create_file(path, "blah")
-        
+
         file = self.fileSystem.open(Path.fromText("dir/test/source.tex"))
-        
+
         self.assertTrue(file.exists())
         self.assertTrue(file.contains("blah"))
 
@@ -75,7 +75,8 @@ class InMemoryFileSystemTest(unittest.TestCase):
         self.fileSystem.create_file(Path.fromText("dir/test2.txt"), "y")
         self.fileSystem.create_file(Path.fromText("dir/more/test.txt"), "x")
         directory = self.fileSystem.open(Path.fromText("dir"))
-        self.assertEqual(len(directory.files()), 3, [ str(file.path()) for file in directory.files() ])
+        self.assertEqual(len(directory.files()), 3, [
+                         str(file.path()) for file in directory.files()])
 
     def testFilteringFilesInDirectory(self):
         self.fileSystem.create_file(Path.fromText("dir/test.txt"), "x")
@@ -108,7 +109,7 @@ class InMemoryFileSystemTest(unittest.TestCase):
         copy = self.fileSystem.open(destination)
         self.assertTrue(copy.exists())
         self.assertEqual(copy.content(), "whatever")
-        
+
     def test_files_that_match(self):
         self.fileSystem.create_file(Path.fromText("dir/foo/bar/test.txt"), "x")
         directory = self.fileSystem.open(Path.fromText("dir/foo"))

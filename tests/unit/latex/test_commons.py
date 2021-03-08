@@ -81,14 +81,17 @@ class PositionTest(TestCase):
         return Position(line, column)
 
     def test_next_line(self):
-        self._verify(self._line+1, 0, self._position.next_line())
+        self._verify(self._line + 1, 0, self._position.next_line())
 
     def _verify(self, line, column, position):
         self.assertEqual(line, position.line)
         self.assertEqual(column, position.column)
 
     def test_next_character(self):
-        self._verify(self._line, self._column+1, self._position.next_character())
+        self._verify(
+            self._line,
+            self._column + 1,
+            self._position.next_character())
 
     def test_equals_itself(self):
         self.assertEqual(self._position, self._position)
@@ -97,17 +100,29 @@ class PositionTest(TestCase):
         self.assertEqual(self._at(self._line, self._column), self._position)
 
     def test_differs_from_a_position_with_different_column(self):
-        self.assertNotEqual(self._at(self._line, self._column+1), self._position)
+        self.assertNotEqual(
+            self._at(
+                self._line,
+                self._column + 1),
+            self._position)
 
     def test_differs_from_a_position_with_different_line(self):
-        self.assertNotEqual(self._at(self._line+1, self._column), self._position)
+        self.assertNotEqual(
+            self._at(
+                self._line + 1,
+                self._column),
+            self._position)
 
     def test_differs_from_an_object_of_another_type(self):
         self.assertNotEqual(self._position, False)
 
     def test_representation(self):
-        self.assertEqual(Position.REPRESENTATION.format(source=Position.UNKNOWN, line=self._line, column=self._column),
-                         str(self._position))
+        self.assertEqual(
+            Position.REPRESENTATION.format(
+                source=Position.UNKNOWN,
+                line=self._line,
+                column=self._column),
+            str(self._position))
 
 
 if __name__ == '__main__':

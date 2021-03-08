@@ -62,19 +62,26 @@ class LatexProject:
     def _verify_different_files(self, actual):
         for (path, file) in self.files.items():
             assert path in actual.files and file == actual.files[path], \
-                self.CONTENT_MISMATCH.format(file=path, actual=actual.files[path].content, expected=file.content)
+                self.CONTENT_MISMATCH.format(
+                file=path,
+                actual=actual.files[path].content,
+                expected=file.content)
 
-    CONTENT_MISMATCH = "Content mismatch for {file}\nExpected:\n'{expected}'\nbut found:\n'{actual}'"
+    CONTENT_MISMATCH = ("Content mismatch for {file}\n"
+                        "Expected:\n'{expected}'\n"
+                        "but found:\n'{actual}'")
 
     def _verify_missing_files(self, actual):
         for path in self.files:
-            assert path in actual.files, self.MISSING_FILE.format(file=path)
+            assert path in actual.files, \
+                self.MISSING_FILE.format(file=path)
 
     MISSING_FILE = "Missing file '{file}'!"
 
     def _verify_extraneous_files(self, actual):
         for path in actual.files:
-            assert path in self.files, self.UNEXPECTED_FILE.format(file=path)
+            assert path in self.files, \
+                self.UNEXPECTED_FILE.format(file=path)
 
     UNEXPECTED_FILE = "Unexpected file '{file}'!"
 
@@ -104,7 +111,13 @@ class LatexProjectBuilder:
         return self
 
     def with_image(self, path):
-        self._files.append(TexFile(path, self.IMAGE_CONTENT.format(key=path.replace("/", "_"))))
+        self._files.append(
+            TexFile(
+                path,
+                self.IMAGE_CONTENT.format(
+                    key=path.replace(
+                        "/",
+                        "_"))))
         return self
 
     IMAGE_CONTENT = "IMAGE DATA FOR {key}"
@@ -161,14 +174,15 @@ class Fragment:
         if not isinstance(other, Fragment):
             return False
         return self._file_name == other._file_name and \
-               self._line == other._line and \
-               self._column == other._column and \
-               self._code == other._code
+            self._line == other._line and \
+            self._column == other._column and \
+            self._code == other._code
 
 
 class FlapTestCase:
 
-    def __init__(self, name, project, expected, invocation=None, skipped=False, output=None):
+    def __init__(self, name, project, expected,
+                 invocation=None, skipped=False, output=None):
         if not len or len(name) == 0:
             raise ValueError("Invalid test case name (found '%s')" % name)
         self._name = name
@@ -208,11 +222,11 @@ class FlapTestCase:
         if not isinstance(other, FlapTestCase):
             return False
         return self._name == other._name and \
-               self._project == other._project and \
-               self._expected == other._expected and \
-               self._invocation == other._invocation and \
-               self._is_skipped == other._is_skipped and \
-               self._output == other._output
+            self._project == other._project and \
+            self._expected == other._expected and \
+            self._invocation == other._invocation and \
+            self._is_skipped == other._is_skipped and \
+            self._output == other._output
 
 
 class Invocation:

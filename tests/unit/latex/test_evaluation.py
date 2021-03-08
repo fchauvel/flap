@@ -64,7 +64,9 @@ class ClassificationTests(TestCase):
 
     def test_invoking_a_macro_with_two_parameters(self):
         self._define(r"\point", "(#1,#2)", "{X=#1 and Y=#2}")
-        self._verify_evaluation(r"\point(12,{3 point 5})", "X=12 and Y=3 point 5")
+        self._verify_evaluation(
+            r"\point(12,{3 point 5})",
+            "X=12 and Y=3 point 5")
 
     def test_macro_with_one_parameter(self):
         self._define(r"\foo", "#1", "{x=#1}")
@@ -83,7 +85,7 @@ class ClassificationTests(TestCase):
     def test_internal_macros(self):
         self._symbols.CHARACTER += "@"
         self._define(r"\internal@foo", "", r"{\internal@bar}")
-        self._verify_evaluation(r"\internal@foo", "\internal@bar")
+        self._verify_evaluation(r"\internal@foo", "\\internal@bar")
 
     def _verify_evaluation(self, invocation, expected_category):
         self.assertEqual(expected_category,
@@ -94,9 +96,9 @@ class ClassificationTests(TestCase):
 
     def _macro(self, name, parameters, body):
         return self._macros.create(
-                name,
-                self._factory.as_list(parameters),
-                self._factory.as_list(body))
+            name,
+            self._factory.as_list(parameters),
+            self._factory.as_list(body))
 
     def _evaluate(self, expression):
         parser = Parser(self._factory.as_tokens(expression, "Unknown"),

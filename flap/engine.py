@@ -117,7 +117,8 @@ class Settings:
                                        file.fullname(),
                                        symbol_table)
                 self._write(tokens,
-                            self.output_directory / self._as_file_name(new_path))
+                            self.output_directory /
+                            self._as_file_name(new_path))
                 return self._as_file_name(new_path.without_extension())
 
             except TexFileNotFound:

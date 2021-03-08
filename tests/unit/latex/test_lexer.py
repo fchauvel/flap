@@ -53,7 +53,9 @@ class LexerTests(TestCase):
 
     def test_recognises_a_single_command(self):
         self._text = r"\myMacro"
-        self._verify_tokens(self._tokens.command(Position(1, 1), r"\myMacro"))
+        self._verify_tokens(
+            self._tokens.command(Position(1, 1),
+                                 r"\myMacro"))
 
     def test_recognises_a_single_special_character_command(self):
         self._text = r"\%"
@@ -78,21 +80,22 @@ class LexerTests(TestCase):
 
     def test_recognises_a_comment(self):
         self._text = "%This is a comment\n\\def\\foo"
-        self._verify_tokens(self._tokens.comment(Position(1, 1), "%This is a comment"),
-                            self._tokens.new_line(Position(1, 1)),
-                            self._tokens.command(Position(2, 1), r"\def"),
-                            self._tokens.command(Position(2, 5), r"\foo"))
+        self._verify_tokens(
+            self._tokens.comment(Position(1, 1), "%This is a comment"),
+            self._tokens.new_line(Position(1, 1)),
+            self._tokens.command(Position(2, 1), r"\def"),
+            self._tokens.command(Position(2, 5), r"\foo"))
 
     def test_recognises_an_opening_group(self):
         self._text = "{"
-        self._verify_tokens(self._tokens.begin_group(Position(1,1)))
+        self._verify_tokens(self._tokens.begin_group(Position(1, 1)))
 
     def test_recognises_an_ending_group(self):
         self._text = "}"
         self._verify_tokens(self._tokens.end_group(Position(1, 1)))
 
     def test_recognises_an_parameter(self):
-        self._text = "\def#1"
+        self._text = "\\def#1"
         self._verify_tokens(self._tokens.command(Position(1, 1), r"\def"),
                             self._tokens.parameter(Position(1, 5), "#1"))
 
@@ -101,10 +104,10 @@ class LexerTests(TestCase):
         self._verify_tokens(self._tokens.command(Position(1, 1), r"\def"),
                             self._tokens.command(Position(1, 5), r"\point"),
                             self._tokens.parameter(Position(1, 11), "#1"),
-                            self._tokens.parameter(Position(1, 13),"#2"),
+                            self._tokens.parameter(Position(1, 13), "#2"),
                             self._tokens.begin_group(Position(1, 15), "{"),
                             self._tokens.others(Position(1, 16), "("),
-                            self._tokens.parameter(Position(1, 17),"#2"),
+                            self._tokens.parameter(Position(1, 17), "#2"),
                             self._tokens.others(Position(1, 19), ","),
                             self._tokens.parameter(Position(1, 20), "#1"),
                             self._tokens.others(Position(1, 22), ")"),
@@ -112,22 +115,26 @@ class LexerTests(TestCase):
 
     def test_recognises_math_mode(self):
         self._text = "$"
-        self._verify_tokens(self._tokens.math(Position(1,1)))
+        self._verify_tokens(self._tokens.math(Position(1, 1)))
 
     def test_recognises_superscript(self):
         self._text = "^"
-        self._verify_tokens(self._tokens.superscript(Position(1,1)))
+        self._verify_tokens(self._tokens.superscript(Position(1, 1)))
 
     def test_recognises_subscript(self):
         self._text = "_"
-        self._verify_tokens(self._tokens.subscript(Position(1,1)))
+        self._verify_tokens(self._tokens.subscript(Position(1, 1)))
 
     def test_recognises_non_breaking_space(self):
         self._text = "~"
-        self._verify_tokens(self._tokens.non_breaking_space(Position(1,1)))
+        self._verify_tokens(self._tokens.non_breaking_space(Position(1, 1)))
 
     def _verify_tokens(self, *expected_tokens):
-        self.assertListEqual(list(expected_tokens), list(Lexer(self._symbols, Source(self._text))))
+        self.assertListEqual(
+            list(expected_tokens), list(
+                Lexer(
+                    self._symbols, Source(
+                        self._text))))
 
 
 if __name__ == "__main__":

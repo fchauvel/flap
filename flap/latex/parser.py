@@ -48,7 +48,8 @@ class Context:
             return self._definitions.get(key)
 
     def __contains__(self, key):
-        return key in self._definitions or (self._parent and key in self._parent)
+        return key in self._definitions or (
+            self._parent and key in self._parent)
 
 
 class Factory:
@@ -124,7 +125,8 @@ class Parser:
         self._definitions[macro.name] = macro
 
     def flush(self, source_name):
-        while self._next_token and self._next_token.location.source == source_name:
+        while self._next_token \
+              and self._next_token.location.source == source_name:
             self._tokens.take()
 
     def _accept(self, as_expected):
@@ -255,7 +257,9 @@ class Parser:
         result = False
         for _, any_macro in self._definitions.items():
             was_called = getattr(any_macro, "was_called", None)
-            if was_called and any_macro.was_called and any_macro.requires_expansion:
+            if was_called \
+               and any_macro.was_called \
+               and any_macro.requires_expansion:
                 result = True
         for _, any_macro in self._definitions.items():
             was_called = getattr(any_macro, "was_called", None)

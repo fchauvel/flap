@@ -34,12 +34,13 @@ class TexFileInclusion(Macro):
         content = self._flap.content_of(link, invocation)
         if not link.endswith(".tex"):
             link += ".tex"
-        return parser._spawn(parser._create.as_tokens(content, link), dict()).rewrite()
+        return parser._spawn(parser._create.as_tokens(
+            content, link), dict()).rewrite()
 
 
 class Input(TexFileInclusion):
     """
-    Intercept the `\input` directive
+    Intercept the `\\input` directive
     """
 
     def __init__(self, flap):
@@ -48,7 +49,7 @@ class Input(TexFileInclusion):
 
 class Include(TexFileInclusion):
     """
-    Intercept the `\include` directive
+    Intercept the `\\include` directive
     """
 
     def __init__(self, flap):

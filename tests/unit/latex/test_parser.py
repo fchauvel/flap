@@ -66,7 +66,12 @@ class ParserTests(TestCase):
         self._do_test_with("hello", "hello")
 
     def _do_test_with(self, input, output):
-        parser = Parser(self._factory.as_tokens(input, "Unknown"), self._factory, self._environment)
+        parser = Parser(
+            self._factory.as_tokens(
+                input,
+                "Unknown"),
+            self._factory,
+            self._environment)
         tokens = parser.rewrite()
         self._verify_output_is(output, tokens)
 
@@ -118,19 +123,28 @@ class ParserTests(TestCase):
         self._environment[name] = macro
 
     def _macro(self, name, parameters, body):
-        return self._macros.create(name, self._factory.as_list(parameters), self._factory.as_list(body))
-
+        return self._macros.create(name, self._factory.as_list(
+            parameters), self._factory.as_list(body))
 
     def test_defining_a_macro_without_parameter(self):
         self._do_test_with(r"\def\foo{X}",
                            r"\def\foo{X}")
-        self.assertEqual(self._macro(r"\foo", "", "{X}"), self._environment[r"\foo"])
-
+        self.assertEqual(
+            self._macro(
+                r"\foo",
+                "",
+                "{X}"),
+            self._environment[r"\foo"])
 
     def test_defining_a_macro_with_one_parameter(self):
         self._do_test_with(r"\def\foo#1{X}",
                            r"\def\foo#1{X}")
-        self.assertEqual(self._macro(r"\foo", "#1", "{X}"), self._environment[r"\foo"])
+        self.assertEqual(
+            self._macro(
+                r"\foo",
+                "#1",
+                "{X}"),
+            self._environment[r"\foo"])
 
     def test_defining_a_macro_with_multiple_parameters(self):
         self._do_test_with(r"\def\point(#1,#2,#3){X}",
@@ -144,7 +158,6 @@ class ParserTests(TestCase):
                            r"File content")
         self._engine.content_of.assert_called_once_with("my-file", ANY)
 
-
     def test_rewriting_multiline_commands(self):
         self._engine.update_link.return_value = "img_result"
         self._do_test_with("\\includegraphics % \n" +
@@ -153,24 +166,29 @@ class ParserTests(TestCase):
                            "\\includegraphics % \n" +
                            "[witdh=\\textwidth] % Blabla\n" +
                            "{img_result}")
-        self._engine.update_link.assert_called_once_with("img/result.pdf", ANY)
+        self._engine.update_link.\
+            assert_called_once_with("img/result.pdf", ANY)
 
     def test_rewriting_includegraphics(self):
         self._engine.update_link.return_value = "img_result"
         self._do_test_with(r"\includegraphics{img/result.pdf}",
                            r"\includegraphics{img_result}")
-        self._engine.update_link.assert_called_once_with("img/result.pdf", ANY)
+        self._engine.update_link\
+                    .assert_called_once_with("img/result.pdf", ANY)
 
     def test_rewriting_includegraphics_with_parameters(self):
         self._engine.update_link.return_value = "img_result"
-        self._do_test_with(r"\includegraphics[width=\linewidth]{img/result.pdf}",
-                           r"\includegraphics[width=\linewidth]{img_result}")
-        self._engine.update_link.assert_called_once_with("img/result.pdf", ANY)
+        self._do_test_with(
+            r"\includegraphics[width=\linewidth]{img/result.pdf}",
+            r"\includegraphics[width=\linewidth]{img_result}")
+        self._engine.update_link\
+                    .assert_called_once_with("img/result.pdf", ANY)
 
     def test_rewriting_graphicspath(self):
         self._do_test_with(r"\graphicspath{{img}}",
                            r"\graphicspath{{img}}")
-        self._engine.record_graphic_path.assert_called_once_with(["img"], ANY)
+        self._engine.record_graphic_path\
+                    .assert_called_once_with(["img"], ANY)
 
     def test_rewriting_include(self):
         self._engine.shall_include.return_value = True
@@ -196,7 +214,8 @@ class ParserTests(TestCase):
         self._engine.shall_include.return_value = True
         self._do_test_with(r"\includeonly{my-file.tex}",
                            r"")
-        self._engine.include_only.assert_called_once_with(["my-file.tex"], ANY)
+        self._engine.include_only\
+                    .assert_called_once_with(["my-file.tex"], ANY)
 
     def test_rewriting_subfile(self):
         self._engine.content_of.return_value \
@@ -221,42 +240,54 @@ class ParserTests(TestCase):
                            r"Not much!"
                            r"\end{document}")
 
-        self._engine.relocate_dependency.assert_called_once_with("article", ANY)
+        self._engine.relocate_dependency.assert_called_once_with(
+            "article", ANY)
 
     def test_rewriting_usepackage(self):
         self._engine.relocate_dependency.return_value = None
         self._do_test_with(r"\usepackage{my-package}",
                            r"\usepackage{my-package}")
 
-        self._engine.relocate_dependency.assert_called_once_with("my-package", ANY)
+        self._engine.relocate_dependency.assert_called_once_with(
+            "my-package", ANY)
 
     def test_rewriting_usepackage_that_exist_locally(self):
         self._engine.relocate_dependency.return_value = "style_my-package"
         self._do_test_with(r"\usepackage{style/my-package}",
                            r"\usepackage{style_my-package}")
 
-        self._engine.relocate_dependency.assert_called_once_with("style/my-package", ANY)
+        self._engine.relocate_dependency.assert_called_once_with(
+            "style/my-package", ANY)
 
     def test_rewriting_usepackage_with_options(self):
         self._engine.relocate_dependency.return_value = None
-        self._do_test_with(r"\usepackage[length=3cm,width=2cm]{my-package}",
-                           r"\usepackage[length=3cm,width=2cm]{my-package}")
+        self._do_test_with(
+            r"\usepackage[length=3cm,width=2cm]{my-package}",
+            r"\usepackage[length=3cm,width=2cm]{my-package}")
 
-        self._engine.relocate_dependency.assert_called_once_with("my-package", ANY)
+        self._engine.relocate_dependency.assert_called_once_with(
+            "my-package", ANY)
 
     def test_rewriting_bibliography_style(self):
-        self._engine.update_link_to_bibliography_style.return_value = "my-style"
+        self._engine.update_link_to_bibliography_style\
+                    .return_value = "my-style"
         self._do_test_with(r"\bibliographystyle{my-style}",
                            r"\bibliographystyle{my-style}")
 
-        self._engine.update_link_to_bibliography_style.assert_called_once_with("my-style", ANY)
+        self._engine.update_link_to_bibliography_style.assert_called_once_with(
+            "my-style", ANY)
 
     def test_rewriting_make_index(self):
-        self._engine.update_link_to_index_style.return_value = "my-style.ist"
-        self._do_test_with("\\makeindex[columns=3, title=Alphabetical Index,\n options= -s my-style.ist]",
-                           "\\makeindex[columns=3, title=Alphabetical Index,\n options= -s my-style.ist]")
+        self._engine.update_link_to_index_style\
+                    .return_value = "my-style.ist"
+        self._do_test_with(
+            "\\makeindex[columns=3, title=Alphabetical Index,\n"
+            "options= -s my-style.ist]",
+            "\\makeindex[columns=3, title=Alphabetical Index,\n"
+            "options= -s my-style.ist]")
 
-        self._engine.update_link_to_index_style.assert_called_once_with("my-style.ist", ANY)
+        self._engine.update_link_to_index_style.assert_called_once_with(
+            "my-style.ist", ANY)
 
     def test_rewriting_endinput(self):
         self._do_test_with(
@@ -266,10 +297,11 @@ class ParserTests(TestCase):
 
     def test_rewriting_overpic(self):
         self._engine.update_link.return_value = "img_result"
-        self._do_test_with(r"\begin{overpic}{img/result}blabla\end{overpic}",
-                           r"\begin{overpic}{img_result}blabla\end{overpic}")
-        self._engine.update_link.assert_called_once_with("img/result", ANY)
-
+        self._do_test_with(
+            r"\begin{overpic}{img/result}blabla\end{overpic}",
+            r"\begin{overpic}{img_result}blabla\end{overpic}")
+        self._engine.update_link\
+                    .assert_called_once_with("img/result", ANY)
 
     def test_expanding_macros(self):
         self._engine.update_link.return_value = "images_logo"
@@ -279,6 +311,7 @@ class ParserTests(TestCase):
             r"\def\logo{\includegraphics{images_logo}}"
             r"\logo"
         )
+
 
 if __name__ == '__main__':
     main()
