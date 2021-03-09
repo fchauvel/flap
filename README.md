@@ -5,7 +5,7 @@
 [![Build status](https://img.shields.io/github/workflow/status/fchauvel/flap/run-test)](https://github.com/fchauvel/flap/actions)
 [![Code coverage](https://img.shields.io/codecov/c/github/fchauvel/flap/master.svg)](https://codecov.io/gh/fchauvel/flap)
 [![Code quality](https://img.shields.io/codacy/grade/df4826670c71444ca487434d612e96d7.svg)](https://www.codacy.com/app/fchauvel/flap/dashboard)
-[![Downloads](https://img.shields.io/pypi/dm/FLaP.svg)](http://pypi-ranking.info/module/FLaP)
+[![Downloads](https://img.shields.io/pypi/dm/FLaP.svg)](https://pypistats.org/packages/flap)
 
 FlaP is a simple utility that flattens LaTeX projects. It takes a
 well-organised LaTeX project&mdash;one you so carefully crafted&mdash;and
