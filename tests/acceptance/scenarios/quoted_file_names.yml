@@ -1,0 +1,81 @@
+#
+# This file is part of Flap.
+#
+# Flap is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Flap is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Flap.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+name: complex file names
+description: |
+   Test that FLaP does properly file names that are quoted, typically
+   when they include spaces. See Issue \#33
+
+# Describe the LaTeX projects, as found on the disk
+project:
+  - path: main.tex
+    content: |
+      \documentclass{article}
+      \usepackage{graphicx}
+      \begin{document}
+      This is an example of graphic inclusion:
+      \begin{figure}
+        \begin{center}
+          \includegraphics[width=3cm]{"quoted"}
+          \includegraphics[width=3cm]{"with spaces"}
+        \end{center}
+        \caption{A sample graphic}
+      \end{figure}
+      \end{document}
+
+  - path: quoted.pdf
+    content: |
+      This is a PDF image!
+
+  - path: with spaces.pdf
+    content: |
+      This is a PDF image!
+
+# Describe the LaTeX project, once flattened
+expected:
+  - path: merged.tex
+    content: |
+      \documentclass{article}
+      \usepackage{graphicx}
+      \begin{document}
+      This is an example of graphic inclusion:
+      \begin{figure}
+        \begin{center}
+          \includegraphics[width=3cm]{quoted}
+          \includegraphics[width=3cm]{"with spaces"}
+        \end{center}
+        \caption{A sample graphic}
+      \end{figure}
+      \end{document}
+
+  - path: quoted.pdf
+    content: |
+      This is a PDF image!
+
+  - path: with spaces.pdf
+    content: |
+      This is a PDF image!
+      
+outputs:
+  - file: main.tex
+    line: 7
+    column: 5
+    code: \includegraphics[width=3cm]{"quoted"}
+  - file: main.tex
+    line: 8
+    column: 5
+    code: \includegraphics[width=3cm]{"with spaces"}

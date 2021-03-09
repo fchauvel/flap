@@ -202,7 +202,11 @@ class Settings:
 
     @staticmethod
     def _as_file_name(path):
-        return str(path).replace("../", "").replace("/", "_")
+        file_name = str(path).replace("../", "")\
+                             .replace("/", "_")
+        if ' ' in file_name:
+            return "\"{}\"".format(file_name)
+        return file_name
 
     def include_only(self, selection, invocation):
         log(invocation,

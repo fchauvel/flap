@@ -125,7 +125,9 @@ class Unit:
     DRIVE = re.compile("\\w\\:")
 
     def __init__(self, name):
-        self._name = name.replace("\n", "").strip()
+        self._name = name.replace("\n", "")\
+                         .replace("\"", "")\
+                         .strip()
         self._match = re.match(Unit.NAMES, self._name)
 
     def fullname(self):
