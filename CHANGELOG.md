@@ -1,8 +1,23 @@
 # Versions History
 
-## Next Releasse (under development)
+## Next Release (under development)
 
-## FLaP v0.6.0 (Mar. 7, 2012)
+ * Bug Fix:
+   
+   * Processing LaTeX commands where file names are quoted or include
+     spaces, as per [Issue
+     33](https://github.com/fchauvel/flap/issues/33)
+    
+   * Processing multiple fill that start with the same prefix, for
+     instance myfile1.txt and myfile2.txt
+     
+ * Documentation
+ 
+   * Different versions of the documentation are now accessible
+     directly from Github.
+
+
+## FLaP v0.6.0 (Mar. 7, 2021)
 
 * New Features:
   * Support for [biblatex](https://ctan.org/pkg/biblatex?lang=en) and
