@@ -2,20 +2,18 @@
 
 ## Next Release (under development)
 
- * Bug Fix:
+ * Bug Fixes:
    
    * Processing LaTeX commands where file names are quoted or include
      spaces, as per [Issue
      33](https://github.com/fchauvel/flap/issues/33)
     
-   * Processing multiple fill that start with the same prefix, for
-     instance myfile1.txt and myfile2.txt
+   * Processing multiple files that start with the same prefix, for
+     instance `myfile.txt` and `myfile_bis.txt
      
- * Documentation
- 
-   * Different versions of the documentation are now accessible
-     directly from Github.
-
+   * Accounting for the `svgpath` argument when processing the
+     `\includesvg` command (see [Issue
+     #31](https://github.com/fchauvel/flap/issues/31))
 
 ## FLaP v0.6.0 (Mar. 7, 2021)
 

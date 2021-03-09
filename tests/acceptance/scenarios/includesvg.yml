@@ -16,9 +16,9 @@
 #
 
 name: \includesvg
-description: >
-   Test that FLaP does properly flatten SVG inclusions that use
-   the 'svg' package.
+description: |
+   Test that FLaP does properly flatten SVG inclusions that use the
+   'svg' package.
 
 # Describe the LaTeX projects, as found on the disk
 project:
@@ -28,7 +28,7 @@ project:
       \usepackage{svg}
       \begin{document}
          \includesvg{graphics/svg/picture}
-         %\includesvg[svgpath=./svg/graphics]{picture}
+         \includesvg[svgpath=./graphics/svg]{picture}
       \end{document}
   - path: graphics/svg/picture.svg
     content: |
@@ -42,7 +42,7 @@ expected:
       \usepackage{svg}
       \begin{document}
          \includesvg{graphics_svg_picture}
-         %\includesvg[svgpath=./svg/graphics]{picture}
+         \includesvg[svgpath=./graphics/svg]{graphics_svg_picture}
       \end{document}
   - path: graphics_svg_picture.svg
     content: |
@@ -53,3 +53,7 @@ outputs:
     line: 4
     column: 4
     code: \includesvg{graphics/svg/picture}
+  - file: main.tex
+    line: 5
+    column: 4
+    code: \includesvg[svgpath=./graphics/svg]{picture}

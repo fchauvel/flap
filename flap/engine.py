@@ -138,11 +138,15 @@ class Settings:
             file=file.fullname())
         return file.content()
 
-    def update_link(self, path, invocation):
+    def update_link(self, path, invocation, extra_folders=[]):
         extensions = ["pdf", "png", "jpeg", "jpg", "ps", "eps", "svg"]
+        searched_folders = \
+            self.graphics_directory + \
+            [self._file_system.open(self.root_directory._path / each)
+             for each in extra_folders]
         return self._update_link(path,
                                  invocation,
-                                 self.graphics_directory,
+                                 searched_folders,
                                  extensions,
                                  GraphicNotFound(path))
 
