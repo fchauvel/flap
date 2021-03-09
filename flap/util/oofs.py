@@ -84,7 +84,8 @@ class File:
         path = Path.fromText(str(self._path) + "/" + str(pattern))
         directory = self.fileSystem.open(path.container())
         return [any_file for any_file in directory.files()
-                if str(any_file.path()).startswith(str(path))]
+                if str(any_file.path()) == str(path)
+                or str(any_file.path()).startswith(str(path) + ".")]
 
     def __repr__(self):
         return str(self.path())

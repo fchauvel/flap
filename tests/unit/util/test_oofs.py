@@ -83,7 +83,7 @@ class InMemoryFileSystemTest(unittest.TestCase):
         self.fileSystem.create_file(Path.fromText("dir/test2.txt"), "y")
         self.fileSystem.create_file(Path.fromText("dir/blah"), "z")
         file = self.fileSystem.open(Path.fromText("dir"))
-        self.assertEqual(len(file.files_that_matches("test")), 2)
+        self.assertEqual(len(file.files_that_matches("test")), 1)
 
     def testCopyingFile(self):
         source = Path.fromText("dir/test.txt")
