@@ -20,10 +20,12 @@ from logging import getLogger, FileHandler, Formatter, DEBUG
 __tool_name__ = "FLaP"
 __version__ = "0.6.0"
 
+LOG_FILE = "flap.log"
+
 
 def _configure_logger():
     logger = getLogger(__name__)
-    handler = FileHandler("flap.log", "w")
+    handler = FileHandler(LOG_FILE, "w")
     formatter = Formatter('%(asctime)s %(levelname)s %(message)s')
     handler.setFormatter(formatter)
     logger.addHandler(handler)

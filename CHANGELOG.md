@@ -15,6 +15,8 @@
      `\includesvg` command (see [Issue
      #31](https://github.com/fchauvel/flap/issues/31))
 
+   * More user-friendly messages when unexpected exceptions occur.
+
 ## FLaP v0.6.0 (Mar. 7, 2021)
 
 * New Features:

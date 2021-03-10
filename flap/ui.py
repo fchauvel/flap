@@ -17,13 +17,16 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import os
 import sys
 import click
 
-from flap import __version__, __tool_name__
+from flap import __version__, __tool_name__, logger, LOG_FILE
 from flap.util import truncate
 from flap.util.oofs import OSFileSystem
 from flap.engine import Settings
+
+import traceback
 
 
 class Controller:
@@ -38,10 +41,19 @@ class Controller:
             ui=self._display,
             root_tex_file=tex_file,
             output=output)
-        self._display.version()
-        self._display.header()
-        request.execute()
-        self._display.footer(request._count, output)
+        try:
+            self._display.version()
+            self._display.header()
+            request.execute()
+            self._display.footer(request._count, output)
+        except Exception as error:
+            trace = traceback.extract_tb(sys.exc_info()[2])
+            logger.error(error, exc_info=True)
+            self._display.unexpected_error(
+                error,
+                trace[-1].name,
+                trace[-1].filename.split("flap", 1)[-1],
+                trace[-1].lineno)
 
 
 class Display:
@@ -56,6 +68,12 @@ class Display:
                           code="LaTeX Command")
     SUMMARY = "{count} modification(s)\n"
     CLOSING = "Check out your flattened project in '{directory}'.\n"
+    ERROR = ("Sorry, FLaP could not parse your file.\n\n"
+             " - Error in method '{method}'({file_name}, l. {line}):\n"
+             "   >>> {message}.\n"
+             "   See '{log_file}' for details.\n\n"
+             "Try upgrading FLaP using 'pip install --upgrade flap'\n"
+             "or report it at https://github.com/fchauvel/flap/issues\n\n")
 
     def __init__(self, output, verbose=False):
         self._output = output
@@ -90,6 +108,15 @@ class Display:
     def _show(self, template, **values):
         self._output.write(template.format(**values))
 
+    def unexpected_error(self, error, method, file_name, line_number):
+        self._show(self._horizontal_line())
+        self._show(self.ERROR,
+                   message=str(error),
+                   method=method,
+                   file_name=file_name,
+                   line=line_number,
+                   log_file=LOG_FILE)
+
 
 @click.command()
 @click.argument('tex_file',
@@ -106,14 +133,15 @@ def main(tex_file, output, verbose):
     """FLaP merges your LaTeX projects into a single LaTeX file that
     refers to images in the same directory.
 
-    It reads the given root TEX_FILE and generates a flatten version
+    It reads the given root TEX_FILE and generates a flatter version
     in the given OUTPUT directory. It inlines the content of any TeX
     files refered by \\input or \\include but also copies resources
     such as images (JPG, EPS, PDF, etc.) as well as other resources
     (class and package definitions, BibTeX files, etc.).
 
     """
-    Controller(OSFileSystem(), Display(sys.stdout, verbose))\
+    Controller(OSFileSystem(),
+               Display(sys.stdout, verbose))\
         .run(tex_file, output)
 
 
