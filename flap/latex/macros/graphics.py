@@ -48,7 +48,7 @@ class IncludeGraphics(UpdateLink):
         super().__init__(flap, r"\includegraphics")
 
     def update_link(self, parser, link, invocation):
-        return self._flap.update_link(link, invocation)
+        return self._flap.update_link_to_graphic(link, invocation)
 
 
 class IncludeSVG(UpdateLink):
@@ -64,13 +64,14 @@ class IncludeSVG(UpdateLink):
         options = self._extract_options(parser, invocation)
         if self.SVG_PATH in options:
             searched_directories.append(options[self.SVG_PATH])
-        return self._flap.update_link(link,
-                                      invocation,
-                                      searched_directories)
+        return self._flap.update_link_to_graphic(link,
+                                                 invocation,
+                                                 searched_directories)
 
     SVG_PATH = "svgpath"
 
-    def _extract_options(self, parser, invocation):
+    @staticmethod
+    def _extract_options(parser, invocation):
         full_options = parser.evaluate_as_text(
             invocation.argument("options"))
         if not full_options.strip():
@@ -95,6 +96,6 @@ class Overpic(Environment):
         invocation.append_argument("options", parser.capture_options())
         invocation.append_argument("link", parser.capture_one())
         link = parser.evaluate_as_text(invocation.argument("link"))
-        new_link = self._flap.update_link(link, invocation)
+        new_link = self._flap.update_link_to_graphic(link, invocation)
         return invocation.substitute("link", parser._create.as_list(
             "{" + new_link + "}")).as_tokens

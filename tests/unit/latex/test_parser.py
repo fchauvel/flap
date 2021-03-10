@@ -65,15 +65,15 @@ class ParserTests(TestCase):
     def test_parsing_a_regular_word(self):
         self._do_test_with("hello", "hello")
 
-    def _do_test_with(self, input, output):
+    def _do_test_with(self, collected, expected):
         parser = Parser(
             self._factory.as_tokens(
-                input,
+                collected,
                 "Unknown"),
             self._factory,
             self._environment)
         tokens = parser.rewrite()
-        self._verify_output_is(output, tokens)
+        self._verify_output_is(expected, tokens)
 
     def _verify_output_is(self, expected_text, actual_tokens):
         output = "".join(str(t) for t in actual_tokens)
@@ -159,29 +159,29 @@ class ParserTests(TestCase):
         self._engine.content_of.assert_called_once_with("my-file", ANY)
 
     def test_rewriting_multiline_commands(self):
-        self._engine.update_link.return_value = "img_result"
+        self._engine.update_link_to_graphic.return_value = "img_result"
         self._do_test_with("\\includegraphics % \n" +
                            "[witdh=\\textwidth] % Blabla\n" +
                            "{img/result.pdf}",
                            "\\includegraphics % \n" +
                            "[witdh=\\textwidth] % Blabla\n" +
                            "{img_result}")
-        self._engine.update_link.\
-            assert_called_once_with("img/result.pdf", ANY)
+        self._engine.update_link_to_graphic\
+            .assert_called_once_with("img/result.pdf", ANY)
 
     def test_rewriting_includegraphics(self):
-        self._engine.update_link.return_value = "img_result"
+        self._engine.update_link_to_graphic.return_value = "img_result"
         self._do_test_with(r"\includegraphics{img/result.pdf}",
                            r"\includegraphics{img_result}")
-        self._engine.update_link\
+        self._engine.update_link_to_graphic\
                     .assert_called_once_with("img/result.pdf", ANY)
 
     def test_rewriting_includegraphics_with_parameters(self):
-        self._engine.update_link.return_value = "img_result"
+        self._engine.update_link_to_graphic.return_value = "img_result"
         self._do_test_with(
             r"\includegraphics[width=\linewidth]{img/result.pdf}",
             r"\includegraphics[width=\linewidth]{img_result}")
-        self._engine.update_link\
+        self._engine.update_link_to_graphic\
                     .assert_called_once_with("img/result.pdf", ANY)
 
     def test_rewriting_graphicspath(self):
@@ -296,15 +296,15 @@ class ParserTests(TestCase):
         self._engine.end_of_input.assert_called_once_with("Unknown", ANY)
 
     def test_rewriting_overpic(self):
-        self._engine.update_link.return_value = "img_result"
+        self._engine.update_link_to_graphic.return_value = "img_result"
         self._do_test_with(
             r"\begin{overpic}{img/result}blabla\end{overpic}",
             r"\begin{overpic}{img_result}blabla\end{overpic}")
-        self._engine.update_link\
+        self._engine.update_link_to_graphic\
                     .assert_called_once_with("img/result", ANY)
 
     def test_expanding_macros(self):
-        self._engine.update_link.return_value = "images_logo"
+        self._engine.update_link_to_graphic.return_value = "images_logo"
         self._do_test_with(
             r"\def\logo{\includegraphics{images/logo}}"
             r"\logo",

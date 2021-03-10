@@ -47,7 +47,8 @@ class EndToEndRunner:
             self._path_for(test_case) /
             "project")
 
-    def _path_for(self, test_case):
+    @staticmethod
+    def _path_for(test_case):
         return TEMP / "flap" / "acceptance" / test_case.escaped_name
 
     def _execute(self, test_case):

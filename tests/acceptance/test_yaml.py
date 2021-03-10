@@ -143,7 +143,8 @@ class TestYamlCodec(TestCase):
     def setUp(self):
         self._codec = YamlCodec()
 
-    def _create_file(self, content):
+    @staticmethod
+    def _create_file(content):
         file = MagicMock()
         file.content.return_value = content
         return file
