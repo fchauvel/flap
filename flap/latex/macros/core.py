@@ -18,14 +18,47 @@
 #
 
 
+from flap import logger
 from flap.latex.macros.commons import Macro, UserDefinedMacro
 from flap.latex.errors import UnknownSymbol
+from flap.latex.symbols import SymbolTable
+from flap.latex.parser import Factory
+
+factory = Factory(SymbolTable.default())
+
+
+class CatCode(Macro):
+
+    def __init__(self, flap):
+        super().__init__(flap,
+                         "catcode",
+                         factory.as_list("#1=#2\n"),
+                         None)
+
+    def _execute(self, parser, invocation):
+        logger.debug("Invocation: " + invocation.as_text)
+        character = "".join(str(each_token)
+                            for each_token
+                            in invocation.argument("#1"))
+
+        if character[0] == "`":
+            if character[1] == "\\":
+                character = character[2]
+            else:
+                character = character[1]
+
+        new_category = "".join(str(each_token)
+                               for each_token
+                               in invocation.argument("#2"))
+
+        self._flap.set_character_category(character, int(new_category))
+        return invocation.as_tokens
 
 
 class Def(Macro):
 
     def __init__(self, flap):
-        super().__init__(flap, r"\def", None, None)
+        super().__init__(flap, "def", None, None)
 
     def rewrite(self, parser):
         invocation = self._parse(parser)
@@ -59,7 +92,7 @@ class Begin(Macro):
     """
 
     def __init__(self, flap):
-        super().__init__(flap, r"\begin", None, None)
+        super().__init__(flap, "begin", None, None)
 
     def _capture_arguments(self, parser, invocation):
         invocation.append_argument("environment", parser.capture_group())
@@ -69,7 +102,9 @@ class Begin(Macro):
             invocation.argument("environment"))
         env = parser._definitions.look_up(environment)
         if env:
+            logger.debug("Known environment " + environment)
             return env.execute(parser, invocation)
+        logger.debug("Unknown environment " + environment)
         return invocation.as_tokens
 
 
@@ -79,7 +114,7 @@ class DocumentClass(Macro):
     """
 
     def __init__(self, flap):
-        super().__init__(flap, r"\documentclass", None, None)
+        super().__init__(flap, "documentclass", None, None)
 
     def _capture_arguments(self, parser, invocation):
         invocation.append_argument("options", parser.capture_options())
@@ -89,8 +124,9 @@ class DocumentClass(Macro):
         class_name = parser.evaluate_as_text(invocation.argument("class"))
         self._flap.relocate_dependency(class_name, invocation)
         if class_name == "subfiles":
-            parser.capture_until_text(r"\begin{document}")
-            document = parser.capture_until_text(r"\end{document}")
+            parser.capture_until_text(r"\begin{document}", True)
+            document = parser.capture_until_text(r"\end{document}", True)
+            logger.debug("Subfile extraction" + "".join(str(t) for t in document))
             return parser._spawn(document[:-11], dict()).rewrite()
         else:
             return invocation.as_tokens
@@ -126,7 +162,7 @@ class UsePackage(PackageReference):
     """
 
     def __init__(self, flap):
-        super().__init__(flap, r"\usepackage")
+        super().__init__(flap, "usepackage")
 
 
 class RequirePackage(PackageReference):
@@ -136,4 +172,4 @@ class RequirePackage(PackageReference):
     """
 
     def __init__(self, flap):
-        super().__init__(flap, r"\RequirePackage")
+        super().__init__(flap, "RequirePackage")

@@ -17,13 +17,14 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+
 from flap.latex.commons import Stream, Position
 from flap.latex.tokens import TokenFactory
 
 
 class Lexer:
     """
-    Scan a stream of character and yields a stream of token. The lexer
+    Scan a stream of characters and yields a stream of tokens. The lexer
     shall define handler for each category of symbols.  These handlers
     are automatically selected using reflection: each handler shall be
     named "_read_category".
@@ -40,6 +41,7 @@ class Lexer:
         self._input = Stream(iter(self._source.content), self._on_take)
 
     def _on_take(self, character):
+        # logger.debug("Lexer: " + character)
         if character in self._symbols.NEW_LINE:
             self._position = self._position.next_line()
         else:
@@ -69,6 +71,7 @@ class Lexer:
         return handler()
 
     def _handler_for(self, category):
+        """Compute the handler based on the name of the category"""
         handler_name = "_read_" + category.name.lower()
         handler = getattr(self, handler_name)
         assert handler, "Lexer has no handler for '%s' symbols" % category.name

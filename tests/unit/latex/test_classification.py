@@ -37,22 +37,22 @@ class ClassificationTests(TestCase):
         self._environment = Context(definitions=self._macros.all())
 
     def test_literal_macro(self):
-        self._test((r"\foo", "", r"{blablabla}"),
+        self._test((r"foo", "", r"{blablabla}"),
                    r"\foo",
                    False)
 
     def test_macro_with_input(self):
-        self._test((r"\foo", "#1", r"{\input{#1}}"),
+        self._test((r"foo", "#1", r"{\input{#1}}"),
                    r"\foo{my-file}",
                    True)
 
     def test_macro_with_include(self):
-        self._test((r"\foo", "#1", r"{\include{#1}}"),
+        self._test((r"foo", "#1", r"{\include{#1}}"),
                    r"\foo{my-file}",
                    True)
 
     def test_macro_with_masked_input(self):
-        self._test((r"\foo", "#1", r"{\def\input#1{blablab #1} \input{#1}}"),
+        self._test((r"foo", "#1", r"{\def\input#1{blablab #1} \input{#1}}"),
                    r"\foo{my-file}",
                    False)
 

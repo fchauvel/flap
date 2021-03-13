@@ -1,0 +1,68 @@
+#
+# This file is part of Flap.
+#
+# Flap is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Flap is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Flap.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+name: catcode
+skipped: False
+description: |
+  Test parsing file where one tempers with the character category
+  codes, for instance, by defining new characters for control and
+  groups declaration.
+  
+# Describe the LaTeX projects, as found on the disk
+project:
+  - path: main.tex
+    content: |
+      \usepackage{graphics}
+      \begin{document}
+      \catcode`\?=0
+      \catcode`\<=1
+      \catcode`\>=2
+      Here is a sample image: ?includegraphics<images/sample>
+      \catcode`\\=0
+      \catcode`\{=1
+      \catcode`\}=2
+      \end{document}
+
+  - path: images/sample.jpg
+    content: |
+      Postscript data
+
+# Describe the LaTeX project, once flattened
+expected:
+  - path: merged.tex
+    content: |
+      \usepackage{graphics}
+      \begin{document}
+      \catcode`\?=0
+      \catcode`\<=1
+      \catcode`\>=2
+      Here is a sample image: ?includegraphics<images_sample>
+      \catcode`\\=0
+      \catcode`\{=1
+      \catcode`\}=2
+      \end{document}
+
+  - path: images_sample.jpg
+    content: |
+      Postscript data
+
+# Describe what should be reported on the console
+outputs:
+  - file: main.tex
+    line: 6
+    column: 25
+    code: ?includegraphics<images/sample>

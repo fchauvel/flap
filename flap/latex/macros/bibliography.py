@@ -28,7 +28,7 @@ class Bibliography(UpdateLink):
     """
 
     def __init__(self, flap):
-        super().__init__(flap, r"\bibliography")
+        super().__init__(flap, "bibliography")
 
     def update_link(self, parser, link, invocation):
         return self._flap.update_link_to_bibliography(link, invocation)
@@ -40,7 +40,7 @@ class BibliographyStyle(UpdateLink):
     """
 
     def __init__(self, flap):
-        super().__init__(flap, r"\bibliographystyle")
+        super().__init__(flap, "bibliographystyle")
 
     def update_link(self, parser, link, invocation):
         return self._flap.update_link_to_bibliography_style(link, invocation)
@@ -53,7 +53,7 @@ class MakeIndex(Macro):
     """
 
     def __init__(self, flap):
-        super().__init__(flap, r"\makeindex", None, None)
+        super().__init__(flap, "makeindex", None, None)
 
     def _capture_arguments(self, parser, invocation):
         invocation.append_argument("options", parser.capture_options())

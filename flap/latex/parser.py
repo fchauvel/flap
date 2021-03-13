@@ -23,6 +23,7 @@ from flap.latex.lexer import Lexer
 from flap.latex.errors import UnknownSymbol
 from flap.util import truncate
 
+
 class Context:
 
     def __init__(self, parent=None, definitions=None):
@@ -34,6 +35,10 @@ class Context:
         if not result and self._parent:
             return self._parent.look_up(symbol)
         return result
+
+    @property
+    def available_macros(self):
+        return list(self._definitions.keys())
 
     def items(self):
         return self._definitions.items()
@@ -114,9 +119,13 @@ class Parser:
 
     def _rewrite_command(self):
         command = str(self._next_token)
-        if command not in self._definitions:
-            return self.default(command)
-        macro = self._definitions[command]
+        command_name = command[1:]
+        if command_name not in self._definitions:
+            logger.debug("Unknown command " + command_name)
+            logger.debug("Candidates are: {}".format(
+                self._definitions.available_macros))
+            return self.default(command_name)
+        macro = self._definitions[command_name]
         return macro.rewrite(self)
 
     @property
@@ -128,6 +137,7 @@ class Parser:
         return [self._tokens.take()]
 
     def define(self, macro):
+        logger.debug("Defining macro {}".format(macro.name))
         self._definitions[macro.name] = macro
 
     def flush(self, source_name):
@@ -143,8 +153,9 @@ class Parser:
         self._raise_unexpected_token()
 
     def _raise_unexpected_token(self):
-        error = "Unexpected {} '{}' in file {} (line {}, column {})."\
-        .format(
+        error = (
+            "Unexpected {} '{}' in file {} (line {}, column {})"
+        ).format(
             self._next_token._category.name,
             self._next_token,
             self._next_token.location.source,
@@ -165,6 +176,7 @@ class Parser:
         result = []
         while not self._tokens.is_empty:
             result += self._evaluate_one()
+        self._debug("fragment", "evaluate", result)
         return result
 
     def _evaluate_one(self):
@@ -195,6 +207,7 @@ class Parser:
         tokens = []
         while not is_excluded(self._next_token):
             tokens += self._evaluate_one()
+        self._debug("until", "evaluate", tokens)
         return tokens
 
     def _abort_on_end_of_text(self):
@@ -202,9 +215,13 @@ class Parser:
             raise ValueError("Unexpected end of text!")
 
     def evaluate_command(self, command):
-        if command not in self._definitions:
-            return self.default(command)
-        macro = self._definitions[command]
+        command_name = command[1:]
+        if command_name not in self._definitions:
+            logger.debug("Unknown command {}".format(command_name))
+            logger.debug("Candidates are: {}".format(
+                self._definitions.available_macros))
+            return self.default(command_name)
+        macro = self._definitions[command_name]
         return macro.evaluate(self)
 
     def capture_options(self, start="[", end="]"):
@@ -214,35 +231,50 @@ class Parser:
             result += self._evaluate_until(lambda token: token.has_text(end))
             result += self._accept(lambda token: token.has_text(end))
             result += self._tokens.take_while(lambda c: c.is_ignored)
-        self._debug("options", "capture", result)
+        # self._debug("options", "capture", result)
         return result
 
     def capture_macro_name(self, name=None):
         tokens = self._accept(lambda token: token.is_a_command)
-        if name and not tokens[-1].has_text(name):
+        if name and not tokens[-1].ends_with(name):
             self._raise_unexpected_token()
-        self._debug("macro", "captured", tokens)
+        #self._debug("macro", "captured", tokens)
         return tokens
 
     def capture_ignored(self):
         tokens = []
         while self._next_token and self._next_token.is_ignored:
             tokens.append(self._tokens.take())
+        #self._debug("ignored", "capture", tokens)
         return tokens
 
-    def capture_until_text(self, marker):
+    def capture_text(self, marker):
         tokens, text = [], ""
         while self._next_token:
             text += str(self._next_token)
-            tokens.append(self._tokens.take())
-            if text.endswith(marker):
+            if not marker.startswith(text):
                 break
+            tokens.append(self._tokens.take())
+        #self._debug("until '{}'".format(marker), "captured", tokens)
+        return tokens
+
+    def capture_until_text(self, marker, capture_marker=False):
+        tokens, text = [], ""
+        while self._next_token:
+            text += str(self._next_token)
+            if text.endswith(marker):
+                if capture_marker:
+                    tokens.append(self._tokens.take())
+                break
+            tokens.append(self._tokens.take())
+        #self._debug("until '{}'".format(marker), "captured", tokens)
         return tokens
 
     def capture_until_group(self):
         tokens = []
         while not self._next_token.begins_a_group:
             tokens += self.capture_one()
+        self._debug("until group", "captured", tokens)
         return tokens
 
     def capture_group(self):
@@ -257,6 +289,8 @@ class Parser:
         self._abort_on_end_of_text()
         if self._next_token.begins_a_group:
             return self.capture_group()
+        if self._next_token._text == "`":
+            return [self._tokens.take()] + self.capture_one()
         else:
             return [self._tokens.take()]
 
@@ -286,10 +320,9 @@ class Parser:
             text = truncate(self._as_text(tokens), 30)
             position = tokens[-1].location,
         logger.debug(
-                "{} (GL={}) '{}' {} {}".format(
-                    position,
+                "GL={} {} {} {}".format(
                     self._level,
-                    category,
                     action,
+                    category,
                     text
                 ))

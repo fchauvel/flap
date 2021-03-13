@@ -18,7 +18,7 @@
 #
 
 
-from flap.latex.macros.core import Begin, Def, DocumentClass, \
+from flap.latex.macros.core import Begin, CatCode, Def, DocumentClass, \
     Macro, RequirePackage, UsePackage
 from flap.latex.macros.graphics import IncludeGraphics, IncludeSVG, \
     GraphicsPath, Overpic
@@ -42,6 +42,7 @@ class MacroFactory:
             Bibliography(self._flap),
             BibliographyStyle(self._flap),
             AddBibResource(self._flap),
+            CatCode(self._flap),
             Def(self._flap),
             DocumentClass(self._flap),
             EndInput(self._flap),

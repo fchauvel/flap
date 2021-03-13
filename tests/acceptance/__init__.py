@@ -42,9 +42,8 @@ class Generator:
     def test_class(self):
         test_cases = self._repository.fetch_all()
         methods = {
-            "test " +
-            each_case.name:
-            self.create_execution(each_case) for each_case in test_cases}
+            "test " + each_case.name: self.create_execution(each_case)
+            for each_case in test_cases}
         return type("YAMLParserTests", (TestCase,), methods)
 
 

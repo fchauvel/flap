@@ -80,7 +80,7 @@ class ClassificationTests(TestCase):
         self._symbols.CHARACTER += "@"
         self._verify_evaluation(r"\def\internal@foo{\internal@bar}", "")
         self.assertEqual(self._macro(r"\internal@foo", "", r"{\internal@bar}"),
-                         self._environment[r"\internal@foo"])
+                         self._environment[r"internal@foo"])
 
     def test_internal_macros(self):
         self._symbols.CHARACTER += "@"
@@ -92,7 +92,8 @@ class ClassificationTests(TestCase):
                          self._evaluate(invocation))
 
     def _define(self, name, parameters, body):
-        self._environment[name] = self._macro(name, parameters, body)
+        macro = self._macro(name, parameters, body)
+        self._environment[macro.name] = macro
 
     def _macro(self, name, parameters, body):
         return self._macros.create(

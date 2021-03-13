@@ -45,6 +45,7 @@ class Settings:
         self._selected_for_inclusion = []
         self._graphic_directories = []
         self._analysed_dependencies = []
+        self._character_table = SymbolTable.default()
 
     @property
     def root_tex_file(self):
@@ -85,8 +86,9 @@ class Settings:
                                str(self.root_tex_file.resource()))
         self._write(tokens, self.flattened)
 
-    def _rewrite(self, text, source, symbol_table=SymbolTable.default()):
-        factory = Factory(symbol_table)
+    def _rewrite(self, text, source, symbol_table=None):
+        character_table = symbol_table or self._character_table
+        factory = Factory(character_table)
         macros = MacroFactory(self)
         parser = Parser(factory.as_tokens(text, source),
                         factory,
@@ -111,7 +113,7 @@ class Settings:
                                   TexFileNotFound(None))
                 new_path = file._path.relative_to(self.root_directory._path)
                 self._show_invocation(invocation)
-                symbol_table = SymbolTable.default()
+                symbol_table = self._character_table.clone()
                 symbol_table.CHARACTER += '@'
                 tokens = self._rewrite(file.content(),
                                        file.fullname(),
@@ -232,6 +234,11 @@ class Settings:
                             line=invocation.location.line,
                             column=invocation.location.column,
                             code=invocation.as_text)
+
+    def set_character_category(self, character, category):
+        logger.debug("Set character {} in category '{}'"
+                     .format(character, category))
+        self._character_table.assign(character, category)
 
     @staticmethod
     def _find(path, directories, extensions, error):

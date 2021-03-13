@@ -19,19 +19,20 @@
 
 from copy import copy
 
+from flap import logger
 from flap.latex.errors import UnknownSymbol
 
 
 class Macro:
     """
-    A LaTeX macro, including its name (e.g., '\\point'), its signature
+    A LaTeX macro, including its name (e.g., 'point'), its signature
     as a list of expected tokens (e.g., '(#1,#2)') and the text that
     should replace it.
     """
 
     def __init__(self, flap, name, signature, body):
         self._flap = flap
-        self._name = name
+        self._name = name if not name.startswith("\\") else name[1:]
         self._signature = signature or []
         self._body = body or iter([])
         self._called = False
@@ -69,19 +70,25 @@ class Macro:
         invocation.append(parser.capture_ignored())
 
     def _capture_arguments(self, parser, invocation):
+        #logger.debug("::".join(t._text for t in self._signature))
         for index, any_token in enumerate(self._signature):
             if any_token.is_a_parameter:
                 parameter = str(any_token)
                 if index == len(self._signature) - 1:
                     expression = parser.capture_one()
                     invocation.append_argument(parameter, expression)
+                    logger.debug("Arg '{}' is '{}'".format(
+                        any_token._text,
+                        "".join(t._text for t in expression)))
                 else:
                     next_token = self._signature[index + 1]
-                    value = parser._evaluate_until(
-                        lambda token: token.has_text(next_token._text))
+                    value = parser.capture_until_text(next_token._text)
                     invocation.append_argument(parameter, value)
+                    logger.debug("Arg '{}' is '{}'".format(
+                        any_token._text,
+                        "".join(t._text for t in value)))
             else:
-                invocation.append(parser._accept(lambda token: True))
+                invocation.append(parser.capture_text(str(any_token)))
 
     def _execute(self, parser, invocation):
         arguments = {
@@ -132,11 +139,14 @@ class UpdateLink(Macro):
 
     def _execute(self, parser, invocation):
         try:
+            link_tokens = invocation.argument("link")
             link = parser.evaluate_as_text(invocation.argument("link"))
+            opening = str(link_tokens[0])
+            closing = str(link_tokens[-1])
             new_link = self.update_link(parser, link, invocation)
             return invocation\
                 .substitute("link",
-                            parser._create.as_list("{" + new_link + "}"))\
+                            parser._create.as_list(opening + new_link + closing))\
                 .as_tokens
         except UnknownSymbol:
             return invocation.as_tokens

@@ -26,7 +26,7 @@ class GraphicsPath(Macro):
     """
 
     def __init__(self, flap):
-        super().__init__(flap, r"\graphicspath", None, None)
+        super().__init__(flap, r"graphicspath", None, None)
 
     def _capture_arguments(self, parser, invocation):
         invocation.append_argument(
@@ -45,7 +45,7 @@ class IncludeGraphics(UpdateLink):
     """
 
     def __init__(self, flap):
-        super().__init__(flap, r"\includegraphics")
+        super().__init__(flap, "includegraphics")
 
     def update_link(self, parser, link, invocation):
         return self._flap.update_link_to_graphic(link, invocation)
@@ -57,7 +57,7 @@ class IncludeSVG(UpdateLink):
     """
 
     def __init__(self, flap):
-        super().__init__(flap, r"\includesvg")
+        super().__init__(flap, r"includesvg")
 
     def update_link(self, parser, link, invocation):
         searched_directories = []

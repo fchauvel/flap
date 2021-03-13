@@ -17,25 +17,34 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from flap import logger
 from enum import Enum, unique
 
 
 @unique
 class Symbol(Enum):
-    CHARACTER = 0
+    """
+    Define the categories of character as specified  by TeX.
+
+    See https://en.wikibooks.org/wiki/TeX/catcode
+    """
+    CONTROL = 0
     BEGIN_GROUP = 1
-    COMMENT = 2
-    CONTROL = 3
-    END_GROUP = 4
-    END_OF_TEXT = 5
-    MATH = 6
-    NEW_LINE = 7
-    NON_BREAKING_SPACE = 8
-    OTHERS = 9
-    PARAMETER = 10
-    SUBSCRIPT = 11
-    SUPERSCRIPT = 12
-    WHITE_SPACES = 13
+    END_GROUP = 2
+    MATH = 3
+    ALIGNMENT_TAB = 4
+    NEW_LINE = 5
+    PARAMETER = 6
+    SUPERSCRIPT = 7
+    SUBSCRIPT = 8
+    IGNORED = 9
+    WHITE_SPACES = 10
+    CHARACTER = 11
+    OTHERS = 12
+    NON_BREAKING_SPACE = 13
+    COMMENT = 14
+    INVALID = 15
+    END_OF_TEXT = 16
 
 
 class SymbolTable:
@@ -66,13 +75,47 @@ class SymbolTable:
             Symbol.WHITE_SPACES: [" ", "\t"]
         })
 
+
     def __init__(self, symbols):
         self._symbols = symbols
+
+    def clone(self):
+        categories = {each_category: each_characters.copy()
+                      for each_category, each_characters
+                      in self._symbols.items()}
+        return SymbolTable(categories)
+
+    def assign(self, character, category_code):
+        assert isinstance(character, str), \
+            "Need character as a string, but got {}".format(
+                type(character))
+        assert len(character) == 1, \
+            "Need a single character, but got '{}'".format(character)
+        assert isinstance(category_code, int), \
+            "Expect category as an integer, but got {}".format(
+                type(category_code))
+        self._remove(character)
+        category = Symbol(category_code)
+        if category != Symbol.OTHERS:
+            self._symbols[category].append(character)
+
+        # logger.debug("Character table:")
+        # for category, characters in self._symbols.items():
+        #   logger.debug("{}: {}".format(category, ",".join(characters)))
+
+
+    def _remove(self, character):
+        for any_category in self._symbols:
+            if character in self._symbols[any_category]:
+                self._symbols[any_category].remove(character)
+                return
+        # Else we do nothing, is the character belongs to OTHER, but
+        # there is no need to remove it. OTHER is only the default
 
     def __getitem__(self, key):
         assert key in list(
             Symbol), "Symbol table only maps symbol categories to symbol lists"
-        return self._symbols[key]
+        return self._symbols.get(key, [])
 
     def __setitem__(self, key, value):
         assert key in list(

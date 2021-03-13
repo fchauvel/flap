@@ -44,7 +44,7 @@ class Input(TexFileInclusion):
     """
 
     def __init__(self, flap):
-        super().__init__(flap, r"\input")
+        super().__init__(flap, "input")
 
 
 class Include(TexFileInclusion):
@@ -53,7 +53,7 @@ class Include(TexFileInclusion):
     """
 
     def __init__(self, flap):
-        super().__init__(flap, r"\include")
+        super().__init__(flap, "include")
 
     def _execute(self, parser, invocation):
         link = parser.evaluate_as_text(invocation.argument("link"))
@@ -66,13 +66,13 @@ class Include(TexFileInclusion):
 class SubFile(TexFileInclusion):
 
     def __init__(self, flap):
-        super().__init__(flap, r"\subfile")
+        super().__init__(flap, "subfile")
 
 
 class EndInput(Macro):
 
     def __init__(self, flap):
-        super().__init__(flap, r"\endinput", None, None)
+        super().__init__(flap, "endinput", None, None)
 
     def _execute(self, parser, invocation):
         source = invocation.name[0].location.source
@@ -87,7 +87,7 @@ class IncludeOnly(Macro):
     """
 
     def __init__(self, flap):
-        super().__init__(flap, r"\includeonly", None, None)
+        super().__init__(flap, r"includeonly", None, None)
 
     def _capture_arguments(self, parser, invocation):
         invocation.append_argument("selection", parser.capture_one())

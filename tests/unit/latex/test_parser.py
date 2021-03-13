@@ -120,7 +120,7 @@ class ParserTests(TestCase):
 
     def _define_macro(self, name, parameters, body):
         macro = self._macro(name, parameters, body)
-        self._environment[name] = macro
+        self._environment[macro.name] = macro
 
     def _macro(self, name, parameters, body):
         return self._macros.create(name, self._factory.as_list(
@@ -134,7 +134,7 @@ class ParserTests(TestCase):
                 r"\foo",
                 "",
                 "{X}"),
-            self._environment[r"\foo"])
+            self._environment["foo"])
 
     def test_defining_a_macro_with_one_parameter(self):
         self._do_test_with(r"\def\foo#1{X}",
@@ -144,13 +144,13 @@ class ParserTests(TestCase):
                 r"\foo",
                 "#1",
                 "{X}"),
-            self._environment[r"\foo"])
+            self._environment["foo"])
 
     def test_defining_a_macro_with_multiple_parameters(self):
         self._do_test_with(r"\def\point(#1,#2,#3){X}",
                            r"\def\point(#1,#2,#3){X}")
         self.assertEqual(self._macro(r"\point", "(#1,#2,#3)", "{X}"),
-                         self._environment[r"\point"])
+                         self._environment["point"])
 
     def test_parsing_input(self):
         self._engine.content_of.return_value = "File content"

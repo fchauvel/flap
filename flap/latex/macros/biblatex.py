@@ -27,7 +27,7 @@ class AddBibResource(UpdateLink):
     """
 
     def __init__(self, flap):
-        super().__init__(flap, r"\addbibresource")
+        super().__init__(flap, r"addbibresource")
 
     def update_link(self, parser, link, invocation):
         return self._flap.update_link_to_bibliography(

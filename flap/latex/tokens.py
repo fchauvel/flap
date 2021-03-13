@@ -61,6 +61,9 @@ class Token:
     def has_text(self, text):
         return self._text == text
 
+    def ends_with(self, text):
+        return self._text.endswith(text)
+
     @property
     def ends_the_text(self):
         return self._category == Symbol.END_OF_TEXT
@@ -104,7 +107,8 @@ class Token:
 class TokenFactory:
 
     def __init__(self, symbol_table):
-        assert isinstance(symbol_table, SymbolTable)
+        assert isinstance(symbol_table, SymbolTable), \
+            "Expected a symbol table but found %s" % type(symbol_table)
         self._symbols = symbol_table
 
     @staticmethod
