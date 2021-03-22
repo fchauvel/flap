@@ -66,7 +66,14 @@ class ListStreamTest(TestCase):
         self._stream = Stream([c for c in self._text], self._handler)
 
     def test_returns_all_characters(self):
-        self.assertEqual(self._text, "".join(self._stream.take_all()))
+        self._verify_stream_content_is(self._text)
+
+    def test_push(self):
+        self._stream.push("abcdef")
+        self._verify_stream_content_is( "abcdef" + self._text)
+
+    def _verify_stream_content_is(self, expected):
+        self.assertEqual(expected, "".join(self._stream.take_all()))
 
 
 class PositionTest(TestCase):

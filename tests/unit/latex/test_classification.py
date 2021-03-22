@@ -23,7 +23,7 @@ from mock import MagicMock
 from flap.latex.symbols import SymbolTable
 from flap.latex.tokens import TokenFactory
 from flap.latex.macros.factory import MacroFactory
-from flap.latex.parser import Parser, Context, Factory
+from flap.latex.parser import Context, Factory, Parser
 
 
 class ClassificationTests(TestCase):
@@ -62,15 +62,16 @@ class ClassificationTests(TestCase):
                          self._classify(invocation))
 
     def _define(self, name, parameters, body):
-        macro = self._macros.create(
+        macro = self._macros.create_user_defined(
             name,
             self._factory.as_list(parameters),
             self._factory.as_list(body))
         self._environment[name] = macro
 
     def _classify(self, expression):
-        parser = Parser(self._factory.as_tokens(expression, "Unknown"),
-                        self._factory,
-                        self._environment)
-        parser.evaluate()
+        parser = Parser(
+            self._factory.as_tokens(expression, "Unknown"),
+            self._factory,
+            self._environment)
+        parser.process()
         return parser.shall_expand()

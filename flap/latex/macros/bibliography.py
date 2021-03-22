@@ -56,9 +56,9 @@ class MakeIndex(Macro):
         super().__init__(flap, "makeindex", None, None)
 
     def _capture_arguments(self, parser, invocation):
-        invocation.append_argument("options", parser.capture_options())
+        invocation.append_argument("options", parser.read.options())
 
-    def _execute(self, parser, invocation):
+    def rewrite2(self, parser, invocation):
         style_file = self._fetch_style_file(parser, invocation)
         new_style_file = self._flap.update_link_to_index_style(
             style_file, invocation)

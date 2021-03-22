@@ -18,6 +18,46 @@
 #
 
 
+from flap import logger
+
+
+class Context:
+
+    def __init__(self, parent=None, definitions=None):
+        self._definitions = definitions or dict()
+        self._parent = parent
+
+    def define(self, macro):
+        logger.debug("Defining macro {}".format(macro.name))
+        self._definitions[macro.name] = macro
+
+    def look_up(self, symbol):
+        result = self._definitions.get(symbol, None)
+        if not result and self._parent:
+            return self._parent.look_up(symbol)
+        return result
+
+    @property
+    def available_macros(self):
+        return list(self._definitions.keys())
+
+    def items(self):
+        return self._definitions.items()
+
+    def __setitem__(self, key, value):
+        self._definitions[key] = value
+
+    def __getitem__(self, key):
+        if self._parent and key not in self._definitions:
+            return self._parent[key]
+        else:
+            return self._definitions.get(key)
+
+    def __contains__(self, key):
+        return key in self._definitions or (
+            self._parent and key in self._parent)
+
+
 class Source:
     """
     A data source, that is a text
@@ -56,8 +96,10 @@ class Stream:
         self._cache = []
 
     def look_ahead(self):
-        self._cache.append(self._take())
-        return self._cache[-1]
+        next_item = self._take()
+        if next_item:
+            self._cache.append(next_item)
+        return next_item
 
     @property
     def is_empty(self):
@@ -73,6 +115,7 @@ class Stream:
 
     def take(self):
         element = self._take()
+        # logger.debug("Taking %s", str(element))
         self._handler(element)
         return element
 
@@ -84,6 +127,25 @@ class Stream:
 
     def take_all(self):
         return self.take_while(lambda e: e is not None)
+
+    def push(self, items):
+        if isinstance(items, list):
+            assert not any(i is None for i in items), \
+                "Cannot push None!"
+            self._cache.extend(reversed(items))
+        else:
+            assert items is not None, \
+                "Cannot push None"
+            self._cache.append(items)
+        logger.debug(f"Pushing! New cache size: {str(len(self._cache))}")
+        # self.debug()
+
+    def debug(self):
+        logger.debug("View of the stack ...")
+        for index in range(len(self._cache)):
+            item = self._cache[-(index+1)]
+            text = str(item) if isinstance(item, str) else item.as_text
+            logger.debug(f"  - {index}: {item}")
 
 
 class Position:

@@ -17,6 +17,7 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from flap import logger
 from flap.latex.macros.commons import Macro
 
 
@@ -27,15 +28,21 @@ class TexFileInclusion(Macro):
         self._requires_expansion = True
 
     def _capture_arguments(self, parser, invocation):
-        invocation.append_argument("link", parser.capture_one())
+        invocation.append_argument("link", parser.read.one())
 
-    def _execute(self, parser, invocation):
+    def execute2(self, parser, invocation):
+        self._called = True
+        logger.debug("Setting CALLED on %d", id(self))
         link = parser.evaluate_as_text(invocation.argument("link"))
         content = self._flap.content_of(link, invocation)
+        logger.debug("TEX INCLUSION %s: '%s'", link, content)
         if not link.endswith(".tex"):
             link += ".tex"
-        return parser._spawn(parser._create.as_tokens(
-            content, link), dict()).rewrite()
+        tokens = parser._create.as_list(content)
+        return parser._tokens.push(tokens)
+
+    def rewrite2(self, parser, invocation):
+        return []
 
 
 class Input(TexFileInclusion):
@@ -55,11 +62,15 @@ class Include(TexFileInclusion):
     def __init__(self, flap):
         super().__init__(flap, "include")
 
-    def _execute(self, parser, invocation):
+    def execute2(self, parser, invocation):
+        self._called = True
         link = parser.evaluate_as_text(invocation.argument("link"))
         if self._flap.shall_include(link):
-            result = super()._execute(parser, invocation)
-            return result + parser._create.as_list(r"\clearpage")
+            tokens = parser._create.as_list(r"\clearpage")
+            parser._tokens.push(tokens)
+            super().execute2(parser, invocation)
+
+    def rewrite2(self, parser, invocation):
         return []
 
 
@@ -74,10 +85,12 @@ class EndInput(Macro):
     def __init__(self, flap):
         super().__init__(flap, "endinput", None, None)
 
-    def _execute(self, parser, invocation):
-        source = invocation.name[0].location.source
+    def execute2(self, parser, invocation):
+        source = invocation.name.location.source
         self._flap.end_of_input(source, invocation)
         parser.flush(source)
+
+    def rewrite2(self, parser, invocation):
         return []
 
 
@@ -90,9 +103,12 @@ class IncludeOnly(Macro):
         super().__init__(flap, r"includeonly", None, None)
 
     def _capture_arguments(self, parser, invocation):
-        invocation.append_argument("selection", parser.capture_one())
+        invocation.append_argument("selection", parser.read.one())
 
-    def _execute(self, parser, invocation):
+    def execute2(self, parser, invocation):
+        pass
+
+    def rewrite2(self, parser, invocation):
         text = parser.evaluate_as_text(invocation.argument("selection"))
         files_to_include = list(map(str.strip, text.split(",")))
         self._flap.include_only(files_to_include, invocation)

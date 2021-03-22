@@ -26,7 +26,7 @@ class InvocationTests(TestCase):
 
     def setUp(self):
         self._name = "foo"
-        self._invocation = Invocation()
+        self._invocation = Invocation("foo")
 
     def test_name_definition(self):
         self._invocation.name = self._name

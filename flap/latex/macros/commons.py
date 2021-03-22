@@ -37,6 +37,7 @@ class Macro:
         self._body = body or iter([])
         self._called = False
         self._requires_expansion = False
+        self.is_user_defined = False
 
     @property
     def requires_expansion(self):
@@ -50,53 +51,48 @@ class Macro:
     def name(self):
         return self._name
 
-    def rewrite(self, parser):
-        invocation = self._parse(parser)
-        return self._execute(parser, invocation)
-
-    def evaluate(self, parser):
+    def execute2(self, parser, invocation):
         self._called = True
-        invocation = self._parse(parser)
-        return self._execute(parser, invocation)
+        pass
 
-    def _parse(self, parser):
-        invocation = Invocation()
-        self._capture_name(invocation, parser)
+    def rewrite2(self, parser, invocation):
+        return invocation.as_tokens
+
+    def capture_invocation(self, parser, command):
+        invocation = Invocation(command)
         self._capture_arguments(parser, invocation)
         return invocation
 
-    def _capture_name(self, invocation, parser):
-        invocation.name = parser.capture_macro_name(self._name)
-        invocation.append(parser.capture_ignored())
-
     def _capture_arguments(self, parser, invocation):
-        #logger.debug("::".join(t._text for t in self._signature))
         for index, any_token in enumerate(self._signature):
             if any_token.is_a_parameter:
                 parameter = str(any_token)
                 if index == len(self._signature) - 1:
-                    expression = parser.capture_one()
+                    expression = parser.read.one()
                     invocation.append_argument(parameter, expression)
                     logger.debug("Arg '{}' is '{}'".format(
-                        any_token._text,
-                        "".join(t._text for t in expression)))
+                        any_token.as_text,
+                        "".join(t.as_text for t in expression)))
                 else:
                     next_token = self._signature[index + 1]
-                    value = parser.capture_until_text(next_token._text)
+                    value = parser.read.until_text(next_token.as_text)
                     invocation.append_argument(parameter, value)
                     logger.debug("Arg '{}' is '{}'".format(
-                        any_token._text,
-                        "".join(t._text for t in value)))
+                        any_token.as_text,
+                        "".join(t.as_text for t in value)))
             else:
-                invocation.append(parser.capture_text(str(any_token)))
+                invocation.append(parser.read.text(str(any_token)))
 
-    def _execute(self, parser, invocation):
-        arguments = {
-            parameter: parser._spawn(
-                argument,
-                dict()).evaluate() for parameter,
-            argument in invocation.arguments.items()}
-        return parser._spawn(self._body, arguments)._evaluate_group()
+    def expand(self, invocation):
+        # TODO: Remove, useless as the we don't substitute tokens into
+        # the body anymore
+        result = []
+        for any_token in self._body:
+            if any_token.is_a_parameter:
+                result += invocation.argument(str(any_token))
+            else:
+                result.append(any_token)
+        return result
 
     def __eq__(self, other):
         if not isinstance(other, Macro):
@@ -118,13 +114,7 @@ class UserDefinedMacro(Macro):
 
     def __init__(self, flap, name, signature, body):
         super().__init__(flap, name, signature, body)
-
-    def rewrite(self, parser):
-        invocation = self._parse(parser)
-        expansion = super()._execute(parser, invocation)
-        if parser.shall_expand():
-            return expansion
-        return invocation.as_tokens
+        self.is_user_defined = True
 
 
 class UpdateLink(Macro):
@@ -134,16 +124,20 @@ class UpdateLink(Macro):
 
     @staticmethod
     def _capture_arguments(parser, invocation):
-        invocation.append_argument("options", parser.capture_options())
-        invocation.append_argument("link", parser.capture_group())
+        invocation.append_argument("options", parser.read.options())
+        logger.debug("Options = '%s'", invocation.argument_as_text("options"))
+        invocation.append_argument("link", parser.read.group())
 
-    def _execute(self, parser, invocation):
+    def execute2(self, parser, invocation):
+        pass
+
+    def rewrite2(self, parser, invocation):
         try:
             link_tokens = invocation.argument("link")
             link = parser.evaluate_as_text(invocation.argument("link"))
+            new_link = self.update_link(parser, link, invocation)
             opening = str(link_tokens[0])
             closing = str(link_tokens[-1])
-            new_link = self.update_link(parser, link, invocation)
             return invocation\
                 .substitute("link",
                             parser._create.as_list(opening + new_link + closing))\
@@ -152,6 +146,7 @@ class UpdateLink(Macro):
             return invocation.as_tokens
 
     def update_link(self, parser, link, invocation):
+        """To be over-ridden in sub classes"""
         pass
 
 
@@ -168,10 +163,6 @@ class Environment:
     def name(self):
         return self._name
 
-    @staticmethod
-    def execute(parser, invocation):
-        return []
-
 
 class Invocation:
     """ The invocation of a LaTeX command, including the name of the
@@ -179,10 +170,36 @@ class Invocation:
     tokens.
     """
 
-    def __init__(self):
-        self.name = []
+    def __init__(self, command):
+        self.name = command
         self._arguments = []
         self._keys = dict()
+
+    @property
+    def as_text(self):
+        text = self.to_text(self.name)
+        for each_argument in self._arguments:
+            text += "".join(map(str, each_argument))
+        return text
+
+    @staticmethod
+    def to_text(parameter):
+        if isinstance(parameter, list):
+            return "".join(map(Invocation.to_text, parameter))
+        elif isinstance(parameter, str):
+             return parameter
+        else:
+            return parameter.as_text
+
+    @property
+    def command_name(self):
+        """Returns the name (as a string) of the command without the first
+        control character.
+        """
+        return str(self.name)[1:]
+
+    def send_to(self, parser):
+        return parser.process_invocation(self)
 
     def append(self, tokens):
         self._arguments.append(tokens)
@@ -193,6 +210,10 @@ class Invocation:
 
     def argument(self, key):
         return self._arguments[self._keys[key]]
+
+    def argument_as_text(self, key):
+        return "".join(each_token.as_text
+                       for each_token in self.argument(key))
 
     @property
     def location(self):
@@ -205,19 +226,16 @@ class Invocation:
         return {key: self._arguments[value]
                 for (key, value) in self._keys.items()}
 
-    @property
-    def as_text(self):
-        text = "".join(map(str, self.name))
-        for each_argument in self._arguments:
-            text += "".join(map(str, each_argument))
-        return text
 
     @property
     def as_tokens(self):
-        return sum(self._arguments, copy(self.name))
+        start = copy(self.name) \
+            if isinstance(self.name, list) \
+            else [self.name]
+        return sum(self._arguments, start)
 
     def substitute(self, argument, value):
-        clone = Invocation()
+        clone = Invocation(self.name)
         clone.name = copy(self.name)
         clone._arguments = copy(self._arguments)
         clone._keys = copy(self._keys)

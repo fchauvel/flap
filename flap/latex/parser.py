@@ -18,43 +18,9 @@
 #
 
 from flap import logger
-from flap.latex.commons import Stream, Source
+from flap.latex.commons import Context, Stream, Source
 from flap.latex.lexer import Lexer
-from flap.latex.errors import UnknownSymbol
-from flap.util import truncate
-
-
-class Context:
-
-    def __init__(self, parent=None, definitions=None):
-        self._definitions = definitions or dict()
-        self._parent = parent
-
-    def look_up(self, symbol):
-        result = self._definitions.get(symbol, None)
-        if not result and self._parent:
-            return self._parent.look_up(symbol)
-        return result
-
-    @property
-    def available_macros(self):
-        return list(self._definitions.keys())
-
-    def items(self):
-        return self._definitions.items()
-
-    def __setitem__(self, key, value):
-        self._definitions[key] = value
-
-    def __getitem__(self, key):
-        if self._parent and key not in self._definitions:
-            return self._parent[key]
-        else:
-            return self._definitions.get(key)
-
-    def __contains__(self, key):
-        return key in self._definitions or (
-            self._parent and key in self._parent)
+from flap.latex.processor import Processor
 
 
 class Factory:
@@ -72,85 +38,58 @@ class Factory:
         return Stream(tokens)
 
 
-class Parser:
+class Parser(Processor):
 
     def __init__(self, tokens, factory, environment):
-        self._create = factory
-        self._tokens = self._create.as_stream(tokens)
-        self._definitions = environment
-        self._level = 0
+        super().__init__("REWRITER", tokens, factory, environment)
 
-    def _spawn(self, tokens, environment):
-        new_environment = Context(self._definitions,
-                                  definitions=environment)
-        parser = Parser(
-            tokens,
-            self._create,
-            new_environment)
-        return parser
-
-    def look_up(self, symbol):
-        return self._definitions.look_up(symbol)
-
-    def rewrite(self):
-        result = []
-        while not self._tokens.is_empty:
-            result += self._rewrite_one()
-        return result
-
-    def _rewrite_one(self):
-        self._abort_on_end_of_text()
-        if self._next_token.begins_a_group:
-            return self._rewrite_group()
-        elif self._next_token.is_a_command:
-            return self._rewrite_command()
-        else:
-            return [self._tokens.take()]
-
-    def _rewrite_group(self):
-        self._level += 1
-        tokens = self._accept(lambda token: token.begins_a_group)
-        while not self._next_token.ends_a_group:
-            tokens += self._rewrite_one()
-        tokens += self._accept(lambda token: token.ends_a_group)
-        self._debug("group", "rewritten", tokens)
-        self._level -= 1
-        return tokens
-
-    def _rewrite_command(self):
-        command = str(self._next_token)
+    def process_control(self, token):
+        self._log("On command:" + str(token))
+        command = str(token)
         command_name = command[1:]
         if command_name not in self._definitions:
-            logger.debug("Unknown command " + command_name)
-            logger.debug("Candidates are: {}".format(
-                self._definitions.available_macros))
-            return self.default(command_name)
-        macro = self._definitions[command_name]
-        return macro.rewrite(self)
+            self._log("Unknown command '{}'.\n"
+                      "\tCandidates are {}"
+                      .format(command_name,
+                              self._definitions.available_macros))
+            self._print([token])
+        else:
+            macro = self._definitions[command_name]
+            invocation = macro.capture_invocation(self, token)
+            self._log(invocation.as_text)
+            self._tokens.push(invocation)
+
+    def process_invocation(self, invocation):
+        self._log("On invocation: " + invocation.as_text)
+        macro = self.look_up(invocation.command_name)
+
+        if macro.is_user_defined:
+            self._log("User defined!")
+            self.open_scope()
+            for each_argument, tokens in invocation.arguments.items():
+                evaluated = self.evaluate(tokens)
+                self._definitions[each_argument] = evaluated
+            self.evaluate(macro._body)
+            self.close_scope()
+
+        else:   # Built-in commands
+            self._log("Built-in!")
+            macro.execute2(self, invocation)
+
+        self._print(macro.rewrite2(self, invocation))
 
     @property
     def _next_token(self):
         next_token = self._tokens.look_ahead()
         return next_token
 
-    def default(self, text):
-        return [self._tokens.take()]
-
     def define(self, macro):
-        logger.debug("Defining macro {}".format(macro.name))
-        self._definitions[macro.name] = macro
+        self._definitions.define(macro)
 
     def flush(self, source_name):
         while self._next_token \
               and self._next_token.location.source == source_name:
             self._tokens.take()
-
-    def _accept(self, as_expected):
-        buffer = self.capture_ignored()
-        if as_expected(self._next_token):
-            buffer.append(self._tokens.take())
-            return buffer
-        self._raise_unexpected_token()
 
     def _raise_unexpected_token(self):
         error = (
@@ -161,142 +100,30 @@ class Parser:
             self._next_token.location.source,
             self._next_token.location.line,
             self._next_token.location.column)
+        self._tokens.debug()
         raise ValueError(error)
 
-    def evaluate_parameter(self, parameter):
-        self._tokens.take()
-        if parameter not in self._definitions:
-            raise UnknownSymbol(parameter)
-        return self._definitions[parameter]
+    @property
+    def read(self):
+        reader = Reader("", self._create)
+        reader._tokens = self._tokens
+        return reader
+
+    def rewrite(self, tokens, extra_definitions=None):
+        definitions = self._definitions
+        if extra_definitions:
+            definitions = Context(self._definitions, extra_definitions)
+        return Parser(tokens, self._create, definitions).process()
+
+    def evaluate(self, tokens, extra_definitions=None):
+        definitions = self._definitions
+        if extra_definitions:
+            definitions = Context(self._definitions, extra_definitions)
+        return Interpreter(tokens, self._create, definitions).process()
 
     def evaluate_as_text(self, tokens):
-        return self._as_text(self._spawn(tokens, dict()).evaluate())
-
-    def evaluate(self):
-        result = []
-        while not self._tokens.is_empty:
-            result += self._evaluate_one()
-        self._debug("fragment", "evaluate", result)
-        return result
-
-    def _evaluate_one(self):
-        self._abort_on_end_of_text()
-        if self._next_token.is_a_comment:
-            self._tokens.take()
-            return []
-        if self._next_token.begins_a_group:
-            return self._evaluate_group()
-        elif self._next_token.is_a_command:
-            return self.evaluate_command(str(self._next_token))
-        elif self._next_token.is_a_parameter:
-            parameter = str(self._tokens.take())
-            if parameter in self._definitions:
-                return self._definitions[parameter]
-            raise UnknownSymbol(parameter)
-        else:
-            return [self._tokens.take()]
-
-    def _evaluate_group(self):
-        self._accept(lambda token: token.begins_a_group)
-        tokens = self._evaluate_until(lambda token: token.ends_a_group)
-        self._accept(lambda token: token.ends_a_group)
-        self._debug("group", "evaluated", tokens)
-        return tokens
-
-    def _evaluate_until(self, is_excluded):
-        tokens = []
-        while not is_excluded(self._next_token):
-            tokens += self._evaluate_one()
-        self._debug("until", "evaluate", tokens)
-        return tokens
-
-    def _abort_on_end_of_text(self):
-        if self._tokens.is_empty:
-            raise ValueError("Unexpected end of text!")
-
-    def evaluate_command(self, command):
-        command_name = command[1:]
-        if command_name not in self._definitions:
-            logger.debug("Unknown command {}".format(command_name))
-            logger.debug("Candidates are: {}".format(
-                self._definitions.available_macros))
-            return self.default(command_name)
-        macro = self._definitions[command_name]
-        return macro.evaluate(self)
-
-    def capture_options(self, start="[", end="]"):
-        result = []
-        if self._next_token.has_text(start):
-            result += self._accept(lambda token: token.has_text(start))
-            result += self._evaluate_until(lambda token: token.has_text(end))
-            result += self._accept(lambda token: token.has_text(end))
-            result += self._tokens.take_while(lambda c: c.is_ignored)
-        # self._debug("options", "capture", result)
-        return result
-
-    def capture_macro_name(self, name=None):
-        tokens = self._accept(lambda token: token.is_a_command)
-        if name and not tokens[-1].ends_with(name):
-            self._raise_unexpected_token()
-        #self._debug("macro", "captured", tokens)
-        return tokens
-
-    def capture_ignored(self):
-        tokens = []
-        while self._next_token and self._next_token.is_ignored:
-            tokens.append(self._tokens.take())
-        #self._debug("ignored", "capture", tokens)
-        return tokens
-
-    def capture_text(self, marker):
-        tokens, text = [], ""
-        while self._next_token:
-            text += str(self._next_token)
-            if not marker.startswith(text):
-                break
-            tokens.append(self._tokens.take())
-        #self._debug("until '{}'".format(marker), "captured", tokens)
-        return tokens
-
-    def capture_until_text(self, marker, capture_marker=False):
-        tokens, text = [], ""
-        while self._next_token:
-            text += str(self._next_token)
-            if text.endswith(marker):
-                if capture_marker:
-                    tokens.append(self._tokens.take())
-                break
-            tokens.append(self._tokens.take())
-        #self._debug("until '{}'".format(marker), "captured", tokens)
-        return tokens
-
-    def capture_until_group(self):
-        tokens = []
-        while not self._next_token.begins_a_group:
-            tokens += self.capture_one()
-        self._debug("until group", "captured", tokens)
-        return tokens
-
-    def capture_group(self):
-        tokens = self._accept(lambda token: token.begins_a_group)
-        while not self._next_token.ends_a_group:
-            tokens += self.capture_one()
-        tokens += self._accept(lambda token: token.ends_a_group)
-        self._debug("group", "captured", tokens)
-        return tokens
-
-    def capture_one(self):
-        self._abort_on_end_of_text()
-        if self._next_token.begins_a_group:
-            return self.capture_group()
-        if self._next_token._text == "`":
-            return [self._tokens.take()] + self.capture_one()
-        else:
-            return [self._tokens.take()]
-
-    @staticmethod
-    def _as_text(tokens):
-        return "".join(map(str, tokens))
+        interpreter = Interpreter(tokens, self._create, self._definitions)
+        return self._as_text(interpreter.process())
 
     def shall_expand(self):
         logger.debug("Expanding")
@@ -313,16 +140,184 @@ class Parser:
                 any_macro._called = False
         return result
 
-    def _debug(self, category, action, tokens):
+
+class Interpreter(Parser):
+
+    def __init__(self, tokens, factory, environment):
+        super().__init__(tokens, factory, environment)
+        self._name = "INTERPRETER"
+
+    def process_begin_group(self, token):
+        pass
+
+    def process_end_group(self, end_group):
+        pass
+
+    def process_parameter(self, parameter):
+        tokens = self.look_up(parameter.as_text)
+        if tokens is not None:
+            self._tokens.push(tokens)
+        else:
+            raise RuntimeError(f"Undefined symbol '{str(parameter)}'")
+
+    def process_invocation(self, invocation):
+        self._log("On invocation: " + invocation.as_text)
+        macro = self.look_up(invocation.command_name)
+
+        if macro.is_user_defined:
+            self._log("User defined!")
+            self.open_scope()
+            for each_argument, tokens in invocation.arguments.items():
+                evaluated = self.evaluate(tokens)
+                self._definitions[each_argument] = evaluated
+            output = self.evaluate(macro._body)
+            self._print(output)
+            self.close_scope()
+
+        else:   # Built-in commands
+            self._log("Built-in!")
+            macro.execute2(self, invocation)
+
+    def evaluate(self, tokens, extra_definitions=None):
+        definitions = self._definitions
+        if extra_definitions:
+            definitions = Context(self._definitions, extra_definitions)
+        return Interpreter(tokens, self._create, definitions).process()
+
+    def evaluate_as_text(self, tokens):
+        interpreter = Interpreter(tokens, self._create, self._definitions)
+        return self._as_text(interpreter.process())
+
+
+
+class Reader(Parser):
+
+    def __init__(self, tokens, factory):
+        super().__init__(tokens, factory, dict())
+        self._name = "READER"
+
+    def one(self):
+        self._log("Reading one ...")
+        if not self._tokens.is_empty:
+            token = self._tokens.take()
+            token.send_to(self)
+            return self._outputs[-1]["data"]
+        return None
+
+    def group(self):
+        self._log("Reading group ...")
+        self.until(lambda t: not t.is_ignored)
+        self.only_if(lambda t: t.begins_a_group)
+        return self._outputs[-1]["data"]
+
+    def only_if(self, is_expected):
+        self._log("Reading only if  ...")
+        if not self._tokens.is_empty:
+            token = self._tokens.take()
+            if is_expected(token):
+                token.send_to(self)
+            else:
+                self._tokens.push(token)
+                self._raise_unexpected_token("not specified", token)
+
+    def until(self, is_end):
+        self._log("Reading until ...")
+        while not self._tokens.is_empty:
+            token = self._tokens.take()
+            if is_end(token):
+                self._tokens.push(token)
+                break
+            else:
+                token.send_to(self)
+        return self._outputs[-1]["data"]
+
+    def until_group(self):
+        self.until(lambda t: t.begins_a_group)
+        return self._outputs[-1]["data"]
+
+    def options(self, start="[", end="]"):
+        self._log("Reading options ...")
+        try:
+            self.until(lambda t: not t.is_ignored)
+            self.only_if(lambda token: token.has_text(start))
+            self.until_text(end)
+            self.only_if(lambda token: token.has_text(end))
+            self.until(lambda t: not t.is_ignored)
+            return self._outputs[-1]["data"]
+        except ValueError as error:
+            self._log("Error '%s'" % str(error))
+            return []
+
+    def macro_name(self, name=None):
+        self.only_if(lambda token: token.is_a_command)
+        if name and not self._outputs[-1]["data"][-1].ends_with(name):
+            self._raise_unexpected_token()
+        return self._outputs[-1]["data"]
+
+    def ignored(self):
+        while self._next_token \
+              and self._next_token.is_ignored:
+            token = self._tokens.take()
+            token.send_to(self)
+        return self._outputs[-1]["data"]
+
+    def text(self, marker):
+        self._log("Reading text '%s'" % marker)
         text = ""
-        position = "None"
-        if not len(tokens) == 0:
-            text = truncate(self._as_text(tokens), 30)
-            position = tokens[-1].location,
-        logger.debug(
-                "GL={} {} {} {}".format(
-                    self._level,
-                    action,
-                    category,
-                    text
-                ))
+        while self._next_token:
+            token = self._tokens.take()
+            text += str(token)
+            if not marker.startswith(text):
+                self._tokens.push(token)
+                break
+            token.send_to(self)
+        return self._outputs[-1]["data"]
+
+    def until_text(self, marker, capture_marker=False):
+        self._log("Reading until text '%s' ..." % marker)
+        text = ""
+        while self._next_token:
+            token = self._tokens.take()
+            text += str(token)
+            if text.endswith(marker):
+                if capture_marker:
+                    self._print([token])
+                else:
+                    self._tokens.push(token)
+                break
+            self._print([token])
+        return self._outputs[-1]["data"]
+
+    def _raise_unexpected_token(self, expected, actual):
+        error = (
+            "Expected {}, but found '{}' in file {} (l. {}, col. {})"
+        ).format(
+            expected,
+            actual,
+            actual.location.source,
+            actual.location.line,
+            actual.location.column)
+        self._tokens.debug()
+        raise ValueError(error)
+
+    def _default(self, token):
+        self._print([token])
+
+    def process_control(self, token):
+        self._default(token)
+
+    def process_begin_group(self, token):
+        self._log("On begin group")
+        self.push_new_output()
+        self._print([token])
+        self.until(lambda t: t.ends_a_group)
+        self.only_if(lambda t: t.ends_a_group)
+
+    def process_end_group(self, end_group):
+        self._log("On end group")
+        self._print([end_group])
+        group_tokens = self.pop_output()
+        self._print(group_tokens)
+
+    def process_invocation(self, invocation):
+        raise RuntimeError("Reader should never meet an invocation token!")

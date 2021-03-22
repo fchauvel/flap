@@ -60,30 +60,34 @@ class Def(Macro):
     def __init__(self, flap):
         super().__init__(flap, "def", None, None)
 
-    def rewrite(self, parser):
-        invocation = self._parse(parser)
-        self._execute(parser, invocation)
-        return invocation.substitute("body", self._rewritten_body).as_tokens
-
-    def _capture_arguments(self, parser, invocation):
-        invocation.append_argument("name", parser.capture_macro_name())
-        invocation.append_argument("signature", parser.capture_until_group())
-        invocation.append_argument("body", parser.capture_group())
-
-    def _execute(self, parser, invocation):
+    def execute2(self, parser, invocation):
         body = invocation.argument("body")
-        try:
-            self._rewritten_body = parser._spawn(body, dict()).rewrite()
-        except UnknownSymbol:
-            self._rewritten_body = body
-
         macro = UserDefinedMacro(
             self._flap,
             "".join(map(str, invocation.argument("name"))),
             invocation.argument("signature"),
             body)
         parser.define(macro)
-        return []
+
+    def rewrite2(self, parser, invocation):
+        body = invocation.argument("body")
+        try:
+            rewritten_body = parser.rewrite(body, dict())
+
+        except UnknownSymbol:
+            rewritten_body = body
+
+        return invocation.substitute("body", rewritten_body).as_tokens
+
+    def rewrite(self, parser):
+        invocation = self._parse(parser)
+        self._execute(parser, invocation)
+        return invocation.substitute("body", self._rewritten_body).as_tokens
+
+    def _capture_arguments(self, parser, invocation):
+        invocation.append_argument("name", parser.read.macro_name())
+        invocation.append_argument("signature", parser.read.until_group())
+        invocation.append_argument("body", parser.read.group())
 
 
 class Begin(Macro):
@@ -95,17 +99,19 @@ class Begin(Macro):
         super().__init__(flap, "begin", None, None)
 
     def _capture_arguments(self, parser, invocation):
-        invocation.append_argument("environment", parser.capture_group())
+        invocation.append_argument("environment", parser.read.group())
 
-    def _execute(self, parser, invocation):
-        environment = parser.evaluate_as_text(
-            invocation.argument("environment"))
-        env = parser._definitions.look_up(environment)
-        if env:
-            logger.debug("Known environment " + environment)
-            return env.execute(parser, invocation)
-        logger.debug("Unknown environment " + environment)
-        return invocation.as_tokens
+    def execute2(self, parser, invocation):
+        environment = parser.find_environment(invocation)
+        if environment is None:
+            return
+        return environment.execute2(parser, invocation)
+
+    def rewrite2(self, parser, invocation):
+        environment = parser.find_environment(invocation)
+        if environment is None:
+            return invocation.as_tokens
+        return environment.rewrite2(parser, invocation)
 
 
 class DocumentClass(Macro):
@@ -117,19 +123,27 @@ class DocumentClass(Macro):
         super().__init__(flap, "documentclass", None, None)
 
     def _capture_arguments(self, parser, invocation):
-        invocation.append_argument("options", parser.capture_options())
-        invocation.append_argument("class", parser.capture_group())
+        invocation.append_argument("options", parser.read.options())
+        invocation.append_argument("class", parser.read.group())
 
-    def _execute(self, parser, invocation):
-        class_name = parser.evaluate_as_text(invocation.argument("class"))
+    def execute2(self, parser, invocation):
+        class_name = self.find_class_name(parser, invocation)
         self._flap.relocate_dependency(class_name, invocation)
+
+    def find_class_name(self, parser, invocation):
+        tokens = invocation.argument("class")
+        return "".join(each_token.as_text
+                       for each_token in tokens[1:-1])
+
+    def rewrite2(self, parser, invocation):
+        class_name = self.find_class_name(parser, invocation)
         if class_name == "subfiles":
-            parser.capture_until_text(r"\begin{document}", True)
-            document = parser.capture_until_text(r"\end{document}", True)
-            logger.debug("Subfile extraction" + "".join(str(t) for t in document))
-            return parser._spawn(document[:-11], dict()).rewrite()
-        else:
-            return invocation.as_tokens
+            parser.read.until_text(r"\begin{document}", True)
+            document = parser.read.until_text(r"\end{document}", True)
+            logger.debug("Subfile extraction" +
+                         "".join(str(t) for t in document))
+            return parser.evaluate(document[:-11], dict())
+        return invocation.as_tokens
 
 
 class PackageReference(Macro):
@@ -141,10 +155,14 @@ class PackageReference(Macro):
         super().__init__(flap, name, None, None)
 
     def _capture_arguments(self, parser, invocation):
-        invocation.append_argument("options", parser.capture_options())
-        invocation.append_argument("package", parser.capture_one())
+        invocation.append_argument("options", parser.read.
+                                   options())
+        invocation.append_argument("package", parser.read.one())
 
-    def _execute(self, parser, invocation):
+    def execute2(self, parser, invocation):
+        pass
+
+    def rewrite2(self, parser, invocation):
         package = parser.evaluate_as_text(invocation.argument("package"))
         new_link = self._flap.relocate_dependency(package, invocation)
         if new_link:

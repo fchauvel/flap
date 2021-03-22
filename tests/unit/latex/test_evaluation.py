@@ -17,13 +17,15 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from unittest import TestCase
-from mock import MagicMock
 
+from flap.latex.macros.factory import MacroFactory
+from flap.latex.parser import Interpreter, Context, Factory, Parser
 from flap.latex.symbols import SymbolTable
 from flap.latex.tokens import TokenFactory
-from flap.latex.macros.factory import MacroFactory
-from flap.latex.parser import Parser, Context, Factory
+
+from mock import MagicMock
+
+from unittest import TestCase
 
 
 class ClassificationTests(TestCase):
@@ -36,11 +38,23 @@ class ClassificationTests(TestCase):
         self._factory = Factory(self._symbols)
         self._environment = Context(definitions=self._macros.all())
 
-    def test_literal_macro(self):
+    def test_parameter(self):
+        self._environment["#1"] = self._factory.as_list("blabla")
+        self._verify_evaluation("#1", "blabla")
+
+    def test_macro_that_expands_as_a_literal(self):
         self._define(r"\foo", "", r"{blablabla}")
         self._verify_evaluation(r"\foo", "blablabla")
 
-    def test_macro_that_uses_input(self):
+    def test_macro_with_one_parameter(self):
+        self._define(r"\foo", "#1", "{x=#1}")
+        self._verify_evaluation(r"\foo{2}", r"x=2")
+
+    def test_nested_macros(self):
+        self._define(r"\foo", "#1", r"{\def\bar(#1){bar=#1} \bar(#1)}")
+        self._verify_evaluation(r"\foo{2}", r" bar=2")
+
+    def test_macro_that_invoke_input(self):
         self._engine.content_of.return_value = "blabla"
         self._define(r"\foo", "#1", r"{File: \input{#1}}")
         self._verify_evaluation(r"\foo{my-file}", "File: blabla")
@@ -68,31 +82,29 @@ class ClassificationTests(TestCase):
             r"\point(12,{3 point 5})",
             "X=12 and Y=3 point 5")
 
-    def test_macro_with_one_parameter(self):
-        self._define(r"\foo", "#1", "{x=#1}")
-        self._verify_evaluation(r"\foo{2}", r"x=2")
-
     def test_macro_with_parameter_scope(self):
-        self._define(r"\foo", r"(#1,#2)", r"{\def\bar#1{Bar=#1}\bar#2 ; #1}")
+        self._define(r"\foo",
+                     "(#1,#2)",
+                     r"{\def\bar#1{Bar=#1}\bar#2 ; #1}")
         self._verify_evaluation(r"\foo(2,3)", r"Bar=3 ; 2")
 
-    def test_defining_internal_macros(self):
-        self._symbols.CHARACTER += "@"
-        self._verify_evaluation(r"\def\internal@foo{\internal@bar}", "")
-        self.assertEqual(self._macro(r"\internal@foo", "", r"{\internal@bar}"),
-                         self._environment[r"internal@foo"])
+    # def test_defining_internal_macros(self):
+    #     self._symbols.CHARACTER += "@"
+    #     self._verify_evaluation(r"\def\internal@foo{\internal@bar}", "")
+    #     self.assertEqual(self._macro(r"\internal@foo", "", r"{\internal@bar}"),
+    #                      self._environment[r"internal@foo"])
 
-    def test_internal_macros(self):
-        self._symbols.CHARACTER += "@"
-        self._define(r"\internal@foo", "", r"{\internal@bar}")
-        self._verify_evaluation(r"\internal@foo", "\\internal@bar")
+    # def test_internal_macros(self):
+    #     self._symbols.CHARACTER += "@"
+    #     self._define(r"\internal@foo", "", r"{\internal@bar}")
+    #     self._verify_evaluation(r"\internal@foo", "\\internal@bar")
 
     def _verify_evaluation(self, invocation, expected_category):
         self.assertEqual(expected_category,
                          self._evaluate(invocation))
 
     def _define(self, name, parameters, body):
-        macro = self._macro(name, parameters, body)
+        macro = self._user_defined_macro(name, parameters, body)
         self._environment[macro.name] = macro
 
     def _macro(self, name, parameters, body):
@@ -101,8 +113,16 @@ class ClassificationTests(TestCase):
             self._factory.as_list(parameters),
             self._factory.as_list(body))
 
+    def _user_defined_macro(self, name, parameters, body):
+        return self._macros.create_user_defined(
+            name,
+            self._factory.as_list(parameters),
+            self._factory.as_list(body))
+
+
     def _evaluate(self, expression):
-        parser = Parser(self._factory.as_tokens(expression, "Unknown"),
-                        self._factory,
-                        self._environment)
-        return "".join(map(str, parser.evaluate()))
+        interpreter = Interpreter(
+            self._factory.as_tokens(expression, "Unknown"),
+            self._factory,
+            self._environment)
+        return "".join(map(str, interpreter.process()))

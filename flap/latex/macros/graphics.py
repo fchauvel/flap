@@ -17,6 +17,7 @@
 # along with Flap.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from flap import logger
 from flap.latex.macros.commons import Macro, UpdateLink, Environment
 
 
@@ -30,12 +31,14 @@ class GraphicsPath(Macro):
 
     def _capture_arguments(self, parser, invocation):
         invocation.append_argument(
-            "paths", parser.capture_group())
+            "paths", parser.read.group())
 
-    def _execute(self, parser, invocation):
+    def execute2(self, parser, invocation):
         argument = parser.evaluate_as_text(invocation.argument("paths"))
         paths = list(map(str.strip, argument.split(",")))
         self._flap.record_graphic_path(paths, invocation)
+
+    def rewrite2(self, parser, invocation):
         return invocation.as_tokens
 
 
@@ -92,9 +95,16 @@ class Overpic(Environment):
     def __init__(self, flap):
         super().__init__(flap, "overpic")
 
-    def execute(self, parser, invocation):
-        invocation.append_argument("options", parser.capture_options())
-        invocation.append_argument("link", parser.capture_one())
+    def execute2(self, parser, invocation):
+        pass
+
+    def rewrite2(self, parser, invocation):
+        invocation.append_argument("options", parser.read.options())
+        logger.debug("OPTIONS: '%s'",
+                     invocation.argument_as_text("options"))
+        invocation.append_argument("link", parser.read.one())
+        logger.debug("LINK: '%s'",
+                     invocation.argument_as_text("link"))
         link = parser.evaluate_as_text(invocation.argument("link"))
         new_link = self._flap.update_link_to_graphic(link, invocation)
         return invocation.substitute("link", parser._create.as_list(

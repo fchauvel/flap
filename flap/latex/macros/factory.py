@@ -18,6 +18,7 @@
 #
 
 
+from flap.latex.macros.commons import UserDefinedMacro
 from flap.latex.macros.core import Begin, CatCode, Def, DocumentClass, \
     Macro, RequirePackage, UsePackage
 from flap.latex.macros.graphics import IncludeGraphics, IncludeSVG, \
@@ -72,3 +73,6 @@ class MacroFactory:
 
     def create(self, name, parameters, body):
         return Macro(self._flap, name, parameters, body)
+
+    def create_user_defined(self, name, parameters, body):
+        return UserDefinedMacro(self._flap, name, parameters, body)

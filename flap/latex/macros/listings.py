@@ -27,7 +27,10 @@ class Verbatim(Environment):
 
     def __init__(self, flap):
         super().__init__(flap, "verbatim")
+        self._content = None
 
-    def execute(self, parser, invocation):
-        return parser._create.as_list(
-            r"\begin{verbatim}") + parser.capture_until_text(r"\end{verbatim}")
+    def execute2(self, parser, invocation):
+        self._content = parser.read.until_text(r"\end{verbatim}")
+
+    def rewrite2(self, parser, invocation):
+        return parser._create.as_list(r"\begin{verbatim}") + self._content

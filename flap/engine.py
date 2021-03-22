@@ -93,7 +93,7 @@ class Settings:
         parser = Parser(factory.as_tokens(text, source),
                         factory,
                         Context(definitions=macros.all()))
-        return parser.rewrite()
+        return parser.process()
 
     def _write(self, tokens, destination):
         latex_code = "".join(str(each_token) for each_token in tokens)

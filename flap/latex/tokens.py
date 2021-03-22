@@ -31,9 +31,34 @@ class Token:
         self._category = category
         self._location = location
 
+    def send_to(self, parser):
+        """
+        Dispatch the appropriate 'rewrite' method depending on the type of
+        tokens.
+        """
+        handler_names = {
+            Symbol.BEGIN_GROUP: "process_begin_group",
+            Symbol.COMMENT: "process_comment",
+            Symbol.CONTROL: "process_control",
+            Symbol.CHARACTER: "process_character",
+            Symbol.WHITE_SPACES: "process_white_spaces",
+            Symbol.PARAMETER: "process_parameter",
+            Symbol.END_GROUP: "process_end_group",
+            Symbol.OTHERS: "process_others",
+            Symbol.NEW_LINE: "process_new_line"
+        }
+        handler_name = handler_names.get(self._category,
+                                         self._category.name)
+        handler = getattr(parser, handler_name)
+        return handler(self)
+
     @property
     def location(self):
         return self._location
+
+    @property
+    def as_text(self):
+        return self._text
 
     def satisfies(self, predicate):
         return predicate.evaluate_on(

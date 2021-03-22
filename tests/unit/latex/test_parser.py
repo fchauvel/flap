@@ -72,7 +72,7 @@ class ParserTests(TestCase):
                 "Unknown"),
             self._factory,
             self._environment)
-        tokens = parser.rewrite()
+        tokens = parser.process()
         self._verify_output_is(expected, tokens)
 
     def _verify_output_is(self, expected_text, actual_tokens):
@@ -105,18 +105,18 @@ class ParserTests(TestCase):
         self._do_test_with(r"\begin{center}blabla\end{center}",
                            r"\begin{center}blabla\end{center}")
 
-    def test_parsing_a_macro_definition(self):
+    def test_rewriting_a_macro_definition(self):
         self._do_test_with(r"\def\myMacro#1{my #1}",
                            r"\def\myMacro#1{my #1}")
 
-    def test_parsing_commented_out_input(self):
+    def test_rewriting_commented_out_input(self):
         self._do_test_with(r"% \input my-file",
                            r"% \input my-file")
         self._engine.content_of.assert_not_called()
 
-    def test_invoking_a_macro_with_one_parameter(self):
+    def test_rewriting_invocation_with_one_parameter(self):
         self._define_macro(r"\foo", "(#1)", "{bar #1}")
-        self._do_test_with(r"\foo(1)", "bar 1")
+        self._do_test_with(r"\foo(1)", r"\foo(1)")
 
     def _define_macro(self, name, parameters, body):
         macro = self._macro(name, parameters, body)
@@ -152,7 +152,7 @@ class ParserTests(TestCase):
         self.assertEqual(self._macro(r"\point", "(#1,#2,#3)", "{X}"),
                          self._environment["point"])
 
-    def test_parsing_input(self):
+    def test_rewriting_input(self):
         self._engine.content_of.return_value = "File content"
         self._do_test_with(r"\input{my-file}",
                            r"File content")
